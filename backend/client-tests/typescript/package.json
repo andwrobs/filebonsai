@@ -1,0 +1,12 @@
+{
+  "name": "filebonsai-contract-checks",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "test": "tsc -p tsconfig.json && node --test dist/client-tests/typescript/catalog.test.js"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "@types/node": "22.18.6"
+  }
+}

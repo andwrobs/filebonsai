@@ -1,0 +1,31 @@
+name: Catalog Java 21
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/catalog-java.yml"
+      - "backend/**"
+  push:
+    paths:
+      - ".github/workflows/catalog-java.yml"
+      - "backend/**"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Compile, generate jOOQ, migrate PostgreSQL, and test
+        run: ./mvnw -B -ntp test

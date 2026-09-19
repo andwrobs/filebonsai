@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
+    "strict": true,
+    "noEmitOnError": true,
+    "esModuleInterop": true,
+    "outDir": "dist",
+    "rootDir": "../..",
+    "skipLibCheck": true
+  },
+  "include": [
+    "*.ts",
+    "../../clients/typescript/**/*.ts"
+  ]
+}

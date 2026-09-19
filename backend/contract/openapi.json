@@ -1,0 +1,415 @@
+{
+  "openapi" : "3.0.1",
+  "info" : {
+    "description" : "Code-first catalog API. The fixture profile is a contract harness; authenticated PostgreSQL HTTP wiring remains gated behind a trusted request-scope provider.",
+    "title" : "Filebonsai Catalog",
+    "version" : "0.1.0"
+  },
+  "servers" : [ {
+    "url" : "http://127.0.0.1:8080"
+  } ],
+  "paths" : {
+    "/api/v1/entries/{id}" : {
+      "get" : {
+        "operationId" : "getEntry",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EntryResponse"
+                }
+              }
+            },
+            "description" : "Entry"
+          },
+          "400" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description" : "VALIDATION_FAILED, INVALID_REQUEST, INVALID_CURSOR, or NOT_A_FOLDER"
+          },
+          "404" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description" : "ENTRY_NOT_FOUND, including inaccessible entries"
+          },
+          "500" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description" : "INTERNAL_ERROR"
+          }
+        },
+        "summary" : "Read an available file or folder",
+        "tags" : [ "Catalog" ]
+      }
+    },
+    "/api/v1/entries/{id}/children" : {
+      "get" : {
+        "description" : "NFC name then ID, ascending UTF-8 byte order; no snapshot. Inserts or renames behind the cursor may be missed, and renames ahead may repeat an entry. Deduplicate by ID or refresh when needed. Tokens are opaque, scoped to the workspace/folder/sort, and invalid after cursor-key rotation; fixture restart rotates its key.",
+        "operationId" : "listChildren",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "in" : "query",
+          "name" : "limit",
+          "required" : false,
+          "schema" : {
+            "maximum" : 100,
+            "minimum" : 1,
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 50
+          }
+        }, {
+          "in" : "query",
+          "name" : "cursor",
+          "required" : false,
+          "schema" : {
+            "maxLength" : 2048,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EntryPageResponse"
+                }
+              }
+            },
+            "description" : "Page"
+          },
+          "400" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description" : "VALIDATION_FAILED, INVALID_REQUEST, INVALID_CURSOR, or NOT_A_FOLDER"
+          },
+          "404" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description" : "ENTRY_NOT_FOUND, including inaccessible entries"
+          },
+          "500" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description" : "INTERNAL_ERROR"
+          }
+        },
+        "summary" : "List direct children",
+        "tags" : [ "Catalog" ]
+      }
+    },
+    "/api/v1/folders" : {
+      "post" : {
+        "description" : "Required Idempotency-Key UUID. Same key and normalized intent replay the original 201 response; changed intent gives 409. Names share one namespace with files and pending uploads. PostgreSQL replay records are durable; fixture records last until restart.",
+        "operationId" : "createFolder",
+        "parameters" : [ {
+          "in" : "header",
+          "name" : "Idempotency-Key",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateFolderRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FolderEntryResponse"
+                }
+              }
+            },
+            "description" : "Created or replayed",
+            "headers" : {
+              "Location" : {
+                "schema" : {
+                  "type" : "string"
+                },
+                "style" : "simple"
+              }
+            }
+          },
+          "400" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description" : "VALIDATION_FAILED, INVALID_REQUEST, INVALID_CURSOR, or NOT_A_FOLDER"
+          },
+          "404" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description" : "ENTRY_NOT_FOUND, including inaccessible entries"
+          },
+          "409" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description" : "NAME_CONFLICT or IDEMPOTENCY_CONFLICT"
+          },
+          "500" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description" : "INTERNAL_ERROR"
+          }
+        },
+        "summary" : "Create a folder",
+        "tags" : [ "Catalog" ]
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "ApiErrorResponse" : {
+        "required" : [ "code", "fieldErrors", "message", "requestId", "status" ],
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "string",
+            "description" : "Open string, not an enum. Known codes are documented per operation. Fall back to status and message for unknown codes."
+          },
+          "fieldErrors" : {
+            "type" : "array",
+            "description" : "Empty when no individual field is responsible",
+            "items" : {
+              "$ref" : "#/components/schemas/FieldErrorResponse"
+            }
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "requestId" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "CreateFolderRequest" : {
+        "required" : [ "name", "parentId" ],
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "description" : "NFC normalized before comparison. Case-sensitive, no trimming. 1–255 normalized UTF-8 bytes; excludes dot names, separators and controls."
+          },
+          "parentId" : {
+            "type" : "string",
+            "description" : "Explicit containing folder ID, including for root children",
+            "format" : "uuid"
+          }
+        }
+      },
+      "CurrentVersionResponse" : {
+        "required" : [ "id", "sizeBytes" ],
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "sizeBytes" : {
+            "maxLength" : 19,
+            "pattern" : "^(0|[1-9][0-9]{0,18})$",
+            "type" : "string",
+            "description" : "Base-10 byte count, 0 through 9223372036854775807 inclusive. Never a JSON number.",
+            "example" : "9007199254740993"
+          }
+        }
+      },
+      "EntryPageResponse" : {
+        "required" : [ "entries", "nextCursor" ],
+        "type" : "object",
+        "properties" : {
+          "entries" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/EntryResponse"
+            }
+          },
+          "nextCursor" : {
+            "type" : "string",
+            "description" : "Opaque continuation token; null means end of this traversal",
+            "nullable" : true
+          }
+        }
+      },
+      "EntryResponse" : {
+        "type" : "object",
+        "discriminator" : {
+          "mapping" : {
+            "file" : "#/components/schemas/FileEntryResponse",
+            "folder" : "#/components/schemas/FolderEntryResponse"
+          },
+          "propertyName" : "kind"
+        },
+        "oneOf" : [ {
+          "$ref" : "#/components/schemas/FileEntryResponse"
+        }, {
+          "$ref" : "#/components/schemas/FolderEntryResponse"
+        } ]
+      },
+      "FieldErrorResponse" : {
+        "required" : [ "code", "field", "message" ],
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "string",
+            "description" : "Open string code; clients must allow unknown codes"
+          },
+          "field" : {
+            "type" : "string"
+          },
+          "message" : {
+            "type" : "string"
+          }
+        },
+        "description" : "Empty when no individual field is responsible"
+      },
+      "FileEntryResponse" : {
+        "required" : [ "createdAt", "currentVersion", "id", "kind", "name", "parentId", "updatedAt" ],
+        "type" : "object",
+        "properties" : {
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "currentVersion" : {
+            "$ref" : "#/components/schemas/CurrentVersionResponse"
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "kind" : {
+            "type" : "string",
+            "enum" : [ "file" ]
+          },
+          "name" : {
+            "type" : "string",
+            "description" : "NFC normalized; case preserved; maximum 255 UTF-8 bytes"
+          },
+          "parentId" : {
+            "type" : "string",
+            "description" : "Containing folder identity",
+            "format" : "uuid"
+          },
+          "updatedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "FolderEntryResponse" : {
+        "required" : [ "createdAt", "id", "kind", "name", "parentId", "updatedAt" ],
+        "type" : "object",
+        "properties" : {
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "kind" : {
+            "type" : "string",
+            "enum" : [ "folder" ]
+          },
+          "name" : {
+            "type" : "string",
+            "description" : "NFC normalized; case preserved; maximum 255 UTF-8 bytes"
+          },
+          "parentId" : {
+            "type" : "string",
+            "description" : "Null only for the workspace root",
+            "format" : "uuid",
+            "nullable" : true
+          },
+          "updatedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+backend/.tools/
+backend/target/
+backend/clients/
+backend/client-tests/swift-contract/.build/
+backend/client-tests/typescript/dist/
+backend/client-tests/typescript/node_modules/

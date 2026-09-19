@@ -1,0 +1,7 @@
+.tools/
+.DS_Store
+target/
+clients/
+client-tests/swift-contract/.build/
+client-tests/typescript/dist/
+client-tests/typescript/node_modules/

@@ -1,0 +1,9 @@
+{
+  "projectName": "FilebonsaiAPI",
+  "useSPMFileStructure": true,
+  "responseAs": "AsyncAwait",
+  "hideGenerationTimestamp": true,
+  "identifiableModels": false,
+  "useJsonEncodable": false,
+  "readonlyProperties": true
+}
