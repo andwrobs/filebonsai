@@ -428,6 +428,15 @@ public final class PostgresLocalTransfers
         if (state != UploadState.STAGED) {
             throw new UploadFailure(INVALID_STATE, "Upload content must be staged before completion");
         }
+        // Finalization can outlive the upload deadline. Pin the name in the same transaction
+        // before any filesystem I/O so both Catalog and upload cleanup preserve uncertain work.
+        int reserved = transaction.execute(
+                "update catalog_names set expires_at = 'infinity'::timestamptz "
+                        + "where id = ? and claim_kind = 'reservation'",
+                uploadId);
+        if (reserved != 1) {
+            throw new UploadFailure(INVALID_STATE, "Upload reservation is no longer available");
+        }
         UUID claimId = UUID.randomUUID();
         transaction.execute(
                 "update upload_sessions set state = 'FINALIZING', recovery_claim_id = ?, fence = fence + 1, "
@@ -566,8 +575,9 @@ public final class PostgresLocalTransfers
                 parentId.value(),
                 name.value());
         transaction.execute(
-                "delete from catalog_names where workspace_id = ? and parent_id = ? and name = ? "
-                        + "and claim_kind = 'reservation' and expires_at <= current_timestamp",
+                "delete from catalog_names n where workspace_id = ? and parent_id = ? and name = ? "
+                        + "and claim_kind = 'reservation' and exists "
+                        + "(select 1 from upload_sessions u where u.id = n.id and u.state = 'EXPIRED')",
                 scope.workspaceId(),
                 parentId.value(),
                 name.value());
@@ -596,9 +606,7 @@ public final class PostgresLocalTransfers
 
     private boolean expired(DSLContext context, Record row) {
         return Boolean.TRUE.equals(context.fetchValue(
-                "select ?::timestamptz <= current_timestamp",
-                Boolean.class,
-                row.get("expires_at", OffsetDateTime.class)));
+                "select ?::timestamptz <= current_timestamp", row.get("expires_at", OffsetDateTime.class)));
     }
 
     private boolean expirable(Record row) {

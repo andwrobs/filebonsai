@@ -15,6 +15,10 @@ observed results; use Git history for prior plans and completed migrations.
 - Flyway V1–V6 define workspace membership, names/reservations, entries, immutable
   versions/objects, idempotency, local-owner sessions, credential-reset replay, login
   throttling, checks, and PostgreSQL guarantees.
+- Flyway V7 and the local-transfer adapter provide durable upload intent, streamed
+  size/digest verification, whole-body retry, cancellation, restart reconciliation,
+  and immutable original download. Finalization pins its name reservation until
+  publication or recovery resolves it; safely expired sessions release the name.
 - The jOOQ PostgreSQL adapter remains behind operation ports. Its 13 Testcontainers
   tests cover workspace scope, deterministic ordering, reservations, idempotency,
   rollback/concurrency, immutable identities/versions/objects, domain constraints,
@@ -43,9 +47,14 @@ observed results; use Git history for prior plans and completed migrations.
 - `cd backend && ./mvnw -Dtest=AccessHttpPostgresTest#protectsWritesWithCsrfAndDerivesCatalogScopeFromTheAuthenticatedMembership test`:
   passed, 1 PostgreSQL Testcontainers test, including authenticated workspace-root
   resolution.
-- `cd backend && ./scripts/verify.sh`: did not complete because the pre-existing
-  `PostgresLocalTransfers` tests attempt to bind a Java `Class` through jOOQ to
-  PostgreSQL. Catalog OpenAPI export completed before that unrelated failure.
+- `cd backend && ./mvnw spotless:apply -Dtest=PostgresLocalTransfersTest,LocalObjectStorageTest test`:
+  passed, 14 PostgreSQL transfer tests and 4 filesystem tests. Covers whole-body retry,
+  zero-byte originals, size/digest rejection, cancellation fencing, expiry, isolation,
+  restart recovery, and name preservation after injected publication failure.
+- `cd backend && ./mvnw test`: passed, 66 tests, no failures or skips, including
+  PostgreSQL Catalog, Access, and Transfers. The erroneous Java Class SQL bind and
+  invalid expiry fixture are repaired. Read-only persistence review has no remaining
+  blockers. No API shape changed; contract/client checks were not rerun in this repair.
 - `cd backend && ./scripts/generate-clients.sh && ./scripts/check-clients.sh`: passed
   against the exported contract; OpenAPI validation, generated TypeScript compilation
   and 6 decoding tests (including `workspace-root`), plus generated Swift compilation
@@ -58,12 +67,13 @@ observed results; use Git history for prior plans and completed migrations.
 
 ## Ordered work
 
-1. Clients: implement the Catalog slice in SwiftUI/TCA through a generated transport
-   and handwritten application adapter; inspect rendered required states.
-2. Local transfer: add bounded filesystem storage, durable upload intent/state,
-   whole-body retry, reconciliation/restart tests, and original download.
-3. Cloud transfer: choose and specify one provider, then prove its multipart and
+1. Web transfers: connect upload and original download to the Catalog browser,
+   including honest progress, failure/retry, and uncertain-completion states; verify
+   the HTTP/client boundary and inspect rendered behavior.
+2. Cloud transfer: choose and specify one provider, then prove its multipart and
    reconciliation semantics before adding another.
+3. iOS Catalog remains deferred by user preference. When resumed, implement the
+   SwiftUI/TCA slice through a generated transport and handwritten application adapter.
 
 Each item is split into a bounded task at execution time with owned paths, dependencies,
 acceptance criteria, checks, and a handoff. The ordered list is not blanket authority
