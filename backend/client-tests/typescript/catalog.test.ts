@@ -4,10 +4,12 @@ import path from "node:path";
 import test from "node:test";
 
 import { ApiErrorResponseFromJSON } from "../../clients/typescript/models/ApiErrorResponse";
+import { AccessSessionResponseFromJSON } from "../../clients/typescript/models/AccessSessionResponse";
 import { EntryPageResponseFromJSON } from "../../clients/typescript/models/EntryPageResponse";
 import { EntryResponseFromJSON } from "../../clients/typescript/models/EntryResponse";
 import { FileEntryResponseFromJSON } from "../../clients/typescript/models/FileEntryResponse";
 import { FolderEntryResponseFromJSON } from "../../clients/typescript/models/FolderEntryResponse";
+import { UploadResponseFromJSON } from "../../clients/typescript/models/UploadResponse";
 
 function fixture(name: string): unknown {
   const file = path.resolve(process.cwd(), "../../contract/fixtures", `${name}.json`);
@@ -51,4 +53,34 @@ test("does not mistake an unknown discriminator for a known entry", () => {
   assert.equal(decoded.kind, "future");
   assert.notEqual(decoded.kind, "file");
   assert.notEqual(decoded.kind, "folder");
+});
+
+test("decodes an authenticated session expiry", () => {
+  const session = AccessSessionResponseFromJSON({
+    principalId: "20000000-0000-4000-8000-000000000001",
+    expiresAt: "2026-09-20T18:00:00.123456Z",
+  });
+
+  assert.equal(session.principalId, "20000000-0000-4000-8000-000000000001");
+  assert.ok(session.expiresAt instanceof Date);
+});
+
+test("decodes durable upload state with exact decimal byte counts", () => {
+  const upload = UploadResponseFromJSON({
+    id: "50000000-0000-4000-8000-000000000001",
+    entryId: "00000000-0000-4000-8000-000000000010",
+    versionId: "30000000-0000-4000-8000-000000000010",
+    parentId: "00000000-0000-4000-8000-000000000001",
+    name: "upload.bin",
+    sizeBytes: "9007199254740993",
+    expectedSha256: null,
+    computedSha256: null,
+    state: "INITIATED",
+    expiresAt: "2026-09-21T18:00:00.123456Z",
+  });
+
+  assert.equal(upload.sizeBytes, "9007199254740993");
+  assert.equal(upload.expectedSha256, null);
+  assert.equal(upload.state, "INITIATED");
+  assert.ok(upload.expiresAt instanceof Date);
 });

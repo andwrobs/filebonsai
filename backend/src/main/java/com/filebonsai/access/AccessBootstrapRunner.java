@@ -1,8 +1,5 @@
 package com.filebonsai.access;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
@@ -27,13 +24,6 @@ final class AccessBootstrapRunner implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments arguments) {
-        try {
-            char[] password = Files.readString(passwordFile, StandardCharsets.UTF_8)
-                    .strip()
-                    .toCharArray();
-            access.bootstrap(password);
-        } catch (IOException exception) {
-            throw new IllegalStateException("Cannot read configured bootstrap password file", exception);
-        }
+        access.bootstrap(PasswordFileReader.read(passwordFile, "Cannot read configured bootstrap password file"));
     }
 }

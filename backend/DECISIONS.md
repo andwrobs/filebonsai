@@ -44,9 +44,30 @@ Domain modeling does not imply an ORM. `FileName` ensures validity when created;
 
 Use the same service behavior as acceptance criteria, not its data structures as database design. The PostgreSQL adapter enforces membership on every query/mutation, uses a bytewise name uniqueness constraint including pending reservations, creates the folder and successful idempotency result in one transaction, resolves competing insert conflicts into stable API errors, and keeps ordering/cursor comparisons identical to the fixture's UTF-8 order. PostgreSQL migrations also guard immutable entry kind, roots, versions/objects, and FileName constraints.
 
-Resolve real session/native auth before exposing the PostgreSQL HTTP profile. Add per-request scope, CSRF/session behavior for the browser, replay retention policy, request-size limits, production cursor key management, and transfer/storage tests. Catalog bytes are synthetic metadata; the fixture's large-size example is intentional and has no backing object.
+Browser access now uses PostgreSQL-backed local-owner sessions, CSRF, persisted login
+throttling, and membership-derived request scope. Administrative credential resets are
+idempotent by an operator-supplied request UUID and revoke active sessions atomically.
+Resolve native session behavior before a native client ships. Add replay retention
+policy and production cursor key management. The fixture's large-size Catalog example
+remains synthetic and has no backing object.
 
-No upload endpoints, storage operations, UI, JPA/Hibernate, or client applications are added to this slice. Active upload/storage and configurable-shell requirements live in `docs/architecture/storage-and-transfers.md` and `docs/product/design.md` and remain future work.
+## Local transfer choices
+
+The PostgreSQL profile authors begin/status/content/complete/cancel operations and
+authorized original download. Begin reserves the logical name and server-generated
+entry/version/object identities without creating an available catalog entry. Content
+streams to an attempt-specific file under an explicit local root with size, duration,
+concurrency, traversal, and symlink bounds. Completion atomically promotes without
+overwrite before a short catalog transaction publishes the immutable version.
+
+The upload session stores a fence and accepted temporary key. Whole-body retries
+replace only a verified staged attempt; cancellation or restart fences a receiver.
+Startup recovery returns interrupted receivers to a retryable state and inspects
+`FINALIZING`/`RECONCILING` bytes to publish, restage, or fail without guessing. Public
+responses expose logical IDs, integrity, state, and expiry but never internal paths.
+The local root defaults to `./data`; 128 MiB, 15 minutes, four concurrent writers, and
+24-hour expiry are configurable. Cloud storage, UI integration, native session
+behavior, and configurable-shell work remain future slices.
 
 ## References consulted
 

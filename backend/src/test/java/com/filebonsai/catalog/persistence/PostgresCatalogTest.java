@@ -392,7 +392,7 @@ class PostgresCatalogTest {
     }
 
     @Test
-    void generatedJooqSchemaMatchesMigratedPostgresqlColumns() {
+    void generatedJooqCatalogSchemaMatchesItsOwnedMigratedColumns() {
         Map<String, List<ColumnShape>> generated = new LinkedHashMap<>();
         DefaultSchema.DEFAULT_SCHEMA.getTables().stream()
                 .sorted(java.util.Comparator.comparing(org.jooq.Table::getName))
@@ -414,6 +414,8 @@ class PostgresCatalogTest {
                         "select table_name, column_name, data_type, is_nullable, character_maximum_length, numeric_scale "
                                 + "from information_schema.columns where table_schema = 'public' "
                                 + "and table_name <> 'flyway_schema_history' and table_name not like 'access_%' "
+                                + "and table_name <> 'upload_sessions' "
+                                + "and not (table_name = 'physical_objects' and column_name = 'sha256') "
                                 + "order by table_name, column_name")
                 .forEach(row -> migrated.computeIfAbsent(
                                 row.get("table_name", String.class), ignored -> new ArrayList<>())

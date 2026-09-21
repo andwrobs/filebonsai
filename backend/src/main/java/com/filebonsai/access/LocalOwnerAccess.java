@@ -10,7 +10,7 @@ import java.util.Base64;
 import java.util.Optional;
 import java.util.UUID;
 import org.jooq.DSLContext;
-import org.jooq.Record3;
+import org.jooq.Record6;
 import org.jooq.impl.DSL;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,7 +28,20 @@ public class LocalOwnerAccess {
     private static final org.jooq.Table<?> PRINCIPALS = DSL.table(DSL.name("access_principals"));
     private static final org.jooq.Table<?> OWNER = DSL.table(DSL.name("access_local_owner"));
     private static final org.jooq.Table<?> SESSIONS = DSL.table(DSL.name("access_sessions"));
+    private static final org.jooq.Table<?> CREDENTIAL_RESETS = DSL.table(DSL.name("access_credential_resets"));
+    private static final org.jooq.Table<?> WORKSPACES = DSL.table(DSL.name("workspaces"));
+    private static final org.jooq.Table<?> MEMBERS = DSL.table(DSL.name("workspace_members"));
+    private static final org.jooq.Table<?> ENTRIES = DSL.table(DSL.name("catalog_entries"));
+    private static final org.jooq.Table<?> NAMES = DSL.table(DSL.name("catalog_names"));
+    private static final org.jooq.Field<UUID> ID = DSL.field(DSL.name("id"), UUID.class);
     private static final org.jooq.Field<UUID> PRINCIPAL_ID = DSL.field(DSL.name("principal_id"), UUID.class);
+    private static final org.jooq.Field<UUID> WORKSPACE_ID = DSL.field(DSL.name("workspace_id"), UUID.class);
+    private static final org.jooq.Field<UUID> PARENT_ID = DSL.field(DSL.name("parent_id"), UUID.class);
+    private static final org.jooq.Field<UUID> ENTRY_ID = DSL.field(DSL.name("entry_id"), UUID.class);
+    private static final org.jooq.Field<String> ROLE = DSL.field(DSL.name("role"), String.class);
+    private static final org.jooq.Field<String> KIND = DSL.field(DSL.name("kind"), String.class);
+    private static final org.jooq.Field<String> NAME = DSL.field(DSL.name("name"), String.class);
+    private static final org.jooq.Field<String> CLAIM_KIND = DSL.field(DSL.name("claim_kind"), String.class);
     private static final org.jooq.Field<String> PASSWORD_HASH = DSL.field(DSL.name("password_hash"), String.class);
     private static final org.jooq.Field<Long> CREDENTIAL_REVISION =
             DSL.field(DSL.name("credential_revision"), Long.class);
@@ -41,39 +54,80 @@ public class LocalOwnerAccess {
             DSL.field(DSL.name("revoked_at"), OffsetDateTime.class);
     private static final org.jooq.Field<OffsetDateTime> CREATED_AT =
             DSL.field(DSL.name("created_at"), OffsetDateTime.class);
+    private static final org.jooq.Field<OffsetDateTime> UPDATED_AT =
+            DSL.field(DSL.name("updated_at"), OffsetDateTime.class);
+    private static final org.jooq.Field<Integer> FAILED_LOGIN_ATTEMPTS =
+            DSL.field(DSL.name("failed_login_attempts"), Integer.class);
+    private static final org.jooq.Field<OffsetDateTime> FAILED_LOGIN_WINDOW_STARTED_AT =
+            DSL.field(DSL.name("failed_login_window_started_at"), OffsetDateTime.class);
+    private static final org.jooq.Field<OffsetDateTime> LOGIN_BLOCKED_UNTIL =
+            DSL.field(DSL.name("login_blocked_until"), OffsetDateTime.class);
+    private static final org.jooq.Field<UUID> RESET_REQUEST_ID = DSL.field(DSL.name("request_id"), UUID.class);
+    private static final org.jooq.Field<OffsetDateTime> APPLIED_AT =
+            DSL.field(DSL.name("applied_at"), OffsetDateTime.class);
 
     private final DSLContext database;
     private final PasswordHasher passwords;
     private final Clock clock;
     private final Duration sessionTtl;
+    private final int maxLoginAttempts;
+    private final Duration loginAttemptWindow;
+    private final Duration loginLockout;
     private final SecureRandom random = new SecureRandom();
 
     @Autowired
     public LocalOwnerAccess(
             DSLContext database,
             PasswordHasher passwords,
-            @Value("${filebonsai.access.session-ttl:PT12H}") Duration sessionTtl) {
-        this(database, passwords, Clock.systemUTC(), sessionTtl);
+            @Value("${filebonsai.access.session-ttl:PT12H}") Duration sessionTtl,
+            @Value("${filebonsai.access.login.max-attempts:5}") int maxLoginAttempts,
+            @Value("${filebonsai.access.login.attempt-window:PT5M}") Duration loginAttemptWindow,
+            @Value("${filebonsai.access.login.lockout:PT15M}") Duration loginLockout) {
+        this(database, passwords, Clock.systemUTC(), sessionTtl, maxLoginAttempts, loginAttemptWindow, loginLockout);
     }
 
     LocalOwnerAccess(DSLContext database, PasswordHasher passwords, Clock clock, Duration sessionTtl) {
+        this(database, passwords, clock, sessionTtl, 5, Duration.ofMinutes(5), Duration.ofMinutes(15));
+    }
+
+    LocalOwnerAccess(
+            DSLContext database,
+            PasswordHasher passwords,
+            Clock clock,
+            Duration sessionTtl,
+            int maxLoginAttempts,
+            Duration loginAttemptWindow,
+            Duration loginLockout) {
         this.database = database;
         this.passwords = passwords;
         this.clock = clock;
         this.sessionTtl = sessionTtl;
+        this.maxLoginAttempts = maxLoginAttempts;
+        this.loginAttemptWindow = loginAttemptWindow;
+        this.loginLockout = loginLockout;
         if (sessionTtl.isNegative() || sessionTtl.isZero()) {
             throw new IllegalArgumentException("Session TTL must be positive");
+        }
+        if (maxLoginAttempts < 1
+                || loginAttemptWindow.isNegative()
+                || loginAttemptWindow.isZero()
+                || loginLockout.isNegative()
+                || loginLockout.isZero()) {
+            throw new IllegalArgumentException("Login throttling settings must be positive");
         }
     }
 
     @Transactional
     public void bootstrap(char[] password) {
-        requirePassword(password);
         try {
+            requirePassword(password);
             if (database.fetchExists(database.selectOne().from(OWNER))) {
                 throw new IllegalStateException("A local owner is already configured");
             }
             UUID principalId = UUID.randomUUID();
+            UUID workspaceId = UUID.randomUUID();
+            UUID rootId = UUID.randomUUID();
+            OffsetDateTime now = OffsetDateTime.now(clock);
             database.insertInto(PRINCIPALS)
                     .columns(DSL.field(DSL.name("id"), UUID.class))
                     .values(principalId)
@@ -86,29 +140,117 @@ public class LocalOwnerAccess {
                             CREDENTIAL_REVISION)
                     .values(true, principalId, passwords.hash(password), 1L)
                     .execute();
+            database.insertInto(WORKSPACES)
+                    .columns(ID, CREATED_AT)
+                    .values(workspaceId, now)
+                    .execute();
+            database.insertInto(MEMBERS)
+                    .columns(WORKSPACE_ID, PRINCIPAL_ID, ROLE, CREATED_AT)
+                    .values(workspaceId, principalId, "owner", now)
+                    .execute();
+            database.insertInto(ENTRIES)
+                    .columns(ID, WORKSPACE_ID, KIND, CREATED_AT, UPDATED_AT)
+                    .values(rootId, workspaceId, "folder", now, now)
+                    .execute();
+            database.insertInto(NAMES)
+                    .columns(ID, WORKSPACE_ID, PARENT_ID, NAME, CLAIM_KIND, ENTRY_ID, CREATED_AT)
+                    .values(UUID.randomUUID(), workspaceId, null, "Library", "entry", rootId, now)
+                    .execute();
         } finally {
-            Arrays.fill(password, '\0');
+            clear(password);
         }
     }
 
     public IssuedSession login(char[] password, String sessionTokenToRotate) {
-        requirePassword(password);
         try {
-            Record3<UUID, String, Long> owner = database.select(PRINCIPAL_ID, PASSWORD_HASH, CREDENTIAL_REVISION)
-                    .from(OWNER)
-                    .fetchOne();
-            if (owner == null || !passwords.matches(password, owner.value2())) {
-                throw new AccessFailure(AccessFailure.Reason.INVALID_CREDENTIALS);
-            }
-            return database.transactionResult(configuration -> {
+            requireLoginPassword(password);
+            LoginResult result = database.transactionResult(configuration -> {
                 DSLContext transaction = DSL.using(configuration);
+                OffsetDateTime now = OffsetDateTime.now(clock);
+                Record6<UUID, String, Long, Integer, OffsetDateTime, OffsetDateTime> owner = transaction
+                        .select(
+                                PRINCIPAL_ID,
+                                PASSWORD_HASH,
+                                CREDENTIAL_REVISION,
+                                FAILED_LOGIN_ATTEMPTS,
+                                FAILED_LOGIN_WINDOW_STARTED_AT,
+                                LOGIN_BLOCKED_UNTIL)
+                        .from(OWNER)
+                        .forUpdate()
+                        .fetchOne();
+                if (owner == null) {
+                    return LoginResult.failure(AccessFailure.Reason.INVALID_CREDENTIALS, 0);
+                }
+                if (owner.value6() != null && owner.value6().isAfter(now)) {
+                    return LoginResult.failure(
+                            AccessFailure.Reason.RATE_LIMITED, retryAfterSeconds(now, owner.value6()));
+                }
+                if (!passwords.matches(password, owner.value2())) {
+                    return recordFailedLogin(transaction, owner, now);
+                }
+                clearLoginFailures(transaction);
                 if (sessionTokenToRotate != null) {
                     revoke(transaction, sessionTokenToRotate);
                 }
-                return issue(transaction, owner.value1(), owner.value3());
+                return LoginResult.success(issue(transaction, owner.value1(), owner.value3()));
+            });
+            if (result.failure() != null) {
+                throw new AccessFailure(result.failure(), result.retryAfterSeconds());
+            }
+            return result.session();
+        } finally {
+            clear(password);
+        }
+    }
+
+    public void resetCredentials(UUID requestId, char[] password) {
+        try {
+            if (requestId == null) {
+                throw new IllegalArgumentException("Credential reset request ID is required");
+            }
+            requirePassword(password);
+            database.transaction(configuration -> {
+                DSLContext transaction = DSL.using(configuration);
+                var owner =
+                        transaction.select(PRINCIPAL_ID).from(OWNER).forUpdate().fetchOne();
+                if (owner == null) {
+                    throw new IllegalStateException("A local owner is not configured");
+                }
+                String appliedPasswordHash = transaction
+                        .select(PASSWORD_HASH)
+                        .from(CREDENTIAL_RESETS)
+                        .where(RESET_REQUEST_ID.eq(requestId))
+                        .fetchOne(PASSWORD_HASH);
+                if (appliedPasswordHash != null) {
+                    if (!passwords.matches(password, appliedPasswordHash)) {
+                        throw new IllegalStateException("Credential reset request conflicts with an existing request");
+                    }
+                    return;
+                }
+                String passwordHash = passwords.hash(password);
+                OffsetDateTime now = OffsetDateTime.now(clock);
+                transaction
+                        .update(OWNER)
+                        .set(PASSWORD_HASH, passwordHash)
+                        .set(CREDENTIAL_REVISION, CREDENTIAL_REVISION.plus(1L))
+                        .set(FAILED_LOGIN_ATTEMPTS, 0)
+                        .set(FAILED_LOGIN_WINDOW_STARTED_AT, (OffsetDateTime) null)
+                        .set(LOGIN_BLOCKED_UNTIL, (OffsetDateTime) null)
+                        .execute();
+                transaction
+                        .update(SESSIONS)
+                        .set(REVOKED_AT, now)
+                        .where(PRINCIPAL_ID.eq(owner.value1()))
+                        .and(REVOKED_AT.isNull())
+                        .execute();
+                transaction
+                        .insertInto(CREDENTIAL_RESETS)
+                        .columns(RESET_REQUEST_ID, PRINCIPAL_ID, PASSWORD_HASH, APPLIED_AT)
+                        .values(requestId, owner.value1(), passwordHash, now)
+                        .execute();
             });
         } finally {
-            Arrays.fill(password, '\0');
+            clear(password);
         }
     }
 
@@ -210,6 +352,44 @@ public class LocalOwnerAccess {
                 .execute();
     }
 
+    private LoginResult recordFailedLogin(
+            DSLContext transaction,
+            Record6<UUID, String, Long, Integer, OffsetDateTime, OffsetDateTime> owner,
+            OffsetDateTime now) {
+        OffsetDateTime windowStarted = owner.value5();
+        int attempts = owner.value4();
+        if (windowStarted == null || !now.isBefore(windowStarted.plus(loginAttemptWindow))) {
+            windowStarted = now;
+            attempts = 1;
+        } else {
+            attempts++;
+        }
+        OffsetDateTime blockedUntil = attempts >= maxLoginAttempts ? now.plus(loginLockout) : null;
+        transaction
+                .update(OWNER)
+                .set(FAILED_LOGIN_ATTEMPTS, attempts)
+                .set(FAILED_LOGIN_WINDOW_STARTED_AT, windowStarted)
+                .set(LOGIN_BLOCKED_UNTIL, blockedUntil)
+                .execute();
+        if (blockedUntil != null) {
+            return LoginResult.failure(AccessFailure.Reason.RATE_LIMITED, retryAfterSeconds(now, blockedUntil));
+        }
+        return LoginResult.failure(AccessFailure.Reason.INVALID_CREDENTIALS, 0);
+    }
+
+    private void clearLoginFailures(DSLContext transaction) {
+        transaction
+                .update(OWNER)
+                .set(FAILED_LOGIN_ATTEMPTS, 0)
+                .set(FAILED_LOGIN_WINDOW_STARTED_AT, (OffsetDateTime) null)
+                .set(LOGIN_BLOCKED_UNTIL, (OffsetDateTime) null)
+                .execute();
+    }
+
+    private long retryAfterSeconds(OffsetDateTime now, OffsetDateTime blockedUntil) {
+        return Math.max(1, Duration.between(now, blockedUntil).toSeconds());
+    }
+
     private boolean credentialIsCurrent(UUID principalId, long sessionRevision) {
         Long current = database.select(CREDENTIAL_REVISION)
                 .from(OWNER)
@@ -221,6 +401,18 @@ public class LocalOwnerAccess {
     private void requirePassword(char[] password) {
         if (password == null || password.length < 12 || password.length > 1024) {
             throw new IllegalArgumentException("Password must contain between 12 and 1024 characters");
+        }
+    }
+
+    private void requireLoginPassword(char[] password) {
+        if (password == null || password.length == 0 || password.length > 1024) {
+            throw new AccessFailure(AccessFailure.Reason.INVALID_CREDENTIALS);
+        }
+    }
+
+    private void clear(char[] password) {
+        if (password != null) {
+            Arrays.fill(password, '\0');
         }
     }
 
@@ -236,6 +428,16 @@ public class LocalOwnerAccess {
                     .digest(token.getBytes(java.nio.charset.StandardCharsets.US_ASCII));
         } catch (java.security.NoSuchAlgorithmException exception) {
             throw new IllegalStateException("SHA-256 is required by the Java runtime", exception);
+        }
+    }
+
+    private record LoginResult(IssuedSession session, AccessFailure.Reason failure, long retryAfterSeconds) {
+        static LoginResult success(IssuedSession session) {
+            return new LoginResult(session, null, 0);
+        }
+
+        static LoginResult failure(AccessFailure.Reason failure, long retryAfterSeconds) {
+            return new LoginResult(null, failure, retryAfterSeconds);
         }
     }
 }

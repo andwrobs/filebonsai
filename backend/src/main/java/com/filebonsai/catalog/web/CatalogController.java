@@ -9,6 +9,8 @@ import com.filebonsai.catalog.domain.FileName;
 import com.filebonsai.platform.web.ApiErrorResponse;
 import com.filebonsai.platform.web.InvalidField;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -36,6 +38,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1")
 @Tag(name = "Catalog")
 @ApiResponses({
+    @ApiResponse(
+            responseCode = "401",
+            description = "AUTH_REQUIRED",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
     @ApiResponse(
             responseCode = "400",
             description = "VALIDATION_FAILED, INVALID_REQUEST, INVALID_CURSOR, or NOT_A_FOLDER",
@@ -101,6 +107,7 @@ public class CatalogController {
             summary = "Create a folder",
             description =
                     "Required Idempotency-Key UUID. Same key and normalized intent replay the original 201 response; changed intent gives 409. Names share one namespace with files and pending uploads. PostgreSQL replay records are durable; fixture records last until restart.")
+    @Parameter(name = "X-CSRF-TOKEN", in = ParameterIn.HEADER, required = true, schema = @Schema(type = "string"))
     @ApiResponse(
             responseCode = "201",
             description = "Created or replayed",
@@ -109,6 +116,10 @@ public class CatalogController {
     @ApiResponse(
             responseCode = "409",
             description = "NAME_CONFLICT or IDEMPOTENCY_CONFLICT",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    @ApiResponse(
+            responseCode = "403",
+            description = "CSRF_INVALID",
             content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     public ResponseEntity<FolderEntryResponse> createFolder(
             @RequestHeader("Idempotency-Key") UUID idempotencyKey, @Valid @RequestBody CreateFolderRequest request) {

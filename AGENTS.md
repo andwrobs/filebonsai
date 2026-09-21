@@ -26,6 +26,8 @@ add archive, handoff, legacy, or canonical-tracing copies to `docs/`.
    also read [`backend/AGENTS.md`](backend/AGENTS.md).
 3. For a bounded implementation or refactor, use the `filebonsai-task` skill. For a
    public API or generated-client change, also use `filebonsai-api-contract`.
+   When creating, updating, or reviewing a pull request, use
+   `.agents/skills/filebonsai-pr/SKILL.md`.
 4. Before editing, state the outcome, owned paths, dependencies, observable acceptance
    criteria, and checks. Resolve decisions that materially change the solution first.
 

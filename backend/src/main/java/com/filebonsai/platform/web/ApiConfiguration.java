@@ -5,8 +5,11 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 import java.io.IOException;
 import java.util.List;
@@ -46,12 +49,20 @@ public class ApiConfiguration implements WebMvcConfigurer {
     @Bean
     OpenAPI catalogApi() {
         return new OpenAPI()
+                .components(new Components()
+                        .addSecuritySchemes(
+                                "sessionCookie",
+                                new SecurityScheme()
+                                        .type(SecurityScheme.Type.APIKEY)
+                                        .in(SecurityScheme.In.COOKIE)
+                                        .name("FILEBONSAI_SESSION")))
+                .addSecurityItem(new SecurityRequirement().addList("sessionCookie"))
                 .info(
                         new Info()
                                 .title("Filebonsai Catalog")
                                 .version("0.1.0")
                                 .description(
-                                        "Code-first catalog API. The fixture profile is a contract harness; authenticated PostgreSQL HTTP wiring remains gated behind a trusted request-scope provider."))
+                                        "Code-first Filebonsai API. The PostgreSQL profile authenticates the local owner and derives catalog scope from server-side membership."))
                 .servers(List.of(new Server().url("http://127.0.0.1:8080")));
     }
 

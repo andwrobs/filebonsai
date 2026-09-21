@@ -2,9 +2,11 @@ package com.filebonsai.access;
 
 import com.filebonsai.platform.web.ApiErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -43,6 +46,7 @@ public final class AccessController {
 
     @GetMapping(value = "/csrf", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(operationId = "getCsrf", summary = "Obtain a CSRF token for a state-changing request")
+    @SecurityRequirements
     public ResponseEntity<AccessCsrfResponse> csrf(HttpServletRequest request) {
         String token = cookie(request, LocalOwnerAccess.CSRF_COOKIE);
         if (token == null) {
@@ -58,12 +62,36 @@ public final class AccessController {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(operationId = "login", summary = "Authenticate the local owner and rotate the session")
+    @SecurityRequirements
+    @ApiResponse(
+            responseCode = "200",
+            description = "Authenticated session",
+            content = @Content(schema = @Schema(implementation = AccessSessionResponse.class)))
     @ApiResponse(
             responseCode = "401",
             description = "INVALID_CREDENTIALS",
             content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    @ApiResponse(
+            responseCode = "400",
+            description = "VALIDATION_FAILED",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    @ApiResponse(
+            responseCode = "403",
+            description = "CSRF_INVALID",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    @ApiResponse(
+            responseCode = "429",
+            description = "RATE_LIMITED",
+            headers =
+                    @Header(
+                            name = HttpHeaders.RETRY_AFTER,
+                            description = "Seconds until another login attempt is accepted",
+                            schema = @Schema(type = "integer", format = "int64", minimum = "1")),
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     public ResponseEntity<AccessSessionResponse> login(
-            @Valid @RequestBody AccessLoginRequest request, HttpServletRequest servletRequest) {
+            @RequestHeader(name = LocalOwnerAccess.CSRF_HEADER) String csrfToken,
+            @Valid @RequestBody AccessLoginRequest request,
+            HttpServletRequest servletRequest) {
         IssuedSession session =
                 access.login(request.password().toCharArray(), cookie(servletRequest, LocalOwnerAccess.SESSION_COOKIE));
         return ResponseEntity.ok()
@@ -76,7 +104,25 @@ public final class AccessController {
 
     @PostMapping("/logout")
     @Operation(operationId = "logout", summary = "Invalidate the current session")
-    public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
+    @ApiResponse(responseCode = "204", description = "Session invalidated")
+    @ApiResponse(
+            responseCode = "401",
+            description = "AUTH_REQUIRED",
+            content =
+                    @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ApiErrorResponse.class)))
+    @ApiResponse(
+            responseCode = "403",
+            description = "CSRF_INVALID",
+            content =
+                    @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ApiErrorResponse.class)))
+    public ResponseEntity<Void> logout(
+            @RequestHeader(name = LocalOwnerAccess.CSRF_HEADER) String csrfToken,
+            HttpServletRequest request,
+            HttpServletResponse response) {
         Object principal = request.getAttribute(AccessScopeProvider.AUTHENTICATED_PRINCIPAL);
         if (!(principal instanceof AuthenticatedPrincipal authenticated)) {
             throw new AccessFailure(AccessFailure.Reason.AUTH_REQUIRED);
@@ -93,6 +139,14 @@ public final class AccessController {
 
     @GetMapping(value = "/me", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(operationId = "getCurrentSession", summary = "Read the authenticated local owner")
+    @ApiResponse(
+            responseCode = "200",
+            description = "Authenticated session",
+            content = @Content(schema = @Schema(implementation = AccessSessionResponse.class)))
+    @ApiResponse(
+            responseCode = "401",
+            description = "AUTH_REQUIRED",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     public AccessSessionResponse me(HttpServletRequest request) {
         Object principal = request.getAttribute(AccessScopeProvider.AUTHENTICATED_PRINCIPAL);
         if (!(principal instanceof AuthenticatedPrincipal authenticated)) {

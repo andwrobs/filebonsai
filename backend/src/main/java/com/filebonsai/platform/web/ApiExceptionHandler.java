@@ -2,6 +2,7 @@ package com.filebonsai.platform.web;
 
 import com.filebonsai.access.AccessFailure;
 import com.filebonsai.catalog.application.CatalogFailure;
+import com.filebonsai.transfers.application.UploadFailure;
 import java.beans.PropertyEditorSupport;
 import java.util.List;
 import java.util.UUID;
@@ -40,7 +41,24 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
                         400,
                         "VALIDATION_FAILED",
                         "Request validation failed",
-                        List.of(new FieldErrorResponse(exception.field(), "INVALID_NAME", exception.getMessage()))));
+                        List.of(new FieldErrorResponse(exception.field(), exception.code(), exception.getMessage()))));
+    }
+
+    @ExceptionHandler(UploadFailure.class)
+    ResponseEntity<Object> uploadFailure(UploadFailure exception, WebRequest request) {
+        int status =
+                switch (exception.reason()) {
+                    case UPLOAD_NOT_FOUND, ENTRY_NOT_FOUND -> 404;
+                    case EXPIRED -> 410;
+                    case TOO_LARGE -> 413;
+                    case STORAGE_UNAVAILABLE -> 503;
+                    default -> 409;
+                };
+        var response = ResponseEntity.status(status);
+        if (exception.reason() == UploadFailure.Reason.STORAGE_UNAVAILABLE) {
+            response.header(HttpHeaders.RETRY_AFTER, "1");
+        }
+        return response.body(error(request, status, exception.reason().name(), exception.getMessage(), List.of()));
     }
 
     @ExceptionHandler(CatalogFailure.class)
@@ -57,12 +75,21 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(AccessFailure.class)
     ResponseEntity<Object> accessFailure(AccessFailure exception, WebRequest request) {
-        int status = exception.reason() == AccessFailure.Reason.CSRF_INVALID ? 403 : 401;
+        int status =
+                switch (exception.reason()) {
+                    case CSRF_INVALID -> 403;
+                    case RATE_LIMITED -> 429;
+                    default -> 401;
+                };
         String code = exception.reason().name();
         String message = exception.reason() == AccessFailure.Reason.INVALID_CREDENTIALS
                 ? "Invalid credentials"
                 : "Request could not be processed";
-        return ResponseEntity.status(status).body(error(request, status, code, message, List.of()));
+        var response = ResponseEntity.status(status);
+        if (exception.reason() == AccessFailure.Reason.RATE_LIMITED) {
+            response.header(HttpHeaders.RETRY_AFTER, Long.toString(exception.retryAfterSeconds()));
+        }
+        return response.body(error(request, status, code, message, List.of()));
     }
 
     @Override

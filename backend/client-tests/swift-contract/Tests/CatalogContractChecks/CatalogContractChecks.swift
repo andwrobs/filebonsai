@@ -53,6 +53,42 @@ final class CatalogContractChecks: XCTestCase {
         XCTAssertThrowsError(try decoder.decode(EntryResponse.self, from: json))
     }
 
+    func testDecodesAuthenticatedSessionExpiry() throws {
+        let json = Data(
+            """
+            {
+              "principalId": "20000000-0000-4000-8000-000000000001",
+              "expiresAt": "2026-09-20T18:00:00.123456Z"
+            }
+            """.utf8)
+
+        let session = try decoder.decode(AccessSessionResponse.self, from: json)
+        XCTAssertEqual(session.principalId.uuidString.lowercased(), "20000000-0000-4000-8000-000000000001")
+    }
+
+    func testDecodesDurableUploadStateWithExactDecimalByteCounts() throws {
+        let json = Data(
+            """
+            {
+              "id": "50000000-0000-4000-8000-000000000001",
+              "entryId": "00000000-0000-4000-8000-000000000010",
+              "versionId": "30000000-0000-4000-8000-000000000010",
+              "parentId": "00000000-0000-4000-8000-000000000001",
+              "name": "upload.bin",
+              "sizeBytes": "9007199254740993",
+              "expectedSha256": null,
+              "computedSha256": null,
+              "state": "INITIATED",
+              "expiresAt": "2026-09-21T18:00:00.123456Z"
+            }
+            """.utf8)
+
+        let upload = try decoder.decode(UploadResponse.self, from: json)
+        XCTAssertEqual(upload.sizeBytes, "9007199254740993")
+        XCTAssertNil(upload.expectedSha256)
+        XCTAssertNil(upload.computedSha256)
+    }
+
     private var decoder: JSONDecoder {
         CodableHelper.jsonDecoder
     }

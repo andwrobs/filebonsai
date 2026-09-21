@@ -30,6 +30,21 @@ Java public controllers and DTOs are authoritative. Springdoc exports OpenAPI 3.
   result retention elapsed. Content, complete, and cancel replay against the upload
   session rather than creating new logical work.
 
+## Local transfer API
+
+`POST /api/v1/uploads` reserves a new filename and durable upload identity. Its JSON
+body contains `parentId`, `name`, decimal-string `sizeBytes`, and nullable `sha256`.
+`GET /api/v1/uploads/{id}` reads state. `PUT /api/v1/uploads/{id}/content` accepts
+`application/octet-stream` and always represents a complete byte-zero attempt.
+`POST /api/v1/uploads/{id}/complete` publishes verified staged bytes, while
+`DELETE /api/v1/uploads/{id}` cancels only before finalization. An available original
+is downloaded from `GET /api/v1/entries/{id}/content`; internal object and temporary
+keys never appear in public DTOs.
+
+`UploadResponse.state` is a closed, versioned lifecycle vocabulary. Adding or
+renaming a value is a breaking API change because generated clients decode it as an
+enum; internal recovery markers must not become public states.
+
 ## Local access boundary
 
 The PostgreSQL profile has one local owner. Bootstrap is an administrative startup
@@ -47,6 +62,19 @@ record. Session records contain only SHA-256 digests of random tokens and persis
 PostgreSQL, so an application restart preserves a valid session. The session cookie
 is HttpOnly, `SameSite=Lax`, and secure by default; set
 `filebonsai.access.cookie.secure=false` only for an explicit loopback HTTP deployment.
+Failed logins are counted in PostgreSQL for the single local owner. Five failures
+within five minutes block login for fifteen minutes by default; deployments may tune
+the positive `filebonsai.access.login.max-attempts`, `attempt-window`, and `lockout`
+settings. A blocked login returns generic `429 RATE_LIMITED` with `Retry-After`, and a
+successful login clears prior failures.
+
+An administrative credential reset requires both
+`filebonsai.access.reset.password-file` and a unique UUID in
+`filebonsai.access.reset.request-id`. The request ID makes startup retry idempotent;
+reuse it only for the same reset operation. A new request updates the password,
+increments the credential revision, and revokes every active session atomically. The
+operator removes the reset settings after the successful start; neither value is an
+HTTP input.
 
 Catalog scope is derived from the authenticated session and the server-side membership
 row. No query parameter, header, or body field can choose a workspace. Until the

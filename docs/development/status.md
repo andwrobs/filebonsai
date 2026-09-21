@@ -11,36 +11,47 @@ observed results; use Git history for prior plans and completed migrations.
   with cross-capability HTTP code under `platform/web`.
 - Java controllers/DTOs author the OpenAPI contract. Pinned TypeScript and Swift
   generation is reproducible; generated output remains disposable.
-- Flyway V1–V4 define workspace membership, names/reservations, entries, immutable
-  versions/objects, idempotency, checks, and PostgreSQL guarantees.
+- Flyway V1–V6 define workspace membership, names/reservations, entries, immutable
+  versions/objects, idempotency, local-owner sessions, credential-reset replay, login
+  throttling, checks, and PostgreSQL guarantees.
 - The jOOQ PostgreSQL adapter remains behind operation ports. Its 13 Testcontainers
   tests cover workspace scope, deterministic ordering, reservations, idempotency,
   rollback/concurrency, immutable identities/versions/objects, domain constraints,
   root protection, and generated-schema drift.
-- The fixture profile is the HTTP contract harness. The PostgreSQL adapter is not
-  exposed through HTTP until authenticated request scope exists.
+- The PostgreSQL profile exposes authenticated Catalog HTTP through session-derived
+  membership scope. Local-owner access includes secret-file bootstrap/reset,
+  PostgreSQL-backed sessions, rotation/logout/reset invalidation, CSRF, persisted
+  login throttling, generic failures, and secure-by-default cookies.
+- Local-owner bootstrap atomically creates the principal, owner credential, initial
+  workspace membership, workspace, and protected `Library` root. Repeated bootstrap
+  fails without replacing the packet; restart preserves authenticated catalog access.
+- The committed OpenAPI is exported from the PostgreSQL profile and includes Access
+  and Catalog. The fixture profile still authors deterministic response fixtures.
+- `web/` now owns a generated `openapi-typescript` schema and a handwritten
+  `openapi-fetch` service for Access and Catalog. The boundary includes cookie
+  credentials, CSRF refresh/rotation handling, pagination, and caller-owned
+  idempotency keys; the React UI is not implemented yet.
 
 ## Latest observed checks
 
 - `cd backend && ./mvnw -Dtest=PostgresCatalogTest test`: passed, 13 tests, PostgreSQL
   17.11 through Docker Desktop 24.0.5.
-- `cd backend && ./scripts/verify.sh`: passed with 38 Java tests, OpenAPI validation
-  and generation, 4 TypeScript tests, and 5 Swift tests under Temurin 25.0.3 compiling
+- `cd backend && ./scripts/verify.sh`: passed with 47 Java tests, OpenAPI validation
+  and generation, 5 TypeScript tests, and 6 Swift tests under Temurin 25.0.3 compiling
   for Java 21. JDK 21 CI is configured but was not observed in this checkout.
+- `cd web && npm test && npm run typecheck:run && npm run generate:schema`: passed with
+  5 request and representative decoding tests, a clean strict TypeScript check, and deterministic schema
+  regeneration under Node 23.7.0.
 - Swift generator warnings are upstream warnings; generated code was not edited.
 
 ## Ordered work
 
-1. Authentication: local-owner bootstrap, PostgreSQL-backed server sessions, rotation,
-   logout/reset invalidation, CSRF, rate limits, generic failures, and a trusted
-   per-request workspace scope. Workspace identity is never caller-selected.
-2. Bootstrap: create the owner, membership, workspace, and protected root exactly once;
-   connect the PostgreSQL Catalog HTTP profile and prove cross-workspace isolation.
-3. Clients: implement the Catalog slice in React and SwiftUI/TCA through generated
-   transports and handwritten application adapters; inspect rendered required states.
-4. Local transfer: add bounded filesystem storage, durable upload intent/state,
+1. Clients: implement the Catalog UI in React over the TypeScript service and the
+   Catalog slice in SwiftUI/TCA through a generated transport and handwritten
+   application adapter; inspect rendered required states.
+2. Local transfer: add bounded filesystem storage, durable upload intent/state,
    whole-body retry, reconciliation/restart tests, and original download.
-5. Cloud transfer: choose and specify one provider, then prove its multipart and
+3. Cloud transfer: choose and specify one provider, then prove its multipart and
    reconciliation semantics before adding another.
 
 Each item is split into a bounded task at execution time with owned paths, dependencies,

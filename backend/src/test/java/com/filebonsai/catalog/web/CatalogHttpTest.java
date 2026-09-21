@@ -210,7 +210,7 @@ class CatalogHttpTest {
                         .has("enum"))
                 .isFalse();
         Files.writeString(
-                output.resolve("openapi.json"),
+                output.resolve("openapi-fixture.json"),
                 mapper.writerWithDefaultPrettyPrinter().writeValueAsString(document) + "\n");
         for (var fixture : Map.of(
                         "root", "/entries/" + ROOT,

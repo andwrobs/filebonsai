@@ -37,6 +37,8 @@ Git history when provenance is needed.
   commands.
 - [`development/java.md`](development/java.md): Java structure and style.
 - [`development/testing.md`](development/testing.md): checks and evidence expectations.
+- [`development/pull-request-review.md`](development/pull-request-review.md): Codex
+  GitHub review setup, maintainer workflow, PR-body integration, and troubleshooting.
 
 Root [`AGENTS.md`](../AGENTS.md) is the single execution contract. Repository skills
 under `.agents/skills/` add task-specific procedure without repeating product truth.
