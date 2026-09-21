@@ -17,12 +17,23 @@ implementation. Do not invent a persistent task graph or copy status into anothe
 3. Select the smallest check matrix for the changed guarantee. Run ordinary
    in-sandbox checks while implementing; batch every remaining elevated check into one
    final request. Do not duplicate focused and integrated runs just to collect evidence.
-4. Repair concrete failures. After two identical failures without new evidence, return
-   to diagnosis and revise the approach.
-5. Run the integrated check that covers the changed guarantee.
-6. For material API or persistence/auth/storage/recovery work, request the matching
-   read-only reviewer when available.
+4. For material API or persistence/auth/storage/recovery work, request the matching
+   fresh-context read-only reviewer after focused checks and before final integrated
+   verification. Send only the acceptance criteria, changed paths, diff base, relevant
+   standards, and existing evidence; do not pass the full conversation history.
+5. Repair concrete failures and review findings that violate acceptance criteria,
+   security invariants, or data correctness. Record other review improvements as
+   follow-up rather than expanding the active task automatically. After two identical
+   failures without new evidence, return to diagnosis and revise the approach.
+6. Run one integrated check that covers the changed guarantee. Before a second
+   integrated run, or when changed paths or acceptance criteria materially expand,
+   pause and report the added cost and scope.
 7. Update `docs/development/status.md` only when verified state or ordering changed.
+
+Bound routine command output and inspect targeted failure reports instead of importing
+full build, generator, or container logs. Do not reread unchanged material already in
+the task context. Prefer a fresh task for a new bounded slice after a long implementation
+or review cycle.
 
 The final handoff names changed files, actual commands/results, unresolved limitations,
 and decision updates. Compilation alone is not evidence for HTTP shape, PostgreSQL

@@ -55,7 +55,8 @@ add archive, handoff, legacy, or canonical-tracing copies to `docs/`.
 - Keep one writer for migrations, public API shape, root build files, and global
   design tokens. Split parallel work only across independent paths.
 - Implement the smallest coherent slice. Run the narrowest relevant check, repair
-  concrete failures, then run the integrated check for the changed guarantee.
+  concrete failures, request any required fresh-context review, repair blocking
+  findings, then run one integrated check for the changed guarantee.
 - Select the minimal test matrix before running commands. During implementation, use
   ordinary in-sandbox checks; when a changed guarantee needs Docker or other elevated
   access, request one final batched command for every required check. Do not request
@@ -68,6 +69,17 @@ add archive, handoff, legacy, or canonical-tracing copies to `docs/`.
   require export, generation, compilation, and representative decoding checks.
 - Request a fresh read-only contract or persistence review for material changes in
   those areas. Keep implementation ownership with the builder.
+- Give reviewers a compact packet containing the acceptance criteria, changed paths,
+  diff base, and relevant standards. Do not pass the full conversation history.
+  Reviews stay diff/path-scoped and use existing test evidence instead of rerunning
+  checks. A finding expands the active task only when it violates acceptance criteria,
+  a security invariant, or data correctness; record other improvements as follow-up.
+- Bound routine command output and inspect targeted failure reports instead of loading
+  full build, generator, or container logs into the conversation. Do not reread
+  unchanged documents already available in the task context.
+- Pause and report the added cost and scope before a second integrated run or when
+  changed paths or acceptance criteria materially expand. Prefer a fresh task when
+  starting a new bounded slice after a long implementation or review cycle.
 - A handoff names changed files, actual commands/results, unresolved limitations, and
   changed decisions. A checkpoint or passing compile is not completion evidence.
 - Update `docs/development/status.md` only with observed state and current ordering.

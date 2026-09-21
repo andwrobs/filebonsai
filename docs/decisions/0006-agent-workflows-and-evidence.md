@@ -25,6 +25,21 @@ Material API and persistence/auth/storage/recovery changes receive a fresh read-
 review when the environment supports it. Product runtime behavior never depends on
 the agents used to build it.
 
+Run focused checks during implementation, then request any required specialist review,
+repair blocking findings, and run one final integrated verification. Reviewers receive
+a fresh, compact packet containing only the acceptance criteria, changed paths, diff
+base, relevant standards, and existing evidence. They stay diff/path-scoped and do not
+rerun tests. A finding expands the active task only when it violates stated acceptance
+criteria, a security invariant, or data correctness; record other improvements as
+follow-up work.
+
+Keep command output proportional: cap routine output and inspect targeted failure
+reports rather than importing full build, generator, or container logs. Reuse unchanged
+documents already present in task context. Before a second integrated run, or whenever
+changed paths or acceptance criteria materially expand, pause and report the added cost
+and scope. Start a fresh task when moving to a new bounded slice after a long
+implementation or review cycle.
+
 ## Consequences
 
 - Root `AGENTS.md` is the execution contract; `docs/development/status.md` is the only
@@ -32,5 +47,7 @@ the agents used to build it.
 - Task packets are created at execution time, not stored in a speculative repository
   DAG.
 - Specialized `.codex/agents/` profiles remain only where their boundaries are useful.
+- Reviewer profiles separate task-blocking correctness findings from non-blocking
+  follow-up improvements and evaluate supplied evidence without duplicating test runs.
 - UI, database, generated-client, storage, and recovery claims require the checks that
   observe those behaviors; a compile or agent assertion is insufficient.
