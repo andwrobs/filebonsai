@@ -14,6 +14,7 @@ export type LoginOperation = operations["login"];
 export type LogoutOperation = operations["logout"];
 export type GetCurrentSessionOperation = operations["getCurrentSession"];
 export type GetEntryOperation = operations["getEntry"];
+export type GetWorkspaceRootOperation = operations["getWorkspaceRoot"];
 export type ListChildrenOperation = operations["listChildren"];
 export type CreateFolderOperation = operations["createFolder"];
 

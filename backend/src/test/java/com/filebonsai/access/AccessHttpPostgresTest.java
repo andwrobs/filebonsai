@@ -226,6 +226,10 @@ class AccessHttpPostgresTest {
                         .cookie(session))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(rootA.toString()));
+        mvc.perform(get("/api/v1/catalog/root").cookie(session))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(rootA.toString()))
+                .andExpect(jsonPath("$.parentId").isEmpty());
         mvc.perform(get("/api/v1/entries/" + ROOT_B)
                         .param("workspaceId", WORKSPACE_B.toString())
                         .cookie(session))

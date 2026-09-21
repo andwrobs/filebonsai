@@ -30,6 +30,36 @@ test("uses generated catalog paths, parameters, and cookie credentials", async (
   assert.equal(requests[0]?.credentials, "include");
 });
 
+test("decodes the generated workspace-root folder response", async () => {
+  const requests: Request[] = [];
+  const service = filebonsaiService({
+    baseUrl,
+    fetch: async (request) => {
+      requests.push(request);
+      return Response.json({
+        createdAt: "2026-01-01T00:00:00Z",
+        id: rootId,
+        kind: "folder",
+        name: "Library",
+        parentId: null,
+        updatedAt: "2026-01-01T00:00:00Z",
+      });
+    },
+  });
+
+  const result = await service.getWorkspaceRoot();
+
+  assert.equal(requests[0]?.url, `${baseUrl}/api/v1/catalog/root`);
+  assert.equal(requests[0]?.credentials, "include");
+  assert.equal(result.data?.kind, "folder");
+  if (result.data?.kind === "folder") {
+    assert.equal(result.data.id, rootId);
+    assert.equal(result.data.parentId, null);
+    assert.equal(result.data.createdAt, "2026-01-01T00:00:00Z");
+    assert.equal(result.data.updatedAt, "2026-01-01T00:00:00Z");
+  }
+});
+
 test("refreshes CSRF after login and sends typed mutation headers and bodies", async () => {
   const requests: Request[] = [];
   let csrfCount = 0;

@@ -60,6 +60,11 @@ class CatalogHttpTest {
         assertThat(root.has("parentId")).isTrue();
         assertThat(root.get("parentId").isNull()).isTrue();
         assertThat(root.has("currentVersion")).isFalse();
+        mvc.perform(get("/api/v1/catalog/root"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(ROOT))
+                .andExpect(jsonPath("$.parentId").isEmpty())
+                .andExpect(header().string("Cache-Control", "no-store"));
     }
 
     @Test
@@ -183,7 +188,13 @@ class CatalogHttpTest {
                 .getContentAsString();
         JsonNode document = mapper.readTree(schema);
         JsonNode schemas = document.path("components").path("schemas");
-        assertThat(document.path("paths").size()).isEqualTo(3);
+        assertThat(document.path("paths").size()).isEqualTo(4);
+        assertThat(document.path("paths")
+                        .path("/api/v1/catalog/root")
+                        .path("get")
+                        .path("operationId")
+                        .asText())
+                .isEqualTo("getWorkspaceRoot");
         assertThat(schemas.path("EntryResponse").path("oneOf").size()).isEqualTo(2);
         assertThat(schemas.path("EntryResponse")
                         .path("discriminator")
@@ -214,6 +225,7 @@ class CatalogHttpTest {
                 mapper.writerWithDefaultPrettyPrinter().writeValueAsString(document) + "\n");
         for (var fixture : Map.of(
                         "root", "/entries/" + ROOT,
+                        "workspace-root", "/catalog/root",
                         "file", "/entries/" + FILE,
                         "folder", "/entries/" + EMPTY,
                         "empty-page", "/entries/" + EMPTY + "/children",

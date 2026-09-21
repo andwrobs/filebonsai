@@ -190,6 +190,65 @@
         "tags" : [ "Access" ]
       }
     },
+    "/api/v1/catalog/root" : {
+      "get" : {
+        "operationId" : "getWorkspaceRoot",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FolderEntryResponse"
+                }
+              }
+            },
+            "description" : "Workspace root folder"
+          },
+          "400" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description" : "VALIDATION_FAILED, INVALID_REQUEST, INVALID_CURSOR, or NOT_A_FOLDER"
+          },
+          "401" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description" : "AUTH_REQUIRED"
+          },
+          "404" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description" : "ENTRY_NOT_FOUND, including inaccessible entries"
+          },
+          "500" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description" : "INTERNAL_ERROR"
+          }
+        },
+        "summary" : "Read the authenticated workspace root folder",
+        "tags" : [ "Catalog" ]
+      }
+    },
     "/api/v1/entries/{id}" : {
       "get" : {
         "operationId" : "getEntry",
@@ -371,19 +430,9 @@
             },
             "description" : "Attachment body"
           },
-          "400" : {
-            "content" : {
-              "application/octet-stream" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            },
-            "description" : "INVALID_REQUEST or VALIDATION_FAILED"
-          },
           "401" : {
             "content" : {
-              "application/octet-stream" : {
+              "application/json" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/ApiErrorResponse"
                 }
@@ -391,59 +440,19 @@
             },
             "description" : "AUTH_REQUIRED"
           },
-          "403" : {
-            "content" : {
-              "application/octet-stream" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            },
-            "description" : "CSRF_INVALID for state-changing requests"
-          },
           "404" : {
             "content" : {
-              "application/octet-stream" : {
+              "application/json" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/ApiErrorResponse"
                 }
               }
             },
-            "description" : "UPLOAD_NOT_FOUND or ENTRY_NOT_FOUND, including inaccessible resources"
-          },
-          "409" : {
-            "content" : {
-              "application/octet-stream" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            },
-            "description" : "State, name, idempotency, size, or digest conflict"
-          },
-          "410" : {
-            "content" : {
-              "application/octet-stream" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            },
-            "description" : "EXPIRED"
-          },
-          "413" : {
-            "content" : {
-              "application/octet-stream" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            },
-            "description" : "TOO_LARGE"
+            "description" : "ENTRY_NOT_FOUND, including inaccessible resources"
           },
           "503" : {
             "content" : {
-              "application/octet-stream" : {
+              "application/json" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/ApiErrorResponse"
                 }
@@ -1495,6 +1504,7 @@
           },
           "state" : {
             "type" : "string",
+            "description" : "Versioned closed lifecycle vocabulary; adding a value is a breaking API change.",
             "enum" : [ "INITIATED", "RECEIVING", "STAGED", "FINALIZING", "RECONCILING", "AVAILABLE", "CANCELLED", "EXPIRED", "FAILED" ]
           },
           "versionId" : {

@@ -3,6 +3,7 @@ package com.filebonsai.catalog.web;
 import com.filebonsai.catalog.application.CatalogScopeProvider;
 import com.filebonsai.catalog.application.CreateFolder;
 import com.filebonsai.catalog.application.GetEntry;
+import com.filebonsai.catalog.application.GetWorkspaceRoot;
 import com.filebonsai.catalog.application.ListChildren;
 import com.filebonsai.catalog.domain.EntryId;
 import com.filebonsai.catalog.domain.FileName;
@@ -57,16 +58,32 @@ import org.springframework.web.bind.annotation.RestController;
 })
 public class CatalogController {
     private final GetEntry getEntry;
+    private final GetWorkspaceRoot getWorkspaceRoot;
     private final ListChildren listChildren;
     private final CreateFolder createFolder;
     private final CatalogScopeProvider scopes;
 
     public CatalogController(
-            GetEntry getEntry, ListChildren listChildren, CreateFolder createFolder, CatalogScopeProvider scopes) {
+            GetEntry getEntry,
+            GetWorkspaceRoot getWorkspaceRoot,
+            ListChildren listChildren,
+            CreateFolder createFolder,
+            CatalogScopeProvider scopes) {
         this.getEntry = getEntry;
+        this.getWorkspaceRoot = getWorkspaceRoot;
         this.listChildren = listChildren;
         this.createFolder = createFolder;
         this.scopes = scopes;
+    }
+
+    @GetMapping(value = "/catalog/root", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(operationId = "getWorkspaceRoot", summary = "Read the authenticated workspace root folder")
+    @ApiResponse(
+            responseCode = "200",
+            description = "Workspace root folder",
+            content = @Content(schema = @Schema(implementation = FolderEntryResponse.class)))
+    public FolderEntryResponse getWorkspaceRoot() {
+        return CatalogResponseMapper.response(getWorkspaceRoot.get(scopes.current()));
     }
 
     @GetMapping(value = "/entries/{id}", produces = MediaType.APPLICATION_JSON_VALUE)

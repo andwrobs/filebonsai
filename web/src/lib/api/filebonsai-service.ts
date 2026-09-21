@@ -57,6 +57,10 @@ export class FilebonsaiService {
     return this.#client.GET("/api/v1/auth/me");
   }
 
+  getWorkspaceRoot() {
+    return this.#client.GET("/api/v1/catalog/root");
+  }
+
   getEntry(id: string) {
     return this.#client.GET("/api/v1/entries/{id}", {
       params: { path: { id } },

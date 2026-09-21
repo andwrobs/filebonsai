@@ -16,15 +16,17 @@ function fixture(name: string): unknown {
   return JSON.parse(readFileSync(file, "utf8"));
 }
 
-test("decodes file precision and root nullability", () => {
+test("decodes file precision and the exported workspace-root response", () => {
   const file = FileEntryResponseFromJSON(fixture("file"));
-  const root = FolderEntryResponseFromJSON(fixture("root"));
+  const root = FolderEntryResponseFromJSON(fixture("workspace-root"));
 
   assert.equal(file.kind, "file");
   assert.equal(file.currentVersion.sizeBytes, "9007199254740993");
   assert.ok(file.createdAt instanceof Date);
   assert.equal(root.kind, "folder");
   assert.equal(root.parentId, null);
+  assert.ok(root.createdAt instanceof Date);
+  assert.ok(root.updatedAt instanceof Date);
 });
 
 test("decodes discriminated pages and empty pages", () => {

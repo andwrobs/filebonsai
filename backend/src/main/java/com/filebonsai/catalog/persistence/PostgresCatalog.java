@@ -16,6 +16,7 @@ import com.filebonsai.catalog.application.CatalogFailure;
 import com.filebonsai.catalog.application.CatalogScope;
 import com.filebonsai.catalog.application.CreateFolder;
 import com.filebonsai.catalog.application.GetEntry;
+import com.filebonsai.catalog.application.GetWorkspaceRoot;
 import com.filebonsai.catalog.application.ListChildren;
 import com.filebonsai.catalog.domain.ByteCount;
 import com.filebonsai.catalog.domain.Entry;
@@ -35,7 +36,7 @@ import org.jooq.Record;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 
-public final class PostgresCatalog implements GetEntry, ListChildren, CreateFolder {
+public final class PostgresCatalog implements GetEntry, GetWorkspaceRoot, ListChildren, CreateFolder {
     private static final String ENTRY_CLAIM = "entry";
     private static final String RESERVATION_CLAIM = "reservation";
     private static final String FOLDER = "folder";
@@ -52,6 +53,23 @@ public final class PostgresCatalog implements GetEntry, ListChildren, CreateFold
     @Override
     public Entry get(CatalogScope scope, EntryId id) {
         return getInternal(database, scope, id);
+    }
+
+    @Override
+    public Entry.Folder get(CatalogScope scope) {
+        UUID rootId = database.select(CATALOG_ENTRIES.ID)
+                .from(CATALOG_ENTRIES)
+                .join(CATALOG_NAMES)
+                .on(CATALOG_NAMES.ENTRY_ID.eq(CATALOG_ENTRIES.ID).and(CATALOG_NAMES.CLAIM_KIND.eq(ENTRY_CLAIM)))
+                .where(CATALOG_ENTRIES.WORKSPACE_ID.eq(scope.workspaceId()))
+                .and(member(scope))
+                .and(CATALOG_ENTRIES.KIND.eq(FOLDER))
+                .and(CATALOG_NAMES.PARENT_ID.isNull())
+                .fetchOne(CATALOG_ENTRIES.ID);
+        if (rootId == null) {
+            throw new CatalogFailure(ENTRY_NOT_FOUND, "Workspace root was not found");
+        }
+        return folder(database, scope, new EntryId(rootId));
     }
 
     @Override
