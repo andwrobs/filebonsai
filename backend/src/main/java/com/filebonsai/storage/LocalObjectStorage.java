@@ -16,7 +16,7 @@ import java.util.UUID;
 import java.util.concurrent.Semaphore;
 
 /** Local immutable-object adapter. Every path component is server-generated. */
-public final class LocalObjectStorage {
+public final class LocalObjectStorage implements PublishedObjectStorage {
     private static final int BUFFER_SIZE = 64 * 1024;
 
     private final Path root;
@@ -117,6 +117,12 @@ public final class LocalObjectStorage {
         // semantics guarantee that an immutable final object is never replaced.
         Files.createLink(target, source);
         Files.delete(source);
+    }
+
+    @Override
+    public void promote(String temporaryKey, String finalKey, long expectedSize, byte[] expectedSha256)
+            throws IOException {
+        promote(temporaryKey, finalKey);
     }
 
     public boolean verifies(String key, long expectedSize, byte[] expectedDigest) throws IOException {

@@ -17,6 +17,7 @@ import com.filebonsai.catalog.domain.EntryId;
 import com.filebonsai.catalog.domain.FileName;
 import com.filebonsai.catalog.domain.VersionId;
 import com.filebonsai.storage.LocalObjectStorage;
+import com.filebonsai.storage.PublishedObjectStorage;
 import com.filebonsai.transfers.application.BeginUpload;
 import com.filebonsai.transfers.application.CancelUpload;
 import com.filebonsai.transfers.application.CompleteUpload;
@@ -45,15 +46,22 @@ public final class PostgresLocalTransfers
     private static final String SESSION_COLUMNS = "u.id, u.workspace_id, u.principal_id, u.parent_id, u.name, "
             + "u.entry_id, u.version_id, u.object_id, u.expected_size_bytes, u.expected_sha256, "
             + "u.computed_sha256, u.state, u.fence, u.active_attempt_id, u.recovery_claim_id, "
-            + "u.accepted_temp_key, u.storage_key, u.expires_at";
+            + "u.accepted_temp_key, u.storage_key, u.expires_at, u.updated_at";
 
     private final DSLContext database;
-    private final LocalObjectStorage storage;
+    private final LocalObjectStorage staging;
+    private final PublishedObjectStorage published;
     private final Duration expiry;
 
     public PostgresLocalTransfers(DSLContext database, LocalObjectStorage storage, Duration expiry) {
+        this(database, storage, storage, expiry);
+    }
+
+    public PostgresLocalTransfers(
+            DSLContext database, LocalObjectStorage staging, PublishedObjectStorage published, Duration expiry) {
         this.database = database;
-        this.storage = storage;
+        this.staging = staging;
+        this.published = published;
         this.expiry = expiry;
     }
 
@@ -65,7 +73,7 @@ public final class PostgresLocalTransfers
             ByteCount expectedSize,
             byte[] expectedSha256,
             UUID idempotencyKey) {
-        if (expectedSize.value() > storage.maximumBytes()) {
+        if (expectedSize.value() > Math.min(staging.maximumBytes(), published.maximumBytes())) {
             throw new UploadFailure(TOO_LARGE, "Upload exceeds the configured size limit");
         }
         byte[] intent = intent(parentId, name, expectedSize, expectedSha256);
@@ -105,7 +113,7 @@ public final class PostgresLocalTransfers
                 UUID entryId = UUID.randomUUID();
                 UUID versionId = UUID.randomUUID();
                 UUID objectId = UUID.randomUUID();
-                String storageKey = storage.finalKey(scope.workspaceId(), objectId);
+                String storageKey = published.finalKey(scope.workspaceId(), objectId);
                 transaction.execute(
                         "insert into upload_sessions (id, workspace_id, principal_id, parent_id, name, entry_id, "
                                 + "version_id, object_id, idempotency_key, intent_hash, expected_size_bytes, "
@@ -172,7 +180,7 @@ public final class PostgresLocalTransfers
         }
         LocalObjectStorage.StoredBody body;
         try {
-            body = storage.writeAttempt(
+            body = staging.writeAttempt(
                     lease.workspaceId(), lease.objectId(), lease.attemptId(), content, lease.expectedSize());
         } catch (LocalObjectStorage.BodyTooLargeException exception) {
             resetAfterRejectedAttempt(lease);
@@ -227,13 +235,14 @@ public final class PostgresLocalTransfers
         byte[] digest = prepared.get("computed_sha256", byte[].class);
         long size = prepared.get("expected_size_bytes", Long.class);
         try {
-            if (!storage.verifies(finalKey, size, digest)) {
-                storage.promote(temporaryKey, finalKey);
+            if (!published.verifies(finalKey, size, digest)) {
+                published.promote(temporaryKey, finalKey, size, digest);
             }
-            if (!storage.verifies(finalKey, size, digest)) {
+            if (!published.verifies(finalKey, size, digest)) {
                 throw new IOException("Promoted object failed verification");
             }
             publish(scope, uploadId, completion.claimId());
+            deleteQuietly(temporaryKey);
             return get(scope, uploadId);
         } catch (IOException | DataAccessException exception) {
             markReconciling(scope, uploadId, completion.claimId());
@@ -293,7 +302,7 @@ public final class PostgresLocalTransfers
             throw new UploadFailure(ENTRY_NOT_FOUND, "Entry was not found");
         }
         try {
-            if (!storage.verifies(
+            if (!published.verifies(
                     row.get("storage_key", String.class),
                     row.get("size_bytes", Long.class),
                     row.get("sha256", byte[].class))) {
@@ -302,7 +311,7 @@ public final class PostgresLocalTransfers
             return new Download(
                     new FileName(row.get("name", String.class)),
                     new ByteCount(row.get("size_bytes", Long.class)),
-                    storage.open(row.get("storage_key", String.class)));
+                    published.open(row.get("storage_key", String.class)));
         } catch (IOException exception) {
             throw new UploadFailure(STORAGE_UNAVAILABLE, "Stored content is temporarily unavailable", exception);
         }
@@ -321,6 +330,17 @@ public final class PostgresLocalTransfers
             reconcile(uploadId);
         }
         expireAbandoned();
+    }
+
+    public void reconcileStale(Duration idle) {
+        List<UUID> sessions = database.fetch(
+                        "select id from upload_sessions where state in ('FINALIZING', 'RECONCILING') "
+                                + "and updated_at <= current_timestamp - (? * interval '1 millisecond') order by id",
+                        idle.toMillis())
+                .getValues("id", UUID.class);
+        for (UUID uploadId : sessions) {
+            reconcile(uploadId, idle);
+        }
     }
 
     private void recoverReceiving(UUID uploadId) {
@@ -350,7 +370,7 @@ public final class PostgresLocalTransfers
         try {
             staged = accepted != null
                     && digest != null
-                    && storage.verifies(accepted, row.get("expected_size_bytes", Long.class), digest);
+                    && staging.verifies(accepted, row.get("expected_size_bytes", Long.class), digest);
         } catch (IOException ignored) {
             // The durable session remains retryable; a later request can supply the whole body again.
         }
@@ -364,7 +384,7 @@ public final class PostgresLocalTransfers
                 uploadId,
                 claimId);
         if (changed == 1) {
-            deleteQuietly(storage.attemptKey(workspaceId, objectId, attemptId));
+            deleteQuietly(staging.attemptKey(workspaceId, objectId, attemptId));
             if (!staged) {
                 deleteQuietly(accepted);
             }
@@ -372,12 +392,23 @@ public final class PostgresLocalTransfers
     }
 
     private void reconcile(UUID uploadId) {
+        reconcile(uploadId, null);
+    }
+
+    private void reconcile(UUID uploadId, Duration idle) {
         UUID claimId = UUID.randomUUID();
         Record row = database.transactionResult(configuration -> {
             DSLContext transaction = DSL.using(configuration);
             Record candidate = findInternal(transaction, uploadId, true);
             if (candidate == null
                     || (state(candidate) != UploadState.FINALIZING && state(candidate) != UploadState.RECONCILING)) {
+                return null;
+            }
+            if (idle != null
+                    && !Boolean.TRUE.equals(transaction.fetchValue(
+                            "select ?::timestamptz <= current_timestamp - (? * interval '1 millisecond')",
+                            candidate.get("updated_at", OffsetDateTime.class),
+                            idle.toMillis()))) {
                 return null;
             }
             transaction.execute(
@@ -395,15 +426,25 @@ public final class PostgresLocalTransfers
         String finalKey = row.get("storage_key", String.class);
         String temporaryKey = row.get("accepted_temp_key", String.class);
         try {
-            if (storage.verifies(finalKey, size, digest)) {
+            if (published.verifies(finalKey, size, digest)) {
                 publish(uploadId, claimId);
-            } else if (temporaryKey != null && storage.verifies(temporaryKey, size, digest)) {
-                database.execute(
-                        "update upload_sessions set state = 'STAGED', recovery_claim_id = null, "
-                                + "updated_at = current_timestamp where id = ? and state = 'RECONCILING' "
-                                + "and recovery_claim_id = ?",
-                        uploadId,
-                        claimId);
+                deleteQuietly(temporaryKey);
+            } else if (temporaryKey != null && staging.verifies(temporaryKey, size, digest)) {
+                if (published.finishOnRecovery()) {
+                    published.promote(temporaryKey, finalKey, size, digest);
+                    if (!published.verifies(finalKey, size, digest)) {
+                        throw new IOException("Recovered object failed verification");
+                    }
+                    publish(uploadId, claimId);
+                    deleteQuietly(temporaryKey);
+                } else {
+                    database.execute(
+                            "update upload_sessions set state = 'STAGED', recovery_claim_id = null, "
+                                    + "updated_at = current_timestamp where id = ? and state = 'RECONCILING' "
+                                    + "and recovery_claim_id = ?",
+                            uploadId,
+                            claimId);
+                }
             } else {
                 failUnrecoverable(uploadId, claimId);
             }
@@ -671,7 +712,7 @@ public final class PostgresLocalTransfers
 
     private void deleteQuietly(String key) {
         try {
-            storage.deleteIfExists(key);
+            staging.deleteIfExists(key);
         } catch (IOException ignored) {
             // Cleanup is retried by recovery; never turn a durable state result into an ambiguous one.
         }

@@ -89,10 +89,46 @@ export class FilebonsaiService {
     });
   }
 
+  async beginUpload(body: import("./generated/schema.js").components["schemas"]["BeginUploadRequest"], idempotencyKey: string) {
+    return this.#client.POST("/api/v1/uploads", {
+      params: { header: { "X-CSRF-TOKEN": await this.#requireCsrf(), "Idempotency-Key": idempotencyKey } }, body,
+    });
+  }
+
+  getUpload(id: string) {
+    return this.#client.GET("/api/v1/uploads/{id}", { params: { path: { id } } });
+  }
+
+  async sendUpload(id: string, file: Blob) {
+    return this.#client.PUT("/api/v1/uploads/{id}/content", {
+      params: { path: { id }, header: { "X-CSRF-TOKEN": await this.#requireCsrf() } },
+      headers: { "Content-Type": "application/octet-stream" },
+      // OpenAPI binary bodies are represented as strings; the serializer sends the original Blob.
+      body: "", bodySerializer: () => file,
+    });
+  }
+
+  async completeUpload(id: string) {
+    return this.#client.POST("/api/v1/uploads/{id}/complete", {
+      params: { path: { id }, header: { "X-CSRF-TOKEN": await this.#requireCsrf() } },
+    });
+  }
+
+  async cancelUpload(id: string) {
+    return this.#client.DELETE("/api/v1/uploads/{id}", {
+      params: { path: { id }, header: { "X-CSRF-TOKEN": await this.#requireCsrf() } },
+    });
+  }
+
+  downloadOriginal(id: string) {
+    return this.#client.GET("/api/v1/entries/{id}/content", {
+      params: { path: { id } }, parseAs: "blob",
+    });
+  }
+
   async #requireCsrf() {
-    if (this.#csrfToken) {
-      return this.#csrfToken;
-    }
+    if (this.#csrfToken) return this.#csrfToken;
+
     const result = await this.refreshCsrf();
     if (!result.data) {
       throw new Error("Could not obtain a CSRF token");

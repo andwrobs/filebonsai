@@ -47,13 +47,54 @@ content may replay without mutation; completion of an available upload and cance
 of a cancelled upload return existing state. A stale writer can never publish over the
 accepted attempt. Cleanup never deletes bytes involved in uncertain finalization.
 
-## Future cloud and processing work
+## First cloud transfer: Cloudflare R2
 
-The first cloud slice selects one real provider and specifies multipart initiation,
-signed part requests, resume/listing, completion, abort, checksums, CORS, credential
-scope, and timeout-after-success reconciliation. Provider upload IDs remain internal.
-Compatibility is proved against that provider, not inferred from an emulator or an
-“S3-compatible” label.
+Decision [0007](../decisions/0007-first-cloud-provider-r2.md) selects R2's S3 API.
+The initial adapter keeps the M1 server-streamed upload and whole-body client retry
+contract. A verified local temporary body is the durable source for R2 part retries
+and restart recovery; it is removed only after cloud publication is resolved. This
+avoids exposing signed URLs or provider upload IDs to clients. No bucket CORS policy
+is needed for this server-to-R2 path.
+
+For a body of at most 8 MiB, including zero bytes, the server uses a single PUT. For
+larger bodies, it initiates a multipart upload and sends uniform 8 MiB parts, except
+the final part. The server persists a new generated key and fence before each R2
+initiation, then persists the provider upload ID and accepted part numbers and ETags
+as responses arrive. If initiation times out, the key is retired; an empty multipart
+listing does not prove the create call failed, and a retry uses another key. Recovery
+lists multipart uploads under retired keys and aborts discovered orphans. On restart,
+it lists parts for a known upload ID and compares them with the retained source before
+retrying missing or uncertain parts. A replacement attempt uses a new key and upload
+ID, so a late completion cannot overwrite its object. The catalog publishes only the
+fenced, verified attempt. Cancellation and expiry abort only their owned uploads;
+cleanup never deletes a key whose completion is still uncertain.
+
+Before completing multipart, the server has verified the staged body's size and
+SHA-256. A successful or uncertain provider completion is followed by a HEAD check
+and a full GET digest check before the short catalog transaction records `AVAILABLE`.
+An R2 ETag is not accepted as a full-object digest. If completion times out, recovery
+first inspects the generated key; when no verified object exists, it inspects the
+persisted multipart upload and retries completion or safely aborts. It keeps the
+name reservation pinned while the outcome is uncertain. No transaction spans an R2
+call or local file I/O.
+
+The single-PUT path follows the same publication check. When its response is lost,
+recovery HEAD/GET-verifies that call's key. An absent object may still be an in-flight
+success, so a retry retires that key and uses a new one. Late objects at retired keys
+are never published and are cleaned up only after their outcome is safe to resolve.
+
+The first compatibility proof must exercise a real R2 bucket: multipart creation,
+part listing and retry, completion, abort, size/digest rejection, zero-byte upload,
+download, restart, delayed create after an empty listing, duplicate upload IDs for
+one logical session, lost single-PUT success, and timeout-after-success reconciliation.
+It must record bounded memory, time, size, and concurrency behavior for local staging,
+part retries, verification GET, and original download. PostgreSQL-backed tests must
+cover durable fences and part state, name reservation, workspace scope, cancellation
+races, and restart publication. API documentation and emulator tests alone do not
+establish provider support. The initial cloud upload cap is 128 MiB until larger
+transfers have measured resource and recovery behavior.
+
+## Future processing work
 
 Derived previews begin only from a committed immutable version through durable work.
 Processor selection validates type and configured budgets; execution constrains CPU,

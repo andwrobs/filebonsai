@@ -1,3 +1,4 @@
+import { UploadControl, DownloadControl, TransferPanel } from "../features/transfers/transfer-controls.js";
 import { useForm } from "@tanstack/react-form";
 import {
   isRouteErrorResponse,
@@ -97,10 +98,13 @@ export default function Library() {
             <h1>{folder.name}</h1>
             <p className="breadcrumb" aria-label="Current location">Library / {folder.name}</p>
           </div>
+          <UploadControl parentId={folder.id} />
           <button className="primary-button" onClick={() => setIsCreating(true)} type="button">
             New folder
           </button>
         </header>
+
+        <TransferPanel />
 
         {isCreating ? (
           <section className="folder-form-panel" aria-labelledby="new-folder-heading">
@@ -182,6 +186,7 @@ export default function Library() {
                       <span className="entry-kind" aria-hidden="true">File</span>
                       <span className="entry-name">{entry.name}</span>
                       <span className="entry-meta">{entryMeta(entry)}</span>
+                      <DownloadControl id={entry.id} name={entry.name} />
                     </span>
                   )}
                 </li>

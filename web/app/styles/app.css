@@ -61,3 +61,14 @@ a.entry-row:hover { background: #edf4ed; }
   .entry-row { grid-template-columns: 3.8rem minmax(0, 1fr); }
   .entry-meta { grid-column: 2; text-align: left; }
 }
+
+.upload-control { display: grid; gap: .4rem; font-weight: 700; max-width: 100%; }
+.upload-control input { max-width: 100%; width: 15rem; }
+.transfer-panel { border: 1px solid #c7d7c9; background: #ebf2eb; border-radius: .8rem; padding: 1.2rem; margin: 1.5rem 0; }
+.transfer-panel p { color: #465e4f; line-height: 1.5; }
+.transfer-panel ul { list-style: none; padding: 0; margin: 0; }
+.transfer-panel li { border-top: 1px solid #c7d7c9; padding: 1rem 0; overflow-wrap: anywhere; }
+.transfer-panel li p { margin: .5rem 0; }
+.transfer-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.download-control { grid-column: 2 / -1; display: flex; align-items: center; flex-wrap: wrap; gap: .75rem; font-size: .85rem; }
+button:disabled { cursor: not-allowed; opacity: .65; }

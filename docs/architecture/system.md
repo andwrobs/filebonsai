@@ -29,8 +29,9 @@ The initial deployment is a container image containing the JVM application plus
 PostgreSQL and durable volumes through Compose. Users do not install a host JDK. The
 server initially serves API and built web assets at one origin, runs unprivileged with
 an explicit writable data root, and expects HTTPS at an ingress/proxy outside the
-loopback development profile. Native Cloudflare Workers is not a JVM target; an object
-store such as R2 is a separate future storage choice.
+loopback development profile. Native Cloudflare Workers is not a JVM target;
+Cloudflare R2 is the selected first object-store adapter, pending implementation
+and real-provider verification.
 
 ## Deliberately deferred categories
 

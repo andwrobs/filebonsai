@@ -76,6 +76,8 @@ arbitrary public hosting, automatic archival, autonomous reorganization, and a h
 multi-tenant service. AI features are optional future work and must preserve user
 authorization, reversibility, and prompt-injection boundaries.
 
-The first cloud provider, open-source license, public release process, supported
+Cloudflare R2 is the selected first cloud provider under
+[decision 0007](../decisions/0007-first-cloud-provider-r2.md); support remains pending
+real-provider verification. The open-source license, public release process, supported
 deployment matrix, sharing defaults, retention semantics, and AI runtime scope remain
 decisions—not implied commitments.

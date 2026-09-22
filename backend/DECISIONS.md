@@ -1,10 +1,10 @@
 # Catalog API decisions
 
-This is the first verified Catalog vertical slice. Java DTOs and controller annotations are the HTTP authoring source. `contract/openapi.json` and representative fixtures are reproducibly exported by tests against the actual Spring application; Swift and TypeScript output is generated from that export. Neither the schema nor generated clients are hand-maintained.
+Java DTOs and controller annotations are the HTTP authoring source. `contract/openapi.json` and representative fixtures are reproducibly exported by tests against the actual Spring application; Swift and TypeScript output is generated from that export. Neither the schema nor generated clients are hand-maintained.
 
 ## Implemented catalog guarantees
 
-The active product and API documents specify NFC names, case-sensitive siblings, at most 255 normalized UTF-8 bytes, no silent trimming, reserved pending-upload names, decimal-string byte counts, deterministic name/ID keyset paging with limit 1–100, required folder-create idempotency, and stable entry identity separate from immutable versions. These are implemented in this slice. Storage verification and upload state transitions are deferred.
+The active product and API documents specify NFC names, case-sensitive siblings, at most 255 normalized UTF-8 bytes, no silent trimming, reserved pending-upload names, decimal-string byte counts, deterministic name/ID keyset paging with limit 1–100, required folder-create idempotency, and stable entry identity separate from immutable versions. These guarantees and the local upload state transitions are implemented. The optional R2 path remains pending real-provider verification.
 
 ## Choices made here
 
@@ -33,7 +33,7 @@ The active product and API documents specify NFC names, case-sensitive siblings,
 
 - `catalog/web`: requests, responses, controller and catalog-specific HTTP mapping. Java Bean Validation covers required request values and page limits; custom domain validation covers normalized names.
 - `catalog/domain`: immutable valid values and entries; no Spring, HTTP, Jackson or jOOQ dependency.
-- `catalog/application`: operation-shaped ports (`GetEntry`, `ListChildren`, `CreateFolder`), scope and typed failure reasons. This is the boundary the real persistence implementation will fulfill.
+- `catalog/application`: operation-shaped ports (`GetEntry`, `ListChildren`, `CreateFolder`), scope and typed failure reasons. The PostgreSQL adapter implements these ports.
 - `catalog/support`: explicitly in-memory adapter, simulated pending reservation, cursor machinery and fixture composition.
 - `platform/web`: genuinely cross-capability JSON, error-envelope and request-correlation infrastructure.
 - `catalog/persistence`: PostgreSQL/Flyway/jOOQ adapter. Database records remain private; query entry/version projections are mapped into application/domain results and never serialized directly.
@@ -66,8 +66,11 @@ Startup recovery returns interrupted receivers to a retryable state and inspects
 `FINALIZING`/`RECONCILING` bytes to publish, restage, or fail without guessing. Public
 responses expose logical IDs, integrity, state, and expiry but never internal paths.
 The local root defaults to `./data`; 128 MiB, 15 minutes, four concurrent writers, and
-24-hour expiry are configurable. Cloud storage, UI integration, native session
-behavior, and configurable-shell work remain future slices.
+24-hour expiry are configurable. The optional R2 publisher uses these verified
+staged bytes and a durable provider-attempt ledger; its design is in repository
+[decision 0007](../docs/decisions/0007-first-cloud-provider-r2.md). Real R2
+compatibility, native session behavior, and configurable-shell work remain future
+proof or implementation slices.
 
 ## References consulted
 

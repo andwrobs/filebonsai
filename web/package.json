@@ -7,7 +7,7 @@
     "build": "react-router build",
     "dev": "react-router dev",
     "generate:schema": "openapi-typescript ../backend/contract/openapi.json -o src/lib/api/generated/schema.ts",
-    "test": "node --import tsx --test src/lib/api/filebonsai-service.test.ts app/features/catalog/catalog-data.test.ts",
+    "test": "node --import tsx --test src/lib/api/filebonsai-service.test.ts app/features/catalog/catalog-data.test.ts app/features/transfers/transfer-store.test.ts",
     "typecheck:run": "react-router typegen && tsc --noEmit"
   },
   "dependencies": {

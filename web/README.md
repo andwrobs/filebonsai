@@ -20,3 +20,14 @@ state-changing calls. Callers must provide stable idempotency keys for folder cr
 so retries retain the same intent.
 
 During local development, Vite proxies `/api` requests to the backend on port 8080.
+
+Upload controls use a tab-owned transfer store so folder navigation does not stop work.
+Body progress is indeterminate until the server verifies it. Explicit retry first reads
+server state and resends from byte zero only for an initiated session. Uncertain
+completion offers a status check; it never assumes the original is available.
+Cancellation is server-confirmed and fences late body responses. Each explicit transfer
+operation refreshes CSRF to accommodate session rotation.
+
+Keep the tab open: selected files and transfer tracking are held in memory and are not
+restored after reload. Original downloads fetch a Blob before handing it to the browser,
+so this control buffers the original rather than streaming directly to disk.
