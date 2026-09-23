@@ -123,13 +123,13 @@ responses and the one-reader download permit but does not simulate the provider'
 network timing or process death.
 
 Successful `R2_PROOF` lines give each scenario's size, pinned digest, elapsed time,
-sampled JVM heap peak, staged-byte high-water mark, largest request body, bytes
+sampled JVM heap peak, sampled staging bytes, largest request body, bytes
 streamed from R2, and observed maximum simultaneous gateway calls. They contain no
 credentials, provider keys, upload IDs, bucket names, or local paths. Preserve those
 lines plus the command exit code and runtime versions as evidence. The sampled heap
-and call counts are per-process observations, not hard memory or concurrency limits;
-record process RSS,
-temporary-disk high-water mark, network transfer totals, and provider-side timing
+and staging values are observations, not exact high-water marks or hard resource limits.
+The 10 ms staging sample can miss short-lived writes during rejected receives. Record
+process RSS, temporary-disk high-water mark, network transfer totals, and provider-side timing
 separately during the live run before claiming bounded operational behavior. The
 runner does not prove a process was killed and relaunched; its restart check rebuilds
 the services over durable PostgreSQL and staging state. A separate process-restart

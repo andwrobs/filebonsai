@@ -16,7 +16,9 @@ import java.io.ByteArrayInputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.time.Duration;
@@ -24,6 +26,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import org.flywaydb.core.Flyway;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
@@ -52,7 +55,7 @@ class RealR2CompatibilityProofTest {
     private R2ObjectStorage published;
     private String prefix;
     private String scenario = "setup";
-    private long peakStagingBytes;
+    private final AtomicLong sampledPeakStagingBytes = new AtomicLong();
     private UploadSession downloadableSmall;
 
     @Test
@@ -283,14 +286,28 @@ class RealR2CompatibilityProofTest {
                                 .state()
                         == UploadState.STAGED,
                 "body did not stage");
-        try (var files = Files.walk(temporaryDirectory.resolve("staging"))) {
-            peakStagingBytes = Math.max(
-                    peakStagingBytes,
-                    files.filter(Files::isRegularFile)
-                            .mapToLong(path -> path.toFile().length())
-                            .sum());
-        }
+        sampleStagingBytes();
         return session;
+    }
+
+    private void sampleStagingBytes() throws IOException {
+        Path root = temporaryDirectory.resolve("staging");
+        if (!Files.exists(root)) {
+            return;
+        }
+        long bytes = 0;
+        try (var files = Files.walk(root)) {
+            for (Path file : files.filter(Files::isRegularFile).toList()) {
+                try {
+                    bytes += Files.size(file);
+                } catch (NoSuchFileException ignored) {
+                    // A completed or rejected attempt can disappear between listing and sizing.
+                }
+            }
+        } catch (UncheckedIOException failure) {
+            throw failure.getCause();
+        }
+        sampledPeakStagingBytes.accumulateAndGet(bytes, Math::max);
     }
 
     private UploadSession uploadAndDownload(String name, byte[] body) throws Exception {
@@ -373,15 +390,20 @@ class RealR2CompatibilityProofTest {
     private void measure(String name, byte[] body, CheckedOperation operation) throws Exception {
         scenario = name;
         gateway.resetMetrics();
-        peakStagingBytes = 0;
+        sampledPeakStagingBytes.set(0);
         AtomicBoolean sampling = new AtomicBoolean(true);
         AtomicLong peakHeap = new AtomicLong();
+        AtomicReference<IOException> samplingFailure = new AtomicReference<>();
         Thread sampler = Thread.ofPlatform().daemon().start(() -> {
             while (sampling.get()) {
                 Runtime runtime = Runtime.getRuntime();
                 peakHeap.accumulateAndGet(runtime.totalMemory() - runtime.freeMemory(), Math::max);
                 try {
+                    sampleStagingBytes();
                     Thread.sleep(10);
+                } catch (IOException failure) {
+                    samplingFailure.compareAndSet(null, failure);
+                    return;
                 } catch (InterruptedException ignored) {
                     return;
                 }
@@ -391,8 +413,16 @@ class RealR2CompatibilityProofTest {
         try {
             operation.run();
         } finally {
+            try {
+                sampleStagingBytes();
+            } catch (IOException failure) {
+                samplingFailure.compareAndSet(null, failure);
+            }
             sampling.set(false);
             sampler.join();
+        }
+        if (samplingFailure.get() != null) {
+            throw samplingFailure.get();
         }
         long elapsedMillis = Duration.ofNanos(System.nanoTime() - started).toMillis();
         require(gateway.maxRequestBytes <= PART_BYTES, "provider request exceeded 8 MiB");
@@ -400,7 +430,8 @@ class RealR2CompatibilityProofTest {
         System.out.println("R2_PROOF scenario=" + name + " status=PASS bytes=" + body.length + " sha256="
                 + R2ProofPayloads.hexSha256(body) + " elapsed_ms=" + elapsedMillis + " heap_peak_bytes="
                 + peakHeap.get() + " max_request_bytes=" + gateway.maxRequestBytes + " provider_read_bytes="
-                + gateway.readBytes + " staging_peak_bytes=" + peakStagingBytes + " max_provider_calls="
+                + gateway.readBytes + " staging_sampled_peak_bytes=" + sampledPeakStagingBytes.get()
+                + " max_provider_calls="
                 + gateway.maxInFlight);
     }
 
