@@ -25,6 +25,10 @@ observed results; use Git history for prior plans and completed migrations.
   unique keys for uncertain retries, and periodic recovery. The local provider is
   still the default. R2 behavior has passed PostgreSQL tests with an injected gateway;
   it has not been exercised against a real R2 bucket.
+- An opt-in real-bucket proof runner now prepares deterministic synthetic bodies,
+  PostgreSQL-backed transfer scenarios, injected uncertain responses around real
+  provider calls, bounded resource observations, and prefix-scoped cleanup. Its local
+  fixture, fault-ordering, and gate checks pass; no live R2 result has been observed.
 - The jOOQ PostgreSQL adapter remains behind operation ports. Its 13 Testcontainers
   tests cover workspace scope, deterministic ordering, reservations, idempotency,
   rollback/concurrency, immutable identities/versions/objects, domain constraints,
@@ -101,6 +105,10 @@ observed results; use Git history for prior plans and completed migrations.
   fixture evidence, not a new live-backend transfer check. Fresh read-only review found
   no remaining blockers after cancellation and CSRF recovery repairs.
 - Swift generator warnings are upstream warnings; generated code was not edited.
+- `cd backend && ./mvnw -q spotless:apply -Dtest=R2ProofPayloadsTest,RealR2CompatibilityProofTest test`:
+  passed two local tests for deterministic payloads and fault ordering; the real-bucket
+  proof was skipped by its required opt-in property. The proof script rejected missing
+  settings before Maven.
 
 ## Ordered work
 
