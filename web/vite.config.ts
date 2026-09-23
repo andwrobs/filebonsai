@@ -5,7 +5,9 @@ export default defineConfig({
   plugins: [reactRouter()],
   server: {
     proxy: {
-      "/api": "http://localhost:8080",
+      "/api": process.env.FILEBONSAI_API_PROXY_TARGET ?? "http://localhost:8080",
+      "/oauth2": process.env.FILEBONSAI_API_PROXY_TARGET ?? "http://localhost:8080",
+      "/login/oauth2": process.env.FILEBONSAI_API_PROXY_TARGET ?? "http://localhost:8080",
     },
   },
 });

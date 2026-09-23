@@ -1,0 +1,163 @@
+name: filebonsai-local
+
+services:
+  postgres:
+    image: postgres:17.6-alpine
+    environment:
+      POSTGRES_DB: filebonsai
+      POSTGRES_USER: filebonsai
+      POSTGRES_PASSWORD: ${FILEBONSAI_DB_PASSWORD:?Run ./up.sh first}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U filebonsai -d filebonsai"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - filebonsai-db:/var/lib/postgresql/data
+
+  authentik-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: authentik
+      POSTGRES_USER: authentik
+      POSTGRES_PASSWORD: ${AUTHENTIK_DB_PASSWORD:?Run ./up.sh first}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U authentik -d authentik"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - authentik-db:/var/lib/postgresql/data
+
+  authentik-server:
+    image: ghcr.io/goauthentik/server:2026.8.3
+    command: server
+    environment: &authentik-environment
+      AUTHENTIK_POSTGRESQL__HOST: authentik-db
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_DB_PASSWORD}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:?Run ./up.sh first}
+      AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
+      AUTHENTIK_LOG_LEVEL: warning
+    depends_on:
+      authentik-db:
+        condition: service_healthy
+    networks:
+      default:
+        aliases:
+          - authentik.localhost
+    ports:
+      - "127.0.0.1:9000:9000"
+    volumes:
+      - authentik-data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:9000/-/health/ready/', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      start_period: 90s
+      retries: 18
+    restart: unless-stopped
+
+  authentik-worker:
+    image: ghcr.io/goauthentik/server:2026.8.3
+    command: worker
+    environment:
+      <<: *authentik-environment
+      AUTHENTIK_BOOTSTRAP_PASSWORD: ${AUTHENTIK_BOOTSTRAP_PASSWORD:?Run ./up.sh first}
+      FILEBONSAI_OIDC_CLIENT_SECRET: ${FILEBONSAI_OIDC_CLIENT_SECRET:?Run ./up.sh first}
+    depends_on:
+      authentik-db:
+        condition: service_healthy
+    volumes:
+      - authentik-data:/data
+      - ./blueprints/filebonsai.yaml:/blueprints/filebonsai.yaml:ro
+    healthcheck:
+      test: ["CMD", "ak", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      start_period: 90s
+      retries: 18
+    restart: unless-stopped
+
+  backend:
+    image: filebonsai-local-backend:dev
+    build:
+      context: ../../backend
+    environment: &backend-environment
+      SPRING_PROFILES_ACTIVE: postgres
+      SERVER_ADDRESS: 0.0.0.0
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/filebonsai
+      SPRING_DATASOURCE_USERNAME: filebonsai
+      SPRING_DATASOURCE_PASSWORD: ${FILEBONSAI_DB_PASSWORD}
+      FILEBONSAI_CATALOG_CURSOR_SECRET_BASE64: ${FILEBONSAI_CURSOR_SECRET_BASE64:?Run ./up.sh first}
+      FILEBONSAI_STORAGE_ROOT: /data
+      FILEBONSAI_ACCESS_COOKIE_SECURE: "false"
+      FILEBONSAI_OIDC_OWNER_SUBJECT: ${FILEBONSAI_OIDC_OWNER_SUBJECT:-}
+      FILEBONSAI_OIDC_SUCCESS_URL: http://localhost:15173/
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_AUTHENTIK_CLIENT_ID: filebonsai-local
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_AUTHENTIK_CLIENT_SECRET: ${FILEBONSAI_OIDC_CLIENT_SECRET}
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_AUTHENTIK_SCOPE: openid,profile,email
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_AUTHENTIK_REDIRECT_URI: http://localhost:15173/login/oauth2/code/authentik
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_AUTHENTIK_ISSUER_URI: http://authentik.localhost:9000/application/o/filebonsai/
+    depends_on:
+      postgres:
+        condition: service_healthy
+      authentik-server:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:18080:8080"
+    volumes:
+      - filebonsai-data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8080/api/v1/auth/csrf"]
+      interval: 5s
+      timeout: 3s
+      start_period: 30s
+      retries: 20
+    restart: unless-stopped
+
+  backend-bootstrap:
+    profiles: [bootstrap]
+    image: filebonsai-local-backend:dev
+    environment:
+      <<: *backend-environment
+      FILEBONSAI_ACCESS_BOOTSTRAP_PASSWORD_FILE: /run/owner-password
+    depends_on:
+      postgres:
+        condition: service_healthy
+      authentik-server:
+        condition: service_healthy
+    volumes:
+      - filebonsai-data:/data
+      - ./secrets/owner-password:/run/owner-password:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8080/api/v1/auth/csrf"]
+      interval: 5s
+      timeout: 3s
+      start_period: 30s
+      retries: 20
+
+  web:
+    build:
+      context: ../../web
+    environment:
+      FILEBONSAI_API_PROXY_TARGET: http://backend:8080
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:15173:5173"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:5173/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      start_period: 30s
+      retries: 20
+    restart: unless-stopped
+
+volumes:
+  filebonsai-db:
+  filebonsai-data:
+  authentik-db:
+  authentik-data:

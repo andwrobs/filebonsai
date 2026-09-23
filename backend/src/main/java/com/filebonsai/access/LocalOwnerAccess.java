@@ -203,6 +203,25 @@ public class LocalOwnerAccess {
         }
     }
 
+    /** Called only after the configured OIDC provider authenticates the local owner. */
+    IssuedSession issueOidcSession(String sessionTokenToRotate) {
+        return database.transactionResult(configuration -> {
+            DSLContext transaction = DSL.using(configuration);
+            var owner = transaction
+                    .select(PRINCIPAL_ID, CREDENTIAL_REVISION)
+                    .from(OWNER)
+                    .forUpdate()
+                    .fetchOne();
+            if (owner == null) {
+                throw new AccessFailure(AccessFailure.Reason.AUTH_REQUIRED);
+            }
+            if (sessionTokenToRotate != null) {
+                revoke(transaction, sessionTokenToRotate);
+            }
+            return issue(transaction, owner.value1(), owner.value2());
+        });
+    }
+
     public void resetCredentials(UUID requestId, char[] password) {
         try {
             if (requestId == null) {
