@@ -17,8 +17,10 @@ import com.zaxxer.hikari.HikariDataSource;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -26,6 +28,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import org.flywaydb.core.Flyway;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
@@ -68,6 +74,11 @@ class PostgresR2TransfersTest {
         hikari.setPassword(POSTGRES.getPassword());
         dataSource = new HikariDataSource(hikari);
         Flyway.configure().dataSource(dataSource).load().migrate();
+        dataSource.close();
+        hikari.setMaximumPoolSize(1);
+        hikari.setMinimumIdle(1);
+        hikari.setConnectionTimeout(1000);
+        dataSource = new HikariDataSource(hikari);
         database = DSL.using(dataSource, SQLDialect.POSTGRES);
     }
 
@@ -285,6 +296,343 @@ class PostgresR2TransfersTest {
             assertThat(input.skip(2)).isEqualTo(2);
             assertThat(input.read()).isEqualTo(3);
             assertThat(input.read()).isEqualTo(-1);
+        }
+    }
+
+    @Test
+    void slowSyntheticMultipartMeasuresResourcesAndKeepsDatabaseFreeDuringProviderIo() throws Exception {
+        int bytes = 9 * 1024 * 1024;
+        byte value = 0x5a;
+        byte[] digest = repeatedSha256(bytes, value);
+        var synthetic = new SlowSyntheticGateway(value);
+        published = new R2ObjectStorage(database, staging, synthetic, Duration.ofSeconds(20), 1);
+        transfers = new PostgresLocalTransfers(database, staging, published, Duration.ofHours(24));
+        assertThat(published.maximumBytes()).isEqualTo(128L * 1024 * 1024);
+        assertThatThrownBy(() -> transfers.begin(
+                        scope,
+                        ROOT,
+                        new FileName("over-limit.bin"),
+                        new ByteCount(published.maximumBytes() + 1),
+                        null,
+                        UUID.randomUUID()))
+                .isInstanceOf(UploadFailure.class);
+
+        var upload = transfers.begin(
+                scope, ROOT, new FileName("measured.bin"), new ByteCount(bytes), digest, UUID.randomUUID());
+        long heapBefore = usedHeap();
+        AtomicLong heapPeak = new AtomicLong(heapBefore);
+        var sampler = Executors.newSingleThreadScheduledExecutor();
+        sampler.scheduleAtFixedRate(
+                () -> heapPeak.accumulateAndGet(usedHeap(), Math::max), 0, 5, TimeUnit.MILLISECONDS);
+        long receiveStart = System.nanoTime();
+        long receiveMillis;
+        long faultedCompletionMillis;
+        long queryMillis;
+        long reconcileMillis;
+        long downloadMillis;
+        long stagedDisk;
+        long recoveredDisk;
+        int verificationGets;
+        int downloadGets;
+        try {
+            assertThat(transfers
+                            .receive(scope, upload.id(), new RepeatedInput(bytes, value))
+                            .state())
+                    .isEqualTo(UploadState.STAGED);
+            receiveMillis = elapsedMillis(receiveStart);
+            stagedDisk = storedBytes(temporaryDirectory.resolve("staging"));
+            assertThat(stagedDisk).isEqualTo(bytes);
+            String temporaryKey = (String)
+                    database.fetchValue("select accepted_temp_key from upload_sessions where id = ?", upload.id());
+            String logicalKey =
+                    (String) database.fetchValue("select storage_key from upload_sessions where id = ?", upload.id());
+            var worker = Executors.newSingleThreadExecutor();
+            try {
+                long faultedStart = System.nanoTime();
+                var firstCompletion = worker.submit(() -> transfers.complete(scope, upload.id()));
+                assertThat(synthetic.partEntered.await(5, TimeUnit.SECONDS)).isTrue();
+                // One pool connection makes this a transaction-boundary check: a provider call
+                // holding a database transaction would prevent this query from completing.
+                long queryStart = System.nanoTime();
+                assertThat(database.fetchValue("select 1", Integer.class)).isEqualTo(1);
+                queryMillis = elapsedMillis(queryStart);
+                assertThat(queryMillis).isLessThan(1000);
+                assertThatThrownBy(() -> published.promote(temporaryKey, logicalKey, bytes, digest))
+                        .isInstanceOf(IOException.class)
+                        .hasMessageContaining("capacity is busy");
+                assertThat(storedBytes(temporaryDirectory.resolve("staging"))).isEqualTo(bytes);
+                synthetic.releasePart.countDown();
+                assertThatThrownBy(() -> firstCompletion.get(5, TimeUnit.SECONDS))
+                        .hasCauseInstanceOf(UploadFailure.class);
+                faultedCompletionMillis = elapsedMillis(faultedStart);
+            } finally {
+                synthetic.releasePart.countDown();
+                worker.shutdownNow();
+            }
+            assertThat(transfers.get(scope, upload.id()).state()).isEqualTo(UploadState.RECONCILING);
+            long reconcileStart = System.nanoTime();
+            transfers.reconcile();
+            reconcileMillis = elapsedMillis(reconcileStart);
+            assertThat(transfers.get(scope, upload.id()).state()).isEqualTo(UploadState.AVAILABLE);
+            assertThat(synthetic.uploadPartCalls).isEqualTo(2);
+            assertThat(synthetic.listPartsCalls).isGreaterThanOrEqualTo(2);
+            assertThat(synthetic.maximumPartBytes).isEqualTo(8 * 1024 * 1024);
+            assertThat(synthetic.openCalls).isGreaterThanOrEqualTo(1);
+            verificationGets = synthetic.openCalls;
+            recoveredDisk = storedBytes(temporaryDirectory.resolve("staging"));
+            assertThat(recoveredDisk).isZero();
+
+            int readsBeforeDownload = synthetic.openCalls;
+            long downloadStart = System.nanoTime();
+            MessageDigest downloaded = MessageDigest.getInstance("SHA-256");
+            long downloadedBytes = 0;
+            try (var original = transfers.open(scope, upload.entryId())) {
+                byte[] buffer = new byte[64 * 1024];
+                int read;
+                while ((read = original.content().read(buffer)) != -1) {
+                    downloaded.update(buffer, 0, read);
+                    downloadedBytes += read;
+                }
+            }
+            downloadMillis = elapsedMillis(downloadStart);
+            assertThat(downloadedBytes).isEqualTo(bytes);
+            assertThat(downloaded.digest()).isEqualTo(digest);
+            downloadGets = synthetic.openCalls - readsBeforeDownload;
+            assertThat(downloadGets).isGreaterThanOrEqualTo(2);
+            assertThat(synthetic.maximumReadBytes()).isLessThanOrEqualTo(64 * 1024);
+
+            synthetic.readDelayMillis = 10;
+            var timed = new R2ObjectStorage(database, staging, synthetic, Duration.ofMillis(1), 1);
+            assertThatThrownBy(() -> timed.verifies(logicalKey, bytes, digest))
+                    .isInstanceOf(IOException.class)
+                    .hasMessageContaining("timed out");
+            try (InputStream original = timed.open(logicalKey)) {
+                assertThatThrownBy(() -> original.read(new byte[64 * 1024]))
+                        .isInstanceOf(IOException.class)
+                        .hasMessageContaining("timed out");
+            }
+        } finally {
+            sampler.shutdownNow();
+        }
+        System.out.printf(
+                "LOCAL_R2_MEASUREMENT bytes=%d heap_before=%d heap_peak=%d staged_disk=%d recovered_disk=%d "
+                        + "receive_ms=%d faulted_completion_ms=%d free_connection_query_ms=%d reconcile_ms=%d "
+                        + "download_ms=%d part_calls=%d list_parts_calls=%d verification_gets=%d download_gets=%d%n",
+                bytes,
+                heapBefore,
+                heapPeak.get(),
+                stagedDisk,
+                recoveredDisk,
+                receiveMillis,
+                faultedCompletionMillis,
+                queryMillis,
+                reconcileMillis,
+                downloadMillis,
+                synthetic.uploadPartCalls,
+                synthetic.listPartsCalls,
+                verificationGets,
+                downloadGets);
+    }
+
+    private static long usedHeap() {
+        Runtime runtime = Runtime.getRuntime();
+        return runtime.totalMemory() - runtime.freeMemory();
+    }
+
+    private static long elapsedMillis(long started) {
+        return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
+    }
+
+    private static long storedBytes(Path root) throws IOException {
+        try (var paths = Files.walk(root)) {
+            return paths.filter(Files::isRegularFile)
+                    .mapToLong(path -> {
+                        try {
+                            return Files.size(path);
+                        } catch (IOException exception) {
+                            throw new IllegalStateException(exception);
+                        }
+                    })
+                    .sum();
+        }
+    }
+
+    private static byte[] repeatedSha256(int bytes, byte value) throws Exception {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] buffer = new byte[64 * 1024];
+        Arrays.fill(buffer, value);
+        for (int remaining = bytes; remaining > 0; ) {
+            int count = Math.min(remaining, buffer.length);
+            digest.update(buffer, 0, count);
+            remaining -= count;
+        }
+        return digest.digest();
+    }
+
+    private static final class RepeatedInput extends InputStream {
+        private int remaining;
+        private final byte value;
+        private final int delayMillis;
+        private final AtomicLong maximumRead;
+
+        private RepeatedInput(int bytes, byte value) {
+            this(bytes, value, 0, null);
+        }
+
+        private RepeatedInput(int bytes, byte value, int delayMillis, AtomicLong maximumRead) {
+            this.remaining = bytes;
+            this.value = value;
+            this.delayMillis = delayMillis;
+            this.maximumRead = maximumRead;
+        }
+
+        @Override
+        public int read() throws IOException {
+            byte[] single = new byte[1];
+            return read(single, 0, 1) == -1 ? -1 : single[0] & 0xff;
+        }
+
+        @Override
+        public int read(byte[] target, int offset, int length) throws IOException {
+            if (remaining == 0) {
+                return -1;
+            }
+            int count = Math.min(length, remaining);
+            if (delayMillis > 0) {
+                try {
+                    Thread.sleep(delayMillis);
+                } catch (InterruptedException exception) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("Synthetic read interrupted", exception);
+                }
+            }
+            Arrays.fill(target, offset, offset + count, value);
+            remaining -= count;
+            if (maximumRead != null) {
+                maximumRead.accumulateAndGet(count, Math::max);
+            }
+            return count;
+        }
+    }
+
+    private static final class SlowSyntheticGateway implements R2Gateway {
+        private final byte value;
+        private final Map<String, Long> objects = new HashMap<>();
+        private final Map<String, TreeMap<Integer, Part>> uploads = new HashMap<>();
+        private final Map<String, String> uploadKeys = new HashMap<>();
+        private final CountDownLatch partEntered = new CountDownLatch(1);
+        private final CountDownLatch releasePart = new CountDownLatch(1);
+        private final AtomicLong maximumRead = new AtomicLong();
+        private volatile int readDelayMillis = 1;
+        private volatile int openCalls;
+        private volatile int maximumPartBytes;
+        private volatile int uploadPartCalls;
+        private volatile int listPartsCalls;
+        private boolean losePartResponse = true;
+
+        private SlowSyntheticGateway(byte value) {
+            this.value = value;
+        }
+
+        @Override
+        public void put(String key, byte[] body) {
+            objects.put(key, (long) body.length);
+        }
+
+        @Override
+        public String createMultipart(String key) {
+            String id = UUID.randomUUID().toString();
+            uploads.put(id, new TreeMap<>());
+            uploadKeys.put(id, key);
+            return id;
+        }
+
+        @Override
+        public String uploadPart(String key, String uploadId, int number, byte[] body) throws IOException {
+            uploadPartCalls++;
+            maximumPartBytes = Math.max(maximumPartBytes, body.length);
+            for (byte next : body) {
+                if (next != value) {
+                    throw new IOException("Synthetic part content differs");
+                }
+            }
+            String etag = '"' + java.util.HexFormat.of().formatHex(MessageDigestHolder.md5(body)) + '"';
+            uploads.get(uploadId).put(number, new Part(number, etag, body.length));
+            if (losePartResponse) {
+                losePartResponse = false;
+                partEntered.countDown();
+                try {
+                    if (!releasePart.await(5, TimeUnit.SECONDS)) {
+                        throw new IOException("Synthetic gateway was not released");
+                    }
+                } catch (InterruptedException exception) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("Synthetic gateway interrupted", exception);
+                }
+                throw new IOException("injected lost part response");
+            }
+            return etag;
+        }
+
+        @Override
+        public List<Part> listParts(String key, String uploadId) {
+            listPartsCalls++;
+            return new ArrayList<>(uploads.get(uploadId).values());
+        }
+
+        @Override
+        public void completeMultipart(String key, String uploadId, List<Part> parts) {
+            objects.put(key, parts.stream().mapToLong(Part::size).sum());
+            uploads.remove(uploadId);
+            uploadKeys.remove(uploadId);
+        }
+
+        @Override
+        public void abortMultipart(String key, String uploadId) {
+            uploads.remove(uploadId);
+            uploadKeys.remove(uploadId);
+        }
+
+        @Override
+        public List<Upload> listMultipartUploads(String keyPrefix) {
+            return uploadKeys.entrySet().stream()
+                    .filter(entry -> entry.getValue().startsWith(keyPrefix))
+                    .map(entry -> new Upload(entry.getValue(), entry.getKey()))
+                    .toList();
+        }
+
+        @Override
+        public Long size(String key) {
+            return objects.get(key);
+        }
+
+        @Override
+        public InputStream open(String key) throws IOException {
+            Long bytes = objects.get(key);
+            if (bytes == null) {
+                throw new IOException("missing synthetic object");
+            }
+            openCalls++;
+            return new RepeatedInput(Math.toIntExact(bytes), value, readDelayMillis, maximumRead);
+        }
+
+        @Override
+        public void delete(String key) {
+            objects.remove(key);
+        }
+
+        private int maximumReadBytes() {
+            return Math.toIntExact(maximumRead.get());
+        }
+    }
+
+    private static final class MessageDigestHolder {
+        private static byte[] md5(byte[] body) {
+            try {
+                return MessageDigest.getInstance("MD5").digest(body);
+            } catch (Exception exception) {
+                throw new IllegalStateException(exception);
+            }
         }
     }
 
