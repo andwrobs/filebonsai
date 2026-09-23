@@ -1,5 +1,17 @@
 # Local setup
 
+## Full local stack
+
+Run `./infra/local/up.sh` from the repository root to build and start the web client,
+PostgreSQL-backed API, and Authentik through Docker Compose. Run
+`python3 infra/local/check.py` to verify an Authentik OIDC sign-in and authorized
+Library-root request. The first run generates local credentials and bootstraps both
+the Authentik administrator and Filebonsai owner; no manual account setup is needed.
+See [the local stack guide](../../infra/local/README.md) for URLs, credential-file
+locations, prerequisites, and stop commands.
+
+## Backend-only development
+
 The backend uses the Maven wrapper and targets Java 21. A newer JDK may compile it locally, but the declared baseline is JDK 21 and the repository has a dedicated CI workflow for that runtime.
 
 Docker Desktop is required for `PostgresCatalogTest`, which starts PostgreSQL 17 with Testcontainers and applies the Flyway chain. The fixture-only HTTP tests do not require Docker.

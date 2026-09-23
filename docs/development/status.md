@@ -33,6 +33,10 @@ observed results; use Git history for prior plans and completed migrations.
   membership scope. Local-owner access includes secret-file bootstrap/reset,
   PostgreSQL-backed sessions, rotation/logout/reset invalidation, CSRF, persisted
   login throttling, generic failures, and secure-by-default cookies.
+- The local Docker Compose stack runs PostgreSQL, the backend, the web client, and
+  Authentik. Authentik OIDC sign-in is pinned to its administrator UUID and issues
+  the existing PostgreSQL-backed Filebonsai session. A different Authentik user is
+  denied before a Filebonsai session is created.
 - Local-owner bootstrap atomically creates the principal, owner credential, initial
   workspace membership, workspace, and protected `Library` root. Repeated bootstrap
   fails without replacing the packet; restart preserves authenticated catalog access.
@@ -53,6 +57,14 @@ observed results; use Git history for prior plans and completed migrations.
 
 ## Latest observed checks
 
+- `cd infra/local && ./up.sh` followed by `python3 check.py`: passed on the initial
+  and repeat startup. Authentik readiness/discovery, administrator OIDC sign-in,
+  session-backed Catalog root access, and denial of a second Authentik user all
+  passed. The repeat startup preserved the `Library` root identity. The local stack
+  was left running.
+- `cd backend && ./mvnw test -q`: passed, including PostgreSQL Testcontainers
+  integration tests. `cd web && npm test -- --run`: passed, 14 tests. The web typecheck
+  and production build passed during this slice.
 - `cd backend && ./mvnw -Dtest=PostgresCatalogTest test`: passed, 13 tests, PostgreSQL
   17.11 through Docker Desktop 24.0.5.
 - `cd backend && ./mvnw -Dtest=CatalogHttpTest test`: passed, 7 tests.

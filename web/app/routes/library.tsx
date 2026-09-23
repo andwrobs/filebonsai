@@ -207,9 +207,9 @@ export function ErrorBoundary({ error }: { error: unknown }) {
     : "The Library is unavailable.";
   return (
     <main className="route-error">
-      <p className="eyebrow">{status === 404 ? "Not found" : "Unavailable"}</p>
-      <h1>{message}</h1>
-      <Link className="primary-button" to="/">Return to Library</Link>
+      <p className="eyebrow">{status === 401 ? "Sign in" : status === 404 ? "Not found" : "Unavailable"}</p>
+      <h1>{status === 401 ? "Open your Library" : message}</h1>
+      {status === 401 ? <a className="primary-button" href="/oauth2/authorization/authentik">Continue with Authentik</a> : <Link className="primary-button" to="/">Return to Library</Link>}
     </main>
   );
 }
