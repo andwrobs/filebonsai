@@ -72,8 +72,11 @@ observed results; use Git history for prior plans and completed migrations.
   contract/client checks were not rerun for this slice. A real R2 run and measured
   provider streaming behavior remain outstanding.
 - `cd backend && ./mvnw spotless:apply -Dtest=PostgresR2TransfersTest test -q`:
-  passed, 9 PostgreSQL R2 tests after cleanup was restricted to terminal sessions.
-  The added test proves uncertain finalization bytes are retained for reconciliation.
+  passed, 11 PostgreSQL R2 tests on PostgreSQL 17.11 through Docker Desktop 24.0.5.
+  They include terminal-only orphan cleanup, cancellation and name-reservation checks
+  during multipart creation, two provider upload IDs for one logical session, and
+  restart after an empty listing before delayed creation becomes visible. The late
+  orphan is aborted without losing the published object.
 - `cd backend && ./scripts/generate-clients.sh && ./scripts/check-clients.sh`: passed
   against the exported contract; OpenAPI validation, generated TypeScript compilation
   and 6 decoding tests (including `workspace-root`), plus generated Swift compilation

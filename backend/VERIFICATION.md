@@ -15,10 +15,13 @@ small, zero-byte, and multipart bodies; lost create, part, PUT, and completion
 responses; full-object digest rejection; pre-publication repinning; stale-session
 retry; workspace scope; and bounded download behavior.
 
-After an orphan-cleanup repair,
-`./mvnw spotless:apply -Dtest=PostgresR2TransfersTest test -q` passed all 9
-R2/PostgreSQL tests. The added
-case verifies that cleanup preserves bytes while finalization is uncertain.
+`./mvnw spotless:apply -Dtest=PostgresR2TransfersTest test -q` passed all 11
+R2/PostgreSQL tests after the fault-test audit. The focused cases verify that
+cleanup preserves bytes while finalization is uncertain; cancellation cannot win
+after multipart creation begins or release its pinned name; two provider upload IDs
+for one logical session leave only the selected object published; and a delayed
+create can appear after an empty listing and a restarted worker has published under
+a new key, then be aborted by terminal cleanup.
 
 ## Limits of this evidence
 

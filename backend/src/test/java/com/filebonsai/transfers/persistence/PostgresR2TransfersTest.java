@@ -184,22 +184,87 @@ class PostgresR2TransfersTest {
         byte[] body = new byte[9 * 1024 * 1024];
         var upload = begin("delayed.bin", body);
         transfers.receive(scope, upload.id(), new ByteArrayInputStream(body));
-        gateway.loseCreateResponse = true;
+        gateway.delayCreateResponse = true;
         assertThatThrownBy(() -> transfers.complete(scope, upload.id())).isInstanceOf(UploadFailure.class);
-        transfers.reconcile();
-        assertThat(transfers.get(scope, upload.id()).state()).isEqualTo(UploadState.AVAILABLE);
+        String retiredKey = (String) database.fetchValue(
+                "select provider_key from r2_attempts where state = 'INITIATING' and logical_key = "
+                        + "(select storage_key from upload_sessions where id = ?)",
+                upload.id());
+        assertThat(gateway.listMultipartUploads(retiredKey)).isEmpty();
+        var restartedPublisher = new R2ObjectStorage(database, staging, gateway, java.time.Duration.ofMinutes(15), 1);
+        var restartedTransfers =
+                new PostgresLocalTransfers(database, staging, restartedPublisher, java.time.Duration.ofHours(24));
+        restartedTransfers.reconcile();
+        assertThat(restartedTransfers.get(scope, upload.id()).state()).isEqualTo(UploadState.AVAILABLE);
         assertThat(database.fetchCount(DSL.table(DSL.name("r2_attempts")))).isEqualTo(2);
         assertThat(database.fetchValue("select count(distinct provider_key) from r2_attempts"))
                 .isEqualTo(2L);
-        assertThat(transfers.get(scope, upload.id()).toString()).doesNotContain("r2/objects/");
-        assertThatThrownBy(() -> transfers.get(new CatalogScope(UUID.randomUUID(), WORKSPACE), upload.id()))
+        assertThat(restartedTransfers.get(scope, upload.id()).toString()).doesNotContain("r2/objects/");
+        assertThatThrownBy(() -> restartedTransfers.get(new CatalogScope(UUID.randomUUID(), WORKSPACE), upload.id()))
                 .isInstanceOf(UploadFailure.class);
+        gateway.finishDelayedCreate();
+        assertThat(gateway.listMultipartUploads(retiredKey)).hasSize(1);
         database.execute("update r2_attempts set created_at = current_timestamp - interval '1 hour' "
                 + "where state = 'INITIATING'");
-        published.reconcileOrphans();
+        restartedPublisher.reconcileOrphans();
         assertThat(gateway.uploads).isEmpty();
         assertThat(database.fetchValue("select count(*) from r2_attempts where state = 'RETIRED'"))
                 .isEqualTo(1L);
+        try (var download = restartedTransfers.open(scope, upload.entryId())) {
+            assertThat(download.content().readAllBytes()).isEqualTo(body);
+        }
+    }
+
+    @Test
+    void duplicateProviderUploadsForOneSessionAbortOnlyTheRetiredUpload() throws Exception {
+        byte[] body = new byte[9 * 1024 * 1024];
+        var upload = begin("duplicate-uploads.bin", body);
+        transfers.receive(scope, upload.id(), new ByteArrayInputStream(body));
+        gateway.loseCreateResponse = true;
+        assertThatThrownBy(() -> transfers.complete(scope, upload.id())).isInstanceOf(UploadFailure.class);
+        String firstId = gateway.createdUploadIds.get(0);
+
+        var restartedPublisher = new R2ObjectStorage(database, staging, gateway, java.time.Duration.ofMinutes(15), 1);
+        var restartedTransfers =
+                new PostgresLocalTransfers(database, staging, restartedPublisher, java.time.Duration.ofHours(24));
+        restartedTransfers.reconcile();
+        assertThat(restartedTransfers.get(scope, upload.id()).state()).isEqualTo(UploadState.AVAILABLE);
+        assertThat(gateway.createdUploadIds).hasSize(2).doesNotHaveDuplicates();
+        assertThat(gateway.uploads).containsKey(firstId);
+        assertThat(database.fetchValue("select count(distinct upload_id) from r2_attempts where upload_id is not null"))
+                .isEqualTo(1L);
+
+        database.execute("update r2_attempts set created_at = current_timestamp - interval '1 hour' "
+                + "where state = 'INITIATING'");
+        restartedPublisher.reconcileOrphans();
+        assertThat(gateway.uploads).doesNotContainKey(firstId);
+        try (var download = restartedTransfers.open(scope, upload.entryId())) {
+            assertThat(download.content().readAllBytes()).isEqualTo(body);
+        }
+    }
+
+    @Test
+    void cancellationAtMultipartCreationConflictsAndKeepsThePinnedReservation() throws Exception {
+        byte[] body = new byte[9 * 1024 * 1024];
+        var upload = begin("cancel-race.bin", body);
+        transfers.receive(scope, upload.id(), new ByteArrayInputStream(body));
+        gateway.onCreate = () -> {
+            assertThat(transfers.get(scope, upload.id()).state()).isEqualTo(UploadState.FINALIZING);
+            assertThatThrownBy(() -> transfers.cancel(scope, upload.id()))
+                    .isInstanceOfSatisfying(
+                            UploadFailure.class,
+                            failure -> assertThat(failure.reason()).isEqualTo(UploadFailure.Reason.INVALID_STATE));
+            assertThat(database.fetchValue("select claim_kind from catalog_names where id = ?", upload.id()))
+                    .isEqualTo("reservation");
+            assertThatThrownBy(() -> begin("cancel-race.bin", body))
+                    .isInstanceOfSatisfying(
+                            UploadFailure.class,
+                            failure -> assertThat(failure.reason()).isEqualTo(UploadFailure.Reason.NAME_CONFLICT));
+        };
+        assertThat(transfers.complete(scope, upload.id()).state()).isEqualTo(UploadState.AVAILABLE);
+        assertThat(gateway.createdUploadIds).hasSize(1);
+        assertThat(database.fetchValue("select claim_kind from catalog_names where id = ?", upload.id()))
+                .isEqualTo("entry");
     }
 
     @Test
@@ -307,12 +372,17 @@ class PostgresR2TransfersTest {
         private final Map<String, String> uploadKeys = new HashMap<>();
         private boolean losePutResponse;
         private boolean loseCreateResponse;
+        private boolean delayCreateResponse;
         private boolean loseCompleteResponse;
         private boolean losePartResponse;
         private boolean corruptWrites;
         private boolean unavailable;
         private int maxRequestBytes;
         private int uploadPartCalls;
+        private final List<String> createdUploadIds = new ArrayList<>();
+        private String delayedKey;
+        private String delayedId;
+        private Runnable onCreate;
 
         @Override
         public void put(String key, byte[] body) throws IOException {
@@ -330,7 +400,19 @@ class PostgresR2TransfersTest {
 
         @Override
         public String createMultipart(String key) throws IOException {
+            if (onCreate != null) {
+                Runnable callback = onCreate;
+                onCreate = null;
+                callback.run();
+            }
             String id = UUID.randomUUID().toString();
+            createdUploadIds.add(id);
+            if (delayCreateResponse) {
+                delayCreateResponse = false;
+                delayedKey = key;
+                delayedId = id;
+                throw new IOException("injected delayed creation");
+            }
             uploads.put(id, new TreeMap<>());
             uploadKeys.put(id, key);
             if (loseCreateResponse) {
@@ -338,6 +420,11 @@ class PostgresR2TransfersTest {
                 throw new IOException("injected lost response");
             }
             return id;
+        }
+
+        private void finishDelayedCreate() {
+            uploads.put(delayedId, new TreeMap<>());
+            uploadKeys.put(delayedId, delayedKey);
         }
 
         @Override
