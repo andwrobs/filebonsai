@@ -83,7 +83,8 @@ recovery HEAD/GET-verifies that call's key. An absent object may still be an in-
 success, so a retry retires that key and uses a new one. Late objects at retired keys
 are never published and are cleaned up only after their outcome is safe to resolve.
 
-The first compatibility proof must exercise a real R2 bucket: multipart creation,
+The [operator runbook](../development/local-setup.md#first-disposable-r2-compatibility-proof)
+describes the first disposable real-bucket proof. It must exercise multipart creation,
 part listing and retry, completion, abort, size/digest rejection, zero-byte upload,
 download, restart, delayed create after an empty listing, duplicate upload IDs for
 one logical session, lost single-PUT success, and timeout-after-success reconciliation.
