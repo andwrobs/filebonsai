@@ -25,6 +25,10 @@ observed results; use Git history for prior plans and completed migrations.
   unique keys for uncertain retries, and periodic recovery. The local provider is
   still the default. R2 behavior has passed PostgreSQL tests with an injected gateway;
   it has not been exercised against a real R2 bucket.
+- An opt-in real-bucket proof runner now prepares deterministic synthetic bodies,
+  PostgreSQL-backed transfer scenarios, injected uncertain responses around real
+  provider calls, bounded resource observations, and prefix-scoped cleanup. Its local
+  fixture, fault-ordering, and gate checks pass; no live R2 result has been observed.
 - The jOOQ PostgreSQL adapter remains behind operation ports. Its 13 Testcontainers
   tests cover workspace scope, deterministic ordering, reservations, idempotency,
   rollback/concurrency, immutable identities/versions/objects, domain constraints,
@@ -33,6 +37,10 @@ observed results; use Git history for prior plans and completed migrations.
   membership scope. Local-owner access includes secret-file bootstrap/reset,
   PostgreSQL-backed sessions, rotation/logout/reset invalidation, CSRF, persisted
   login throttling, generic failures, and secure-by-default cookies.
+- The local Docker Compose stack runs PostgreSQL, the backend, the web client, and
+  Authentik. Authentik OIDC sign-in is pinned to its administrator UUID and issues
+  the existing PostgreSQL-backed Filebonsai session. A different Authentik user is
+  denied before a Filebonsai session is created.
 - Local-owner bootstrap atomically creates the principal, owner credential, initial
   workspace membership, workspace, and protected `Library` root. Repeated bootstrap
   fails without replacing the packet; restart preserves authenticated catalog access.
@@ -53,6 +61,14 @@ observed results; use Git history for prior plans and completed migrations.
 
 ## Latest observed checks
 
+- `cd infra/local && ./up.sh` followed by `python3 check.py`: passed on the initial
+  and repeat startup. Authentik readiness/discovery, administrator OIDC sign-in,
+  session-backed Catalog root access, and denial of a second Authentik user all
+  passed. The repeat startup preserved the `Library` root identity. The local stack
+  was left running.
+- `cd backend && ./mvnw test -q`: passed, including PostgreSQL Testcontainers
+  integration tests. `cd web && npm test -- --run`: passed, 14 tests. The web typecheck
+  and production build passed during this slice.
 - `cd backend && ./mvnw -Dtest=PostgresCatalogTest test`: passed, 13 tests, PostgreSQL
   17.11 through Docker Desktop 24.0.5.
 - `cd backend && ./mvnw -Dtest=CatalogHttpTest test`: passed, 7 tests.
@@ -72,11 +88,26 @@ observed results; use Git history for prior plans and completed migrations.
   contract/client checks were not rerun for this slice. A real R2 run and measured
   provider streaming behavior remain outstanding.
 - `cd backend && ./mvnw spotless:apply -Dtest=PostgresR2TransfersTest test -q`:
-  passed, 11 PostgreSQL R2 tests on PostgreSQL 17.11 through Docker Desktop 24.0.5.
-  They include terminal-only orphan cleanup, cancellation and name-reservation checks
-  during multipart creation, two provider upload IDs for one logical session, and
-  restart after an empty listing before delayed creation becomes visible. The late
-  orphan is aborted without losing the published object.
+  passed separately with 10 resource-measurement tests and 11 fault tests on
+  PostgreSQL 17.11 through Docker Desktop 24.0.5. The fault suite includes
+  terminal-only orphan cleanup, cancellation and name-reservation checks during
+  multipart creation, two provider upload IDs for one logical session, and restart
+  after an empty listing before delayed creation becomes visible. The late orphan
+  is aborted without losing the published object. The resource test's 9 MiB synthetic
+  body through a slow/faulting injected gateway
+  used 9 MiB of staged disk, then 0 after recovery. In this run, sampled JVM heap
+  rose from 94.3 MB to 124.2 MB (5 ms sampling); receive took 12 ms, faulted
+  completion 39 ms, reconciliation 454 ms, and verified original download 396 ms.
+  The test checks the 128 MiB configured size cap, one-promotion concurrency limit,
+  8 MiB maximum part, 64 KiB maximum GET read request, listed-part reuse after a
+  lost response, two verification GETs, two download-path GETs, and verification/
+  download timeouts. A query completed in 1 ms on the only PostgreSQL pool connection
+  while a provider part call was blocked. These are local fixture measurements, not
+  R2 latency, memory, disk, or compatibility evidence; the real-bucket proof remains.
+- In the combined PR #1–#5 tree, `cd backend && ./mvnw spotless:apply test -q`
+  passed on Java 25.0.3 with PostgreSQL 17.11 through Docker Desktop 24.0.5,
+  including all 12 `PostgresR2TransfersTest` cases. The opt-in real-bucket proof
+  remained skipped.
 - `cd backend && ./scripts/generate-clients.sh && ./scripts/check-clients.sh`: passed
   against the exported contract; OpenAPI validation, generated TypeScript compilation
   and 6 decoding tests (including `workspace-root`), plus generated Swift compilation
@@ -92,6 +123,10 @@ observed results; use Git history for prior plans and completed migrations.
   fixture evidence, not a new live-backend transfer check. Fresh read-only review found
   no remaining blockers after cancellation and CSRF recovery repairs.
 - Swift generator warnings are upstream warnings; generated code was not edited.
+- `cd backend && ./mvnw -q spotless:apply -Dtest=R2ProofPayloadsTest,RealR2CompatibilityProofTest test`:
+  passed two local tests for deterministic payloads and fault ordering; the real-bucket
+  proof was skipped by its required opt-in property. The proof script rejected missing
+  settings before Maven.
 
 ## Ordered work
 

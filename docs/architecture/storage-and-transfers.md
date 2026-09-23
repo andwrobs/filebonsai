@@ -83,7 +83,8 @@ recovery HEAD/GET-verifies that call's key. An absent object may still be an in-
 success, so a retry retires that key and uses a new one. Late objects at retired keys
 are never published and are cleaned up only after their outcome is safe to resolve.
 
-The first compatibility proof must exercise a real R2 bucket: multipart creation,
+The [operator runbook](../development/local-setup.md#first-disposable-r2-compatibility-proof)
+describes the first disposable real-bucket proof. It must exercise multipart creation,
 part listing and retry, completion, abort, size/digest rejection, zero-byte upload,
 download, restart, delayed create after an empty listing, duplicate upload IDs for
 one logical session, lost single-PUT success, and timeout-after-success reconciliation.
@@ -93,6 +94,48 @@ cover durable fences and part state, name reservation, workspace scope, cancella
 races, and restart publication. API documentation and emulator tests alone do not
 establish provider support. The initial cloud upload cap is 128 MiB until larger
 transfers have measured resource and recovery behavior.
+
+### Repeatable real-bucket proof
+
+`backend/scripts/run-r2-proof.sh --live-disposable-bucket` runs the opt-in
+`RealR2CompatibilityProofTest` against the production S3 adapter, a fresh PostgreSQL
+container, and synthetic payloads. Set `FILEBONSAI_R2_PROOF_ACCOUNT_ID`,
+`FILEBONSAI_R2_PROOF_JURISDICTION` (`default`, `eu`, `us`, or `fedramp`),
+`FILEBONSAI_R2_PROOF_BUCKET`, `FILEBONSAI_R2_PROOF_ACCESS_KEY_ID_FILE`, and
+`FILEBONSAI_R2_PROOF_SECRET_ACCESS_KEY_FILE`. The two credential values are read from
+files; the script never accepts them as command arguments. Use a disposable bucket and
+bucket-scoped Object Read & Write credentials. The runner creates a random workspace
+prefix, checks it is empty, and deletes only objects and multipart uploads under that
+prefix. A failed cleanup is a failed proof and needs operator inspection of the
+disposable bucket before it is discarded.
+
+The pinned synthetic bodies are 0 bytes (SHA-256
+`e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`),
+4,096 bytes (`d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca`),
+and 9,437,184 bytes (`5a9ed69fb98cb8ce976ff50dd58c64f3ad76ea56e5591551ad232a0c499d937d`).
+Each byte is its zero-based offset modulo 251. The run covers zero-byte and small PUT,
+multipart part listing after a lost response, completion after a lost response, a
+late multipart create after an empty listing, a second attempt for the same logical
+session, orphan abort, direct abort, size/digest rejection, full download digest,
+and service reconstruction over the same PostgreSQL and staging data. Faults are
+injected *after* successful real provider calls, except delayed create, which is
+executed after its initial empty listing. This tests recovery around uncertain
+responses and the one-reader download permit but does not simulate the provider's
+network timing or process death.
+
+Successful `R2_PROOF` lines give each scenario's size, pinned digest, elapsed time,
+sampled JVM heap peak, sampled staging bytes, largest request body, bytes
+streamed from R2, and observed maximum simultaneous gateway calls. They contain no
+credentials, provider keys, upload IDs, bucket names, or local paths. Preserve those
+lines plus the command exit code and runtime versions as evidence. The sampled heap
+and staging values are observations, not exact high-water marks or hard resource limits.
+The 10 ms staging sample can miss short-lived writes during rejected receives. Record
+process RSS, temporary-disk high-water mark, network transfer totals, and provider-side timing
+separately during the live run before claiming bounded operational behavior. The
+runner does not prove a process was killed and relaunched; its restart check rebuilds
+the services over durable PostgreSQL and staging state. A separate process-restart
+drill is still needed for that claim. Local fixture tests and injected gateways do
+not establish R2 compatibility.
 
 ## Future processing work
 

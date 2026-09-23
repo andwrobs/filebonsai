@@ -81,4 +81,10 @@ row. No query parameter, header, or body field can choose a workspace. Until the
 workspace bootstrap packet is complete, the local owner has no catalog scope; once it
 exists, exactly one membership is required for this first local-owner slice.
 
+The optional loopback Compose stack also offers Authentik OIDC sign-in. Its provider
+uses the authorization-code flow. The backend validates the provider's ID token and
+accepts only the pinned administrator subject, then issues the same Filebonsai
+session and CSRF cookies used by local-owner login. A different Authentik account
+cannot acquire the local owner's workspace scope.
+
 These are observable product/API rules, not a requirement that every client share Java's internal types.
