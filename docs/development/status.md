@@ -88,8 +88,17 @@ observed results; use Git history for prior plans and completed migrations.
   contract/client checks were not rerun for this slice. A real R2 run and measured
   provider streaming behavior remain outstanding.
 - `cd backend && ./mvnw spotless:apply -Dtest=PostgresR2TransfersTest test -q`:
-  passed, 9 PostgreSQL R2 tests after cleanup was restricted to terminal sessions.
-  The added test proves uncertain finalization bytes are retained for reconciliation.
+  passed, 10 PostgreSQL R2 tests on Java 25.0.3 and PostgreSQL 17.11 in Docker
+  Desktop 24.0.5. A 9 MiB synthetic body through a slow/faulting injected gateway
+  used 9 MiB of staged disk, then 0 after recovery. In this run, sampled JVM heap
+  rose from 94.3 MB to 124.2 MB (5 ms sampling); receive took 12 ms, faulted
+  completion 39 ms, reconciliation 454 ms, and verified original download 396 ms.
+  The test checks the 128 MiB configured size cap, one-promotion concurrency limit,
+  8 MiB maximum part, 64 KiB maximum GET read request, listed-part reuse after a
+  lost response, two verification GETs, two download-path GETs, and verification/
+  download timeouts. A query completed in 1 ms on the only PostgreSQL pool connection
+  while a provider part call was blocked. These are local fixture measurements, not
+  R2 latency, memory, disk, or compatibility evidence; the real-bucket proof remains.
 - `cd backend && ./scripts/generate-clients.sh && ./scripts/check-clients.sh`: passed
   against the exported contract; OpenAPI validation, generated TypeScript compilation
   and 6 decoding tests (including `workspace-root`), plus generated Swift compilation
