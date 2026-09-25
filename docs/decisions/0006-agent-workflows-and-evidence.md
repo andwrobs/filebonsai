@@ -43,9 +43,10 @@ implementation or review cycle.
 ## Consequences
 
 - Root `AGENTS.md` is the execution contract; `docs/development/status.md` is the only
-  live queue/status source.
+  live queue/status source. Candidate work that has not started lives in `docs/backlog/`
+  ([0008](0008-checked-in-backlog.md)).
 - Task packets are created at execution time, not stored in a speculative repository
-  DAG.
+  DAG. Backlog items state outcomes and dependencies, not packets.
 - Specialized `.codex/agents/` profiles remain only where their boundaries are useful.
 - Reviewer profiles separate task-blocking correctness findings from non-blocking
   follow-up improvements and evaluate supplied evidence without duplicating test runs.
