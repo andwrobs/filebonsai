@@ -31,7 +31,9 @@ export class FilebonsaiService {
   }
 
   async login(password: LoginBody["password"]) {
-    const csrfToken = await this.#requireCsrf();
+    const csrf = await this.refreshCsrf();
+    if (!csrf.data) throw new Error("Could not obtain a CSRF token");
+    const csrfToken = csrf.data.token;
     const result = await this.#client.POST("/api/v1/auth/login", {
       params: { header: { "X-CSRF-TOKEN": csrfToken } },
       body: { password },

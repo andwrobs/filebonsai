@@ -143,6 +143,7 @@ services:
       context: ../../web
     environment:
       FILEBONSAI_API_PROXY_TARGET: http://backend:8080
+      VITE_FILEBONSAI_OIDC: authentik
     depends_on:
       backend:
         condition: service_healthy

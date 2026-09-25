@@ -1,0 +1,7 @@
+# Copy to application-r2-local.properties for the disposable R2 compatibility run.
+filebonsai.storage.provider=r2
+filebonsai.r2.account-id=REPLACE_WITH_32_CHARACTER_CLOUDFLARE_ACCOUNT_ID
+filebonsai.r2.bucket=filebonsai-r2-proof
+filebonsai.r2.jurisdiction=default
+filebonsai.r2.access-key-id-file=${user.home}/.config/filebonsai/r2/access-key-id
+filebonsai.r2.secret-access-key-file=${user.home}/.config/filebonsai/r2/secret-access-key

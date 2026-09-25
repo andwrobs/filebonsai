@@ -1,0 +1,2 @@
+# Copy to application-bootstrap-local.properties for the first owner creation only.
+filebonsai.access.bootstrap.password-file=${user.home}/.config/filebonsai/local-owner-password

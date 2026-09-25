@@ -1,0 +1,7 @@
+# Copy to application-dev.properties for local PostgreSQL development.
+spring.datasource.url=jdbc:postgresql://127.0.0.1:5432/filebonsai
+spring.datasource.username=filebonsai
+spring.datasource.password=REPLACE_WITH_LOCAL_DATABASE_PASSWORD
+filebonsai.catalog.cursor-secret-base64=REPLACE_WITH_BASE64_OF_32_RANDOM_BYTES
+filebonsai.access.cookie.secure=false
+filebonsai.storage.provider=local

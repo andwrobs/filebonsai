@@ -118,6 +118,27 @@ test("refreshes CSRF after login and sends typed mutation headers and bodies", a
   });
 });
 
+test("refreshes CSRF before each explicit sign-in attempt", async () => {
+  const tokens: string[] = [];
+  let csrfCount = 0;
+  const service = filebonsaiService({
+    baseUrl,
+    fetch: async (request) => {
+      if (request.url.endsWith("/csrf")) {
+        csrfCount += 1;
+        return Response.json({ headerName: "X-CSRF-TOKEN", token: `csrf-${csrfCount}` });
+      }
+      tokens.push(request.headers.get("X-CSRF-TOKEN") ?? "");
+      return Response.json({ code: "INVALID_CREDENTIALS", message: "Request could not be processed", status: 401 }, { status: 401 });
+    },
+  });
+
+  await service.login("incorrect password");
+  await service.login("incorrect password");
+
+  assert.deepEqual(tokens, ["csrf-1", "csrf-2"]);
+});
+
 test("reuses a CSRF token until a successful session transition", async () => {
   const requests: Request[] = [];
   const service = filebonsaiService({
