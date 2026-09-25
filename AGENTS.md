@@ -96,5 +96,9 @@ add archive, handoff, legacy, or canonical-tracing copies to `docs/`.
 - `infra/`: runtime/deployment resources. Root `scripts/`: small developer/CI wrappers.
 - `.agents/skills/`: Filebonsai-specific task procedures. `.codex/agents/`: only
   specialized worker/reviewer profiles with a current ownership boundary.
+- `CLAUDE.md`, `backend/CLAUDE.md`, and `.claude/` are derived Claude Code adapters:
+  the `CLAUDE.md` files import `AGENTS.md`, `.claude/skills` links to
+  `.agents/skills`, and `scripts/sync-claude-agents` generates `.claude/agents/` from
+  `.codex/agents/`. Edit the sources, rerun the script, and never edit the adapters.
 - Do not create `packages/`, `tooling/`, `services/`, or `apps/` until a concrete
   artifact justifies that boundary.
