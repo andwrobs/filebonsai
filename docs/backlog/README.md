@@ -14,7 +14,7 @@ still written when the work starts, as decision 0006 requires.
 1. Choose an item whose **Depends on** keys no longer appear in this backlog (removed means
    done) and that has no **Blocked on** line. Prefer `P1`, then `P2`. `P3` covers later work
    and the fun extras. If an **In flight** line names an unmerged branch, start from that
-   branch or confirm its status first.
+   branch or confirm its status first. Read the merged work a **Context** line names.
 2. Read `AGENTS.md`, `docs/README.md` and `docs/development/status.md`, then the item's
    **Read** list. Use the `filebonsai-task` skill. For items marked *Public API change*, also
    use `filebonsai-api-contract`.
@@ -56,6 +56,7 @@ still written when the work starts, as decision 0006 requires.
 | Build, Decision, Proof, Spike | See step 5 above. |
 | Blocked on | Needs something only the user can provide, such as paid infrastructure or lifting a deferral. |
 | In flight | Related work exists on an unmerged branch. |
+| Context | Related work has merged. Read it before starting. When an in-flight branch merges, its line becomes a Context line. |
 
 | Check | Command or evidence |
 | --- | --- |
@@ -81,8 +82,8 @@ M1 promises that a clean checkout becomes a working, recoverable library. Close 
 | [M1-04](finish-m1.md#m1-04-expose-upload-limits-for-client-preflight) Expose upload limits for client preflight | Build | P1 | S | none |
 | [M1-05](finish-m1.md#m1-05-prove-interruption-and-restart-recovery-in-the-browser) Prove interruption and restart recovery in the browser | Proof | P1 | M | none |
 | [M1-06](finish-m1.md#m1-06-prove-second-principal-isolation-over-http) Prove second-principal isolation over HTTP | Proof | P1 | M | none |
-| [M1-07](finish-m1.md#m1-07-container-image-and-compose-from-a-clean-checkout) Container image and Compose from a clean checkout (in flight) | Build | P1 | L | [M1-08](finish-m1.md#m1-08-serve-the-web-app-from-the-backend-at-one-origin) |
-| [M1-08](finish-m1.md#m1-08-serve-the-web-app-from-the-backend-at-one-origin) Serve the web app from the backend at one origin (in flight) | Build | P1 | M | none |
+| [M1-07](finish-m1.md#m1-07-container-image-and-compose-from-a-clean-checkout) Container image and Compose from a clean checkout | Build | P1 | L | [M1-08](finish-m1.md#m1-08-serve-the-web-app-from-the-backend-at-one-origin) |
+| [M1-08](finish-m1.md#m1-08-serve-the-web-app-from-the-backend-at-one-origin) Serve the web app from the backend at one origin | Build | P1 | M | none |
 | [M1-09](finish-m1.md#m1-09-read-only-storage-page) Read-only Storage page | Build | P1 | M | [M1-04](finish-m1.md#m1-04-expose-upload-limits-for-client-preflight) |
 | [M1-10](finish-m1.md#m1-10-honest-determinate-upload-progress) Honest determinate upload progress | Build | P2 | S | none |
 | [M1-11](finish-m1.md#m1-11-drag-and-drop-upload) Drag-and-drop upload | Build | P2 | S | none |
@@ -103,7 +104,7 @@ Harnesses that make every later slice cheaper to prove.
 | [ENG-07](foundations.md#eng-07-property-based-tests-for-names-and-upload-states) Property-based tests for names and upload states | Build | P2 | M | none |
 | [ENG-08](foundations.md#eng-08-crash-injection-harness-for-transfers) Crash-injection harness for transfers | Build | P2 | L | none |
 | [ENG-09](foundations.md#eng-09-observability-baseline) Observability baseline | Build | P2 | M | none |
-| [ENG-10](foundations.md#eng-10-measured-resource-baselines-for-transfers) Measured resource baselines for transfers (in flight) | Proof | P2 | M | none |
+| [ENG-10](foundations.md#eng-10-measured-resource-baselines-for-transfers) Measured resource baselines for transfers | Proof | P2 | M | none |
 | [ENG-11](foundations.md#eng-11-migration-upgrade-test-harness) Migration upgrade test harness | Build | P2 | M | none |
 
 ### [Everyday library](everyday-library.md)
@@ -183,7 +184,7 @@ Files stay where they are in the library while their bytes move between hot, coo
 
 | Item | Kind | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- |
-| [TIER-00](storage-tiers.md#tier-00-real-r2-compatibility-proof-m2) Real R2 compatibility proof (M2) (blocked on you, in flight) | Proof | P1 | L | none |
+| [TIER-00](storage-tiers.md#tier-00-real-r2-compatibility-proof-m2) Real R2 compatibility proof (M2) (blocked on you) | Proof | P1 | L | none |
 | [TIER-01](storage-tiers.md#tier-01-decision-connections-tiers-and-placement) Decision: connections, tiers and placement | Decision | P1 | M | [TIER-00](storage-tiers.md#tier-00-real-r2-compatibility-proof-m2) |
 | [TIER-02](storage-tiers.md#tier-02-spike-r2-infrequent-access-behaviour) Spike: R2 Infrequent Access behaviour (blocked on you) | Spike | P2 | S | none |
 | [TIER-03](storage-tiers.md#tier-03-storage-connection-registry) Storage connection registry | Build | P2 | M | [TIER-01](storage-tiers.md#tier-01-decision-connections-tiers-and-placement) |
@@ -244,11 +245,11 @@ Keep the owner's account secure, and let them share read-only links they can rev
 | Item | Kind | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- |
 | [ACC-01](access-and-sharing.md#acc-01-session-management) Session management | Build | P2 | M | none |
-| [ACC-02](access-and-sharing.md#acc-02-passkeys-for-owner-sign-in) Passkeys for owner sign-in (in flight) | Build | P3 | L | none |
+| [ACC-02](access-and-sharing.md#acc-02-passkeys-for-owner-sign-in) Passkeys for owner sign-in | Build | P3 | L | none |
 | [ACC-03](access-and-sharing.md#acc-03-decision-read-only-sharing) Decision: read-only sharing | Decision | P2 | M | none |
 | [ACC-04](access-and-sharing.md#acc-04-file-share-links) File share links | Build | P3 | L | [ACC-03](access-and-sharing.md#acc-03-decision-read-only-sharing), [ORG-11](organize.md#org-11-activity-and-audit-log), [M1-08](finish-m1.md#m1-08-serve-the-web-app-from-the-backend-at-one-origin) |
 | [ACC-05](access-and-sharing.md#acc-05-folder-share-links) Folder share links | Build | P3 | M | [ACC-04](access-and-sharing.md#acc-04-file-share-links), [ORG-09](organize.md#org-09-download-a-folder-as-zip) |
-| [ACC-06](access-and-sharing.md#acc-06-decision-second-user-and-roles) Decision: second user and roles (in flight) | Decision | P3 | M | [M1-06](finish-m1.md#m1-06-prove-second-principal-isolation-over-http) |
+| [ACC-06](access-and-sharing.md#acc-06-decision-second-user-and-roles) Decision: second user and roles | Decision | P3 | M | [M1-06](finish-m1.md#m1-06-prove-second-principal-isolation-over-http) |
 
 ### [Bring files in](bring-files-in.md)
 
@@ -268,7 +269,7 @@ On hold by your choice. When it resumes: native browsing, background transfers, 
 
 | Item | Kind | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- |
-| [IOS-01](ios.md#ios-01-decision-native-auth-and-background-transfers) Decision: native auth and background transfers (in flight) | Decision | P2 | M | none |
+| [IOS-01](ios.md#ios-01-decision-native-auth-and-background-transfers) Decision: native auth and background transfers | Decision | P2 | M | none |
 | [IOS-02](ios.md#ios-02-ios-catalog-slice) iOS Catalog slice (blocked on you) | Build | P3 | L | [IOS-01](ios.md#ios-01-decision-native-auth-and-background-transfers) |
 | [IOS-03](ios.md#ios-03-background-uploads) Background uploads (blocked on you) | Build | P3 | L | [IOS-02](ios.md#ios-02-ios-catalog-slice) |
 | [IOS-04](ios.md#ios-04-share-extension) Share extension (blocked on you) | Build | P3 | M | [IOS-03](ios.md#ios-03-background-uploads) |

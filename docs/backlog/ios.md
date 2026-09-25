@@ -12,7 +12,7 @@ See [the backlog index](README.md) for how to pick up and retire items.
 
 Depends on: none
 
-In flight: Unmerged branch `codex/run-authentik-and-the-local` adds OIDC sign-in through Authentik. Native auth must fit whichever access model is accepted.
+Context: PR #1 (merged 2026-09-23) added optional Authentik OIDC sign-in. Native auth must fit whichever access model is accepted.
 
 **Why.** status.md lists this as unresolved. It can be decided without starting the app.
 

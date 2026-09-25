@@ -12,9 +12,9 @@ See [the backlog index](README.md) for how to pick up and retire items.
 
 Depends on: none
 
-Blocked on: Needs a disposable Cloudflare R2 bucket and credentials that you set up. That is paid infrastructure, and the agent never handles secret values.
+Blocked on: Your go-ahead for each live run, because it uses paid infrastructure and the agent never handles secret values. On 2026-09-25 you reported the disposable bucket, bucket-scoped key files and `backend/config/application-r2-local.properties` set up, with a web upload through R2 succeeding.
 
-In flight: Unmerged branches `codex/prepare-repeatable-r2-compatibility`, `codex/write-disposable-r2-bucket-test` and `codex/close-r2-postgresql-faulttest-gaps` (2026-09-22) prepare the real-bucket proof and close fault-test gaps. Start from them.
+Context: PRs #2, #4 and #5 (merged 2026-09-23) added `backend/scripts/run-r2-proof.sh` with `RealR2CompatibilityProofTest`, closed PostgreSQL fault-test gaps, and documented the manual procedure in local-setup.md. The runner does not kill a real process or measure 128 MiB and concurrent transfers; do those by hand.
 
 **Why.** status.md lists this as the next ordered work. Tiering starts from a provider proven for real.
 

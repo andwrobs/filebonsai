@@ -12,7 +12,7 @@ See [the backlog index](README.md) for how to pick up and retire items.
 
 Depends on: none
 
-**Why.** The web client turns most server errors into 'Request failed (413)' and doesn't return to sign-in when a session expires.
+**Why.** The web client turns most server errors into 'Request failed (413)'. Since PR #8 a signed-out page load goes to `/sign-in`, but it doesn't return to the original folder afterwards, and an expired session during an action isn't handled.
 
 **Outcome.** Every M1 scenario 7 outcome gets a specific message and a recovery action. An expired session returns to the same folder after sign-in.
 
@@ -139,7 +139,7 @@ Depends on: none
 
 Depends on: [M1-08](#m1-08-serve-the-web-app-from-the-backend-at-one-origin)
 
-In flight: Unmerged branch `codex/run-authentik-and-the-local` (2026-09-22) adds backend and web Dockerfiles and `infra/local/compose.yml` with Authentik OIDC sign-in. Reconcile with it first. It may conflict with single-origin serving (M1-08) and the local-owner access model.
+Context: PR #1 (merged 2026-09-23) added backend and web Dockerfiles and `infra/local/compose.yml`, a development stack with Authentik OIDC in which the web app runs the Vite dev server in its own container. Decide whether to extend that stack or add a separate production Compose file. It may conflict with single-origin serving (M1-08).
 
 **Why.** system.md describes a container plus PostgreSQL through Compose. Today you need a host JDK, a local PostgreSQL and hand-copied config, so M1 scenario 1 is unproven.
 
@@ -166,7 +166,7 @@ In flight: Unmerged branch `codex/run-authentik-and-the-local` (2026-09-22) adds
 
 Depends on: none
 
-In flight: Unmerged branch `codex/run-authentik-and-the-local` adds a separate web Dockerfile. Decide whether the backend serves the web app or the web app runs in its own container.
+Context: PR #1 (merged 2026-09-23) runs the web app from its own Dockerfile on the Vite dev server in the local Compose stack. Decide whether that stack switches to backend-served assets once this lands.
 
 **Why.** system.md says the server serves the API and the built web assets at one origin. Today the web app runs on the Vite dev server behind a proxy.
 

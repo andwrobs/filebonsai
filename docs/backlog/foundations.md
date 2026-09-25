@@ -183,7 +183,7 @@ Depends on: none
 
 Depends on: none
 
-In flight: Unmerged branch `codex/measure-transfer-resource-limits-locally` (2026-09-22) measures transfer limits with a slow synthetic R2 gateway. Start from it, or confirm its status before duplicating the work.
+Context: PR #3 (merged 2026-09-23) measured one 9 MiB body through a slow synthetic R2 gateway; the numbers are in status.md. Four concurrent 128 MiB uploads, threads, file descriptors and the local path are still unmeasured.
 
 **Why.** INV-15 needs recorded numbers before any limit is raised.
 

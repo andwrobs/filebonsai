@@ -30,7 +30,7 @@ Depends on: none
 
 Depends on: none
 
-In flight: Unmerged branch `codex/run-authentik-and-the-local` adds OIDC sign-in through Authentik. Settle whether external identity is part of the access model before starting.
+Context: PR #1 (merged 2026-09-23) added optional Authentik OIDC sign-in pinned to one administrator subject, and PR #8 offers it on `/sign-in` when `VITE_FILEBONSAI_OIDC=authentik`. Settle whether external identity is part of the access model before starting.
 
 **Why.** A modern, phishing-resistant sign-in, and fun to build.
 
@@ -103,7 +103,7 @@ Depends on: [ACC-04](#acc-04-file-share-links), [ORG-09](organize.md#org-09-down
 
 Depends on: [M1-06](finish-m1.md#m1-06-prove-second-principal-isolation-over-http)
 
-In flight: Unmerged branch `codex/run-authentik-and-the-local` adds OIDC sign-in through Authentik, which changes how a second user could arrive. Account for it.
+Context: PR #1 (merged 2026-09-23) added optional Authentik OIDC sign-in, which changes how a second user could arrive. Account for it.
 
 **Why.** Isolation is already tested with a second principal. Invitations are the next step.
 
