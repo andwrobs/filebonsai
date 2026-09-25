@@ -49,7 +49,9 @@ observed results; use Git history for prior plans and completed migrations.
 - `web/` owns a React Router Catalog application over a generated
   `openapi-typescript` schema and handwritten `openapi-fetch` service. It discovers
   the session workspace root, browses direct children, navigates folders, handles
-  loading/empty/error/not-found states, and exposes TanStack Form folder creation
+  password sign-in for anonymous visitors (plus **Continue with Authentik** when
+  `VITE_FILEBONSAI_OIDC=authentik`), loading/empty/error/not-found states, and exposes
+  TanStack Form folder creation
   with caller-owned idempotency keys. The boundary includes cookie credentials, CSRF
   refresh/rotation handling, and pagination.
 - Web Catalog now provides multi-file upload and original download controls. A tab-owned
@@ -120,8 +122,23 @@ observed results; use Git history for prior plans and completed migrations.
   synthetic intercepted HTTP responses and reduced motion. Browser checks exercised
   failed upload/retry, reconciliation, folder navigation, availability refresh, and
   browser download; long names wrapped without horizontal overflow. This is client
-  fixture evidence, not a new live-backend transfer check. Fresh read-only review found
+  fixture evidence. Fresh read-only review found
   no remaining blockers after cancellation and CSRF recovery repairs.
+- Isolated local browser check against the actual PostgreSQL-profile backend and
+  filesystem storage passed: anonymous redirect to sign-in, owner login, folder
+  creation, 65,541-byte binary upload reaching `AVAILABLE`, and byte-identical
+  browser download. Desktop and mobile screens were rendered at 1440×900 and
+  390×844; neither had mobile horizontal overflow or browser page errors. The
+  disposable test database, storage, and password were local only. After the
+  sign-in change, `cd web && npm test && npm run typecheck:run && npm run build`
+  passed with 15 tests, strict TypeScript, and a production SPA build.
+- After merging the password sign-in page with Authentik OIDC sign-in,
+  `cd backend && ./mvnw -q spotless:check test -Dtest=AccessHttpPostgresTest` passed
+  10 PostgreSQL tests, and `cd web && npm test && npm run typecheck:run && npm run build`
+  passed with 15 tests. Against the PostgreSQL-profile backend, anonymous `/` and
+  `/library/{id}` redirected to `/sign-in`, which rendered at 1440×900 and 390×844
+  without horizontal overflow and showed **Continue with Authentik** only with
+  `VITE_FILEBONSAI_OIDC=authentik`. The Authentik round trip was not rerun.
 - Swift generator warnings are upstream warnings; generated code was not edited.
 - `cd backend && ./mvnw -q spotless:apply -Dtest=R2ProofPayloadsTest,RealR2CompatibilityProofTest test`:
   passed two local tests for deterministic payloads and fault ordering; the real-bucket

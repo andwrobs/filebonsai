@@ -33,6 +33,38 @@ set `filebonsai.access.reset.password-file` plus a new UUID in
 settings. Password files must contain 12–1024 characters after surrounding whitespace
 is stripped.
 
+## Run the local application
+
+From the repository root, copy `backend/config/application-dev.properties.example` to
+`backend/config/application-dev.properties` and set the local PostgreSQL connection and
+a fresh cursor signing secret (`openssl rand -base64 32`):
+
+```sh
+cp backend/config/application-dev.properties.example backend/config/application-dev.properties
+chmod 600 backend/config/application-dev.properties
+```
+
+The filled-in file is Git-ignored and contains the database password and cursor
+signing secret. Spring loads it through the `dev` profile when started by the
+launcher; ordinary tests use their own settings.
+
+To create the first owner, copy
+`backend/config/application-bootstrap-local.properties.example` to the same name
+without `.example`, set its password-file path, and place a 12–1024 character password
+in that file outside the repository. Restrict both files to the local user:
+
+```sh
+cp backend/config/application-bootstrap-local.properties.example backend/config/application-bootstrap-local.properties
+chmod 600 backend/config/application-bootstrap-local.properties
+```
+
+Run `backend/scripts/run-local.sh --bootstrap` once. Normal starts use
+`backend/scripts/run-local.sh`. The launcher changes to
+`backend/`, enables the `postgres,dev` profiles, and reports missing local config
+files before starting Maven. The backend listens on `127.0.0.1:8080`; the web dev
+server proxies `/api` there. The `dev` example disables the secure cookie flag for
+local HTTP only.
+
 The PostgreSQL profile stores local objects below `FILEBONSAI_STORAGE_ROOT` (default
 `./data`). Upload defaults are 128 MiB, 15 minutes per streaming attempt, four
 concurrent writers, and 24-hour intent expiry. Override them with
@@ -41,12 +73,31 @@ concurrent writers, and 24-hour intent expiry. Override them with
 
 ## Optional Cloudflare R2 adapter
 
-Set `FILEBONSAI_STORAGE_PROVIDER=r2` to use the first cloud adapter. The server still
-stages each verified upload under `FILEBONSAI_STORAGE_ROOT` until publication or
-recovery resolves it. R2 uploads are capped at 128 MiB in this initial slice,
-regardless of a higher general upload setting. The local provider remains the default.
+For a disposable R2 run, copy
+`backend/config/application-r2-local.properties.example` to
+`backend/config/application-r2-local.properties`:
 
-Configure `FILEBONSAI_R2_ACCOUNT_ID`, `FILEBONSAI_R2_BUCKET`, and optionally
+```sh
+cp backend/config/application-r2-local.properties.example backend/config/application-r2-local.properties
+chmod 600 backend/config/application-r2-local.properties
+```
+
+Set its account, bucket, and jurisdiction, then run
+`backend/scripts/run-local.sh --r2`. This adds the `r2-local` profile to the normal
+local profiles. The filled-in file is Git-ignored. Keep the
+Access Key ID and Secret Access Key in the separate local files named by the example;
+do not paste them into an application config file. Use `--r2 --bootstrap` together
+only if the test database has no local owner yet. The launcher selects local object
+storage unless `--r2` is present and uses the R2 settings from the local config file
+even if a prior shell exported different R2 values. The automated R2 tests use a fake
+gateway.
+
+The server still stages each verified upload under `FILEBONSAI_STORAGE_ROOT` until
+publication or recovery resolves it. R2 uploads are capped at 128 MiB in this initial
+slice, regardless of a higher general upload setting.
+
+For an environment-based deployment, set `FILEBONSAI_STORAGE_PROVIDER=r2`,
+`FILEBONSAI_R2_ACCOUNT_ID`, `FILEBONSAI_R2_BUCKET`, and optionally
 `FILEBONSAI_R2_JURISDICTION` (`default`, `eu`, `us`, or `fedramp`). Supply a bucket-scoped
 Object Read & Write key pair through mounted files named by
 `FILEBONSAI_R2_ACCESS_KEY_ID_FILE` and `FILEBONSAI_R2_SECRET_ACCESS_KEY_FILE`.

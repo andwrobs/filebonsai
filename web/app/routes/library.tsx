@@ -3,6 +3,7 @@ import { useForm } from "@tanstack/react-form";
 import {
   isRouteErrorResponse,
   Link,
+  redirect,
   useLoaderData,
   useRevalidator,
 } from "react-router";
@@ -30,12 +31,14 @@ export async function clientLoader({ params }: { params: { entryId?: string } })
   const service = filebonsaiService();
   const [entryResult, childrenResult] = await Promise.all([service.getEntry(entryId), service.listChildren(entryId)]);
   if (!entryResult.data) {
+    if (entryResult.response.status === 401) throw redirect("/sign-in");
     throw failureResponse(entryResult.response, errorMessage(entryResult.error, "Could not open this folder."));
   }
   if (entryResult.data.kind !== "folder") {
     throw new Response("This entry is a file, not a folder.", { status: 404 });
   }
   if (!childrenResult.data) {
+    if (childrenResult.response.status === 401) throw redirect("/sign-in");
     throw failureResponse(childrenResult.response, errorMessage(childrenResult.error, "Could not list this folder."));
   }
   return {
@@ -209,7 +212,7 @@ export function ErrorBoundary({ error }: { error: unknown }) {
     <main className="route-error">
       <p className="eyebrow">{status === 401 ? "Sign in" : status === 404 ? "Not found" : "Unavailable"}</p>
       <h1>{status === 401 ? "Open your Library" : message}</h1>
-      {status === 401 ? <a className="primary-button" href="/oauth2/authorization/authentik">Continue with Authentik</a> : <Link className="primary-button" to="/">Return to Library</Link>}
+      {status === 401 ? <Link className="primary-button" to="/sign-in">Sign in</Link> : <Link className="primary-button" to="/">Return to Library</Link>}
     </main>
   );
 }

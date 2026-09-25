@@ -61,6 +61,7 @@ class AccessHttpPostgresTest {
         registry.add("filebonsai.access.cookie.secure", () -> false);
         registry.add("filebonsai.access.login.max-attempts", () -> 3);
         registry.add("filebonsai.storage.local.root", TRANSFER_ROOT::toString);
+        registry.add("filebonsai.storage.provider", () -> "local");
     }
 
     @Autowired

@@ -32,6 +32,12 @@ Requires JDK 21 or newer and internet access when Maven, npm, SwiftPM, or the pi
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=fixture
 ```
 
+For authenticated local development, configure PostgreSQL once and run
+`./scripts/run-local.sh`. Add `--r2` to use the disposable R2 test bucket, or
+`--bootstrap` for the first owner creation. See
+[`local-setup.md`](../docs/development/local-setup.md) for the ignored config files and
+credential paths.
+
 Demo root: `00000000-0000-4000-8000-000000000001`.
 Server binds to `127.0.0.1:8080`. GET `/v3/api-docs` exposes springdoc output.
 The explicit fixture profile supplies a fixed identity and volatile data; it is not production authentication or persistence. Java formatting can be applied with `./mvnw spotless:apply`.
@@ -43,4 +49,4 @@ The explicit fixture profile supplies a fixed identity and volatile data; it is 
 See [`docs/development/status.md`](../docs/development/status.md) for current verified
 checks and remaining provider proof.
 
-The committed contract is exported from the authenticated PostgreSQL profile; the fixture profile supplies deterministic response fixtures. Catalog and transfer scope is derived from the authenticated session's server-side membership and is never caller-selected. Web UI and iOS application integration remain future slices. The Swift 5 generator currently emits upstream Swift 6 concurrency/retroactive-conformance warnings and is deprecated in favor of the Swift 6 generator; migration is a separate compatibility decision. See `VERIFICATION.md` for exact evidence and limitations.
+The committed contract is exported from the authenticated PostgreSQL profile; the fixture profile supplies deterministic response fixtures. Catalog and transfer scope is derived from the authenticated session's server-side membership and is never caller-selected. The web Catalog client is active; iOS application integration remains a future slice. The Swift 5 generator currently emits upstream Swift 6 concurrency/retroactive-conformance warnings and is deprecated in favor of the Swift 6 generator; migration is a separate compatibility decision. See `VERIFICATION.md` for exact evidence and limitations.

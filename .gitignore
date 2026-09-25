@@ -4,6 +4,7 @@
 !.env.example
 infra/local/secrets/
 backend/.tools/
+backend/config/*.properties
 backend/target/
 backend/clients/
 backend/client-tests/swift-contract/.build/

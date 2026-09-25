@@ -3,7 +3,9 @@
 The React Router single-page Catalog uses the consumer-owned TypeScript API boundary:
 `openapi-typescript` derives types from the committed backend contract and
 `openapi-fetch` provides the handwritten service. The interface discovers the
-workspace root, browses folders, and creates folders with TanStack Form.
+workspace root, browses folders, and creates folders with TanStack Form. Anonymous
+visitors are sent to `/sign-in`; the owner password is submitted through the
+CSRF-protected session API and is not persisted by the client.
 
 ```bash
 npm install
@@ -20,6 +22,10 @@ state-changing calls. Callers must provide stable idempotency keys for folder cr
 so retries retain the same intent.
 
 During local development, Vite proxies `/api` requests to the backend on port 8080.
+Set `FILEBONSAI_API_PROXY_TARGET` to a different origin when the backend uses
+another port, for example `http://127.0.0.1:8081`. Set `VITE_FILEBONSAI_OIDC=authentik`
+when the backend has Authentik OIDC configured to add **Continue with Authentik** to
+the sign-in page; the local Compose stack sets it.
 
 Upload controls use a tab-owned transfer store so folder navigation does not stop work.
 Body progress is indeterminate until the server verifies it. Explicit retry first reads
