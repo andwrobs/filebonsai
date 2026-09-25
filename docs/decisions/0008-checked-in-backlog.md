@@ -23,6 +23,8 @@ plan.
 - A task that finishes an item deletes it from the backlog in the same change that
   records observed results in `status.md`. Git keeps the history. A dependency key that
   no longer appears in the backlog is complete.
+- An item removed for any other reason (dropped, split or merged) is removed in the same
+  change that updates every item depending on it, so an absent key still means complete.
 - Readiness is judged when an item is picked up, from its dependencies and any
   user-held blocker. The backlog is not generated, not a workflow engine, and not a
   store of task packets; those are still written at execution time (decision 0006).

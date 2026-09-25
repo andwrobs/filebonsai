@@ -41,8 +41,11 @@ still written when the work starts, as decision 0006 requires.
   same fields: outcome, acceptance, dependencies, open questions, invariants and checks.
 - Edit an item's text only as part of the task that works on it, or of a deliberate backlog
   change. Avoid bulk rewrites on parallel branches.
-- An item that stops being wanted is deleted and the reason goes in the commit message. No
-  "dropped" section.
+- An item removed for any reason other than completion (dropped, split or merged) is removed
+  in the same change that updates every item depending on it. Search the backlog for its key
+  first, then drop that dependency or point it at the item that now covers the need. A
+  dependent left pointing at a removed key would look ready, because removed means done.
+  The reason goes in the commit message. No "dropped" section.
 
 ## Vocabulary
 
@@ -58,7 +61,7 @@ still written when the work starts, as decision 0006 requires.
 | --- | --- |
 | `web` | `cd web && npm test && npm run typecheck:run && npm run build` |
 | `rendered` | Rendered inspection at 1440×900 and 390×844 against the real PostgreSQL-profile backend |
-| `contract` | Export the contract, then `cd backend && ./scripts/generate-clients.sh && ./scripts/check-clients.sh`; read-only contract-reviewer pass |
+| `contract` | `cd backend && ./mvnw test`, then `./scripts/verify.sh` once and inspect the OpenAPI diff, as `filebonsai-api-contract` prescribes; read-only contract-reviewer pass |
 | `postgres` | Targeted PostgreSQL Testcontainers tests, then `cd backend && ./mvnw spotless:apply test -q` once; read-only persistence-reviewer pass |
 | `backend` | Targeted backend tests, then `cd backend && ./mvnw spotless:apply test -q` once |
 | `decision-review` | No code changes; the user reviews the proposed record |
@@ -80,10 +83,10 @@ M1 promises that a clean checkout becomes a working, recoverable library. Close 
 | [M1-06](finish-m1.md#m1-06-prove-second-principal-isolation-over-http) Prove second-principal isolation over HTTP | Proof | P1 | M | none |
 | [M1-07](finish-m1.md#m1-07-container-image-and-compose-from-a-clean-checkout) Container image and Compose from a clean checkout (in flight) | Build | P1 | L | [M1-08](finish-m1.md#m1-08-serve-the-web-app-from-the-backend-at-one-origin) |
 | [M1-08](finish-m1.md#m1-08-serve-the-web-app-from-the-backend-at-one-origin) Serve the web app from the backend at one origin (in flight) | Build | P1 | M | none |
-| [M1-09](finish-m1.md#m1-09-read-only-storage-page) Read-only Storage page | Build | P2 | M | [M1-04](finish-m1.md#m1-04-expose-upload-limits-for-client-preflight) |
+| [M1-09](finish-m1.md#m1-09-read-only-storage-page) Read-only Storage page | Build | P1 | M | [M1-04](finish-m1.md#m1-04-expose-upload-limits-for-client-preflight) |
 | [M1-10](finish-m1.md#m1-10-honest-determinate-upload-progress) Honest determinate upload progress | Build | P2 | S | none |
 | [M1-11](finish-m1.md#m1-11-drag-and-drop-upload) Drag-and-drop upload | Build | P2 | S | none |
-| [M1-12](finish-m1.md#m1-12-m1-exit-review) M1 exit review | Proof | P1 | M | [M1-01](finish-m1.md#m1-01-map-m1-failure-outcomes-in-the-web-client), [M1-02](finish-m1.md#m1-02-breadcrumbs-from-real-ancestors), [M1-03](finish-m1.md#m1-03-rediscover-and-cancel-open-uploads), [M1-05](finish-m1.md#m1-05-prove-interruption-and-restart-recovery-in-the-browser), [M1-06](finish-m1.md#m1-06-prove-second-principal-isolation-over-http), [M1-07](finish-m1.md#m1-07-container-image-and-compose-from-a-clean-checkout) |
+| [M1-12](finish-m1.md#m1-12-m1-exit-review) M1 exit review | Proof | P1 | M | [M1-01](finish-m1.md#m1-01-map-m1-failure-outcomes-in-the-web-client), [M1-02](finish-m1.md#m1-02-breadcrumbs-from-real-ancestors), [M1-03](finish-m1.md#m1-03-rediscover-and-cancel-open-uploads), [M1-05](finish-m1.md#m1-05-prove-interruption-and-restart-recovery-in-the-browser), [M1-06](finish-m1.md#m1-06-prove-second-principal-isolation-over-http), [M1-07](finish-m1.md#m1-07-container-image-and-compose-from-a-clean-checkout), [M1-09](finish-m1.md#m1-09-read-only-storage-page) |
 
 ### [Foundations](foundations.md)
 

@@ -183,7 +183,7 @@ In flight: Unmerged branch `codex/run-authentik-and-the-local` adds a separate w
 
 ## M1-09 Read-only Storage page
 
-`P2` · `M` · Build · Backend, Web · Public API change
+`P1` · `M` · Build · Backend, Web · Public API change
 
 Depends on: [M1-04](#m1-04-expose-upload-limits-for-client-preflight)
 
@@ -247,7 +247,7 @@ Depends on: none
 
 `P1` · `M` · Proof · Ops, Web, Backend
 
-Depends on: [M1-01](#m1-01-map-m1-failure-outcomes-in-the-web-client), [M1-02](#m1-02-breadcrumbs-from-real-ancestors), [M1-03](#m1-03-rediscover-and-cancel-open-uploads), [M1-05](#m1-05-prove-interruption-and-restart-recovery-in-the-browser), [M1-06](#m1-06-prove-second-principal-isolation-over-http), [M1-07](#m1-07-container-image-and-compose-from-a-clean-checkout)
+Depends on: [M1-01](#m1-01-map-m1-failure-outcomes-in-the-web-client), [M1-02](#m1-02-breadcrumbs-from-real-ancestors), [M1-03](#m1-03-rediscover-and-cancel-open-uploads), [M1-05](#m1-05-prove-interruption-and-restart-recovery-in-the-browser), [M1-06](#m1-06-prove-second-principal-isolation-over-http), [M1-07](#m1-07-container-image-and-compose-from-a-clean-checkout), [M1-09](#m1-09-read-only-storage-page)
 
 **Why.** Declare M1 done with evidence, or name what's left.
 
@@ -256,8 +256,9 @@ Depends on: [M1-01](#m1-01-map-m1-failure-outcomes-in-the-web-client), [M1-02](#
 **Acceptance**
 
 - Each scenario has recorded commands, screenshots or digests
+- Every M1 surface that design.md requires is present in the running app, or M1 is not declared done
 - Remaining gaps become backlog items
 - No claims beyond the evidence
 
-**Read:** `docs/product/overview.md`  
+**Read:** `docs/product/overview.md`, `docs/product/design.md`  
 **Checks:** Scripted or recorded run of each scenario

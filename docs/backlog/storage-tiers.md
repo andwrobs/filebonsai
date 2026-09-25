@@ -99,7 +99,8 @@ Depends on: [TIER-03](#tier-03-storage-connection-registry)
 **Acceptance**
 
 - Fallback is tested with the primary unavailable
-- Pointers remain immutable after commit
+- Each committed copy's object identity and key stay immutable (INV-03); changing the primary rewrites no copy
+- The primary can only point at a verified copy
 
 **Invariants:** INV-03, INV-04  
 **Checks:** `postgres`
