@@ -41,7 +41,7 @@ if "$bootstrap"; then
 fi
 
 cd "$backend_root"
-unset FILEBONSAI_STORAGE_PROVIDER
-unset FILEBONSAI_R2_ACCOUNT_ID FILEBONSAI_R2_BUCKET FILEBONSAI_R2_JURISDICTION
-unset FILEBONSAI_R2_ACCESS_KEY_ID_FILE FILEBONSAI_R2_SECRET_ACCESS_KEY_FILE
+# Config files, not a previous shell's exports, select storage and R2 settings.
+# Spring's relaxed binding accepts several spellings, so clear the whole prefix.
+while read -r name; do unset "$name"; done < <(compgen -e | grep -E '^FILEBONSAI_(R2|STORAGE_?PROVIDER)' || true)
 exec ./mvnw spring-boot:run "-Dspring-boot.run.profiles=$profiles"
