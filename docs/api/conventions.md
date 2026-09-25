@@ -41,6 +41,13 @@ body contains `parentId`, `name`, decimal-string `sizeBytes`, and nullable `sha2
 is downloaded from `GET /api/v1/entries/{id}/content`; internal object and temporary
 keys never appear in public DTOs.
 
+`GET /api/v1/upload-limits` returns the effective `maximumBytes` as a decimal string:
+the smaller of the configured staging limit and the active publisher's limit, the same
+value begin-upload enforces. It requires authentication. Clients may refuse larger
+files before `POST /api/v1/uploads`, but the server stays authoritative and still
+returns `413 TOO_LARGE`. `maximumBytes` stays required and finite; later limits arrive
+as new optional or nullable fields so existing clients keep decoding.
+
 `UploadResponse.state` is a closed, versioned lifecycle vocabulary. Adding or
 renaming a value is a breaking API change because generated clients decode it as an
 enum; internal recovery markers must not become public states.

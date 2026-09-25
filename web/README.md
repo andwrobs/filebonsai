@@ -28,6 +28,9 @@ when the backend has Authentik OIDC configured to add **Continue with Authentik*
 the sign-in page; the local Compose stack sets it.
 
 Upload controls use a tab-owned transfer store so folder navigation does not stop work.
+Before beginning an upload, the store reads the server's upload limit once per tab and
+refuses larger files without sending anything, naming the limit. If the limit cannot be
+read, or the server answers `413`, the server decides and the limit is read again.
 Body progress is indeterminate until the server verifies it. Explicit retry first reads
 server state and resends from byte zero only for an initiated session. Uncertain
 completion offers a status check; it never assumes the original is available.

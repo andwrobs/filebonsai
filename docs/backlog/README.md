@@ -79,12 +79,11 @@ M1 promises that a clean checkout becomes a working, recoverable library. Close 
 | [M1-01](finish-m1.md#m1-01-map-m1-failure-outcomes-in-the-web-client) Map M1 failure outcomes in the web client | Build | P1 | M | none |
 | [M1-02](finish-m1.md#m1-02-breadcrumbs-from-real-ancestors) Breadcrumbs from real ancestors | Build | P1 | M | none |
 | [M1-03](finish-m1.md#m1-03-rediscover-and-cancel-open-uploads) Rediscover and cancel open uploads | Build | P1 | L | none |
-| [M1-04](finish-m1.md#m1-04-expose-upload-limits-for-client-preflight) Expose upload limits for client preflight | Build | P1 | S | none |
 | [M1-05](finish-m1.md#m1-05-prove-interruption-and-restart-recovery-in-the-browser) Prove interruption and restart recovery in the browser | Proof | P1 | M | none |
 | [M1-06](finish-m1.md#m1-06-prove-second-principal-isolation-over-http) Prove second-principal isolation over HTTP | Proof | P1 | M | none |
 | [M1-07](finish-m1.md#m1-07-container-image-and-compose-from-a-clean-checkout) Container image and Compose from a clean checkout | Build | P1 | L | [M1-08](finish-m1.md#m1-08-serve-the-web-app-from-the-backend-at-one-origin) |
 | [M1-08](finish-m1.md#m1-08-serve-the-web-app-from-the-backend-at-one-origin) Serve the web app from the backend at one origin | Build | P1 | M | none |
-| [M1-09](finish-m1.md#m1-09-read-only-storage-page) Read-only Storage page | Build | P1 | M | [M1-04](finish-m1.md#m1-04-expose-upload-limits-for-client-preflight) |
+| [M1-09](finish-m1.md#m1-09-read-only-storage-page) Read-only Storage page | Build | P1 | M | none |
 | [M1-10](finish-m1.md#m1-10-honest-determinate-upload-progress) Honest determinate upload progress | Build | P2 | S | none |
 | [M1-11](finish-m1.md#m1-11-drag-and-drop-upload) Drag-and-drop upload | Build | P2 | S | none |
 | [M1-12](finish-m1.md#m1-12-m1-exit-review) M1 exit review | Proof | P1 | M | [M1-01](finish-m1.md#m1-01-map-m1-failure-outcomes-in-the-web-client), [M1-02](finish-m1.md#m1-02-breadcrumbs-from-real-ancestors), [M1-03](finish-m1.md#m1-03-rediscover-and-cancel-open-uploads), [M1-05](finish-m1.md#m1-05-prove-interruption-and-restart-recovery-in-the-browser), [M1-06](finish-m1.md#m1-06-prove-second-principal-isolation-over-http), [M1-07](finish-m1.md#m1-07-container-image-and-compose-from-a-clean-checkout), [M1-09](finish-m1.md#m1-09-read-only-storage-page) |
@@ -106,6 +105,7 @@ Harnesses that make every later slice cheaper to prove.
 | [ENG-09](foundations.md#eng-09-observability-baseline) Observability baseline | Build | P2 | M | none |
 | [ENG-10](foundations.md#eng-10-measured-resource-baselines-for-transfers) Measured resource baselines for transfers | Proof | P2 | M | none |
 | [ENG-11](foundations.md#eng-11-migration-upgrade-test-harness) Migration upgrade test harness | Build | P2 | M | none |
+| [ENG-12](foundations.md#eng-12-anchor-byte-count-patterns-in-the-contract) Anchor byte-count patterns in the contract | Build | P3 | S | none |
 
 ### [Everyday library](everyday-library.md)
 

@@ -1,6 +1,6 @@
 # Verified status and next work
 
-Updated 2026-09-22. This is the only live status and sequencing document. Record only
+Updated 2026-09-25. This is the only live status and sequencing document. Record only
 observed results; use Git history for prior plans and completed migrations.
 
 ## Current implementation
@@ -60,9 +60,25 @@ observed results; use Git history for prior plans and completed migrations.
   refreshes CSRF for explicit transfer operations. Sending progress is indeterminate;
   uncertain completion requires an explicit status check. Closing/reloading the tab
   does not preserve its selected files or upload tracking.
+- Authenticated `GET /api/v1/upload-limits` exposes the effective `maximumBytes`
+  (the smaller of the staging and publisher limits, the value begin-upload enforces).
+  The web transfer store reads it once per tab and refuses larger files before
+  `beginUpload`, naming the limit; an unreadable limit or a `413` defers to the server.
 
 ## Latest observed checks
 
+- Upload limits (M1-04): `cd backend && ./scripts/verify.sh` passed on Java 25.0.3 with
+  PostgreSQL 17.11 through Docker Desktop 24.0.5: 83 backend tests (1 opt-in R2 proof
+  skipped), OpenAPI export, TypeScript client 7 tests and Swift client 8 tests,
+  including new `UploadLimitsResponse` decoding. The HTTP test configures a 50,000,000
+  byte limit and checks anonymous `401`, the exposed value, `no-store`, `413 TOO_LARGE`
+  at limit + 1 and `201` at the limit. `getUploadLimits` documents only `200`, `401`,
+  and `500`. `cd web && npm test && npm run typecheck:run && npm run build` passed with
+  20 tests, including a re-read before refusing and a re-read after `413`. Rendered against a disposable PostgreSQL-profile backend with a 1 MiB limit at
+  1440×900 and 390×844: a 2 MiB file showed "Too large to upload: 2 MB is over the
+  1 MB limit. Nothing was sent." with no begin request; a 64 KiB file reached
+  `AVAILABLE`; a direct begin at 1,048,577 bytes returned `413 TOO_LARGE`. No mobile
+  horizontal overflow.
 - `cd infra/local && ./up.sh` followed by `python3 check.py`: passed on the initial
   and repeat startup. Authentik readiness/discovery, administrator OIDC sign-in,
   session-backed Catalog root access, and denial of a second Authentik user all

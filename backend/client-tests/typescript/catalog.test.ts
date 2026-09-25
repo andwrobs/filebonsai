@@ -9,6 +9,7 @@ import { EntryPageResponseFromJSON } from "../../clients/typescript/models/Entry
 import { EntryResponseFromJSON } from "../../clients/typescript/models/EntryResponse";
 import { FileEntryResponseFromJSON } from "../../clients/typescript/models/FileEntryResponse";
 import { FolderEntryResponseFromJSON } from "../../clients/typescript/models/FolderEntryResponse";
+import { UploadLimitsResponseFromJSON } from "../../clients/typescript/models/UploadLimitsResponse";
 import { UploadResponseFromJSON } from "../../clients/typescript/models/UploadResponse";
 
 function fixture(name: string): unknown {
@@ -85,4 +86,11 @@ test("decodes durable upload state with exact decimal byte counts", () => {
   assert.equal(upload.expectedSha256, null);
   assert.equal(upload.state, "INITIATED");
   assert.ok(upload.expiresAt instanceof Date);
+});
+
+test("decodes upload limits as an exact decimal byte count", () => {
+  const limits = UploadLimitsResponseFromJSON({ maximumBytes: "9007199254740993", futureLimit: "1" });
+
+  assert.equal(limits.maximumBytes, "9007199254740993");
+  assert.equal("futureLimit" in limits, false);
 });

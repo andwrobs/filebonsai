@@ -23,8 +23,10 @@ import com.filebonsai.transfers.application.CancelUpload;
 import com.filebonsai.transfers.application.CompleteUpload;
 import com.filebonsai.transfers.application.DownloadOriginal;
 import com.filebonsai.transfers.application.GetUpload;
+import com.filebonsai.transfers.application.GetUploadLimits;
 import com.filebonsai.transfers.application.ReceiveUpload;
 import com.filebonsai.transfers.application.UploadFailure;
+import com.filebonsai.transfers.application.UploadLimits;
 import com.filebonsai.transfers.application.UploadSession;
 import com.filebonsai.transfers.domain.UploadState;
 import java.io.IOException;
@@ -42,7 +44,13 @@ import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 
 public final class PostgresLocalTransfers
-        implements BeginUpload, GetUpload, ReceiveUpload, CompleteUpload, CancelUpload, DownloadOriginal {
+        implements BeginUpload,
+                GetUpload,
+                GetUploadLimits,
+                ReceiveUpload,
+                CompleteUpload,
+                CancelUpload,
+                DownloadOriginal {
     private static final String SESSION_COLUMNS = "u.id, u.workspace_id, u.principal_id, u.parent_id, u.name, "
             + "u.entry_id, u.version_id, u.object_id, u.expected_size_bytes, u.expected_sha256, "
             + "u.computed_sha256, u.state, u.fence, u.active_attempt_id, u.recovery_claim_id, "
@@ -66,6 +74,16 @@ public final class PostgresLocalTransfers
     }
 
     @Override
+    public UploadLimits limits(CatalogScope scope) {
+        return new UploadLimits(new ByteCount(maximumBytes()));
+    }
+
+    /** The one size limit both preflight and begin use: staging and the publisher must each accept the body. */
+    private long maximumBytes() {
+        return Math.min(staging.maximumBytes(), published.maximumBytes());
+    }
+
+    @Override
     public UploadSession begin(
             CatalogScope scope,
             EntryId parentId,
@@ -73,7 +91,7 @@ public final class PostgresLocalTransfers
             ByteCount expectedSize,
             byte[] expectedSha256,
             UUID idempotencyKey) {
-        if (expectedSize.value() > Math.min(staging.maximumBytes(), published.maximumBytes())) {
+        if (expectedSize.value() > maximumBytes()) {
             throw new UploadFailure(TOO_LARGE, "Upload exceeds the configured size limit");
         }
         byte[] intent = intent(parentId, name, expectedSize, expectedSha256);

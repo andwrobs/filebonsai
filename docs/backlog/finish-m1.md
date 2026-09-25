@@ -72,26 +72,6 @@ Depends on: none
 **Read:** `docs/architecture/storage-and-transfers.md`, `docs/api/conventions.md`  
 **Checks:** `postgres`; `contract`; `web`; `rendered`
 
-## M1-04 Expose upload limits for client preflight
-
-`P1` · `S` · Build · Backend, Web · Public API change
-
-Depends on: none
-
-**Why.** The server enforces a size limit, but clients find out only from a 413 after they start sending.
-
-**Outcome.** Authenticated clients can read the effective upload limits, and the web client rejects oversized files before beginUpload, naming the limit.
-
-**Acceptance**
-
-- HTTP test: the value matches configuration and requires authentication
-- Rendered check with a lowered local limit
-- The server remains authoritative
-
-**Invariants:** INV-15  
-**Read:** `docs/api/conventions.md`  
-**Checks:** `contract`; `web`; `rendered`
-
 ## M1-05 Prove interruption and restart recovery in the browser
 
 `P1` · `M` · Proof · Web, Backend
@@ -185,7 +165,9 @@ Context: PR #1 (merged 2026-09-23) runs the web app from its own Dockerfile on t
 
 `P1` · `M` · Build · Backend, Web · Public API change
 
-Depends on: [M1-04](#m1-04-expose-upload-limits-for-client-preflight)
+Depends on: none
+
+Context: M1-04 added `GET /api/v1/upload-limits` (`UploadLimitsResponse`, the effective limit begin-upload enforces). Show that value rather than deriving another one.
 
 **Why.** design.md requires an M1 Storage surface that shows the configured connection, capabilities and limits, with no credential editor. The sidebar currently has a disabled placeholder.
 

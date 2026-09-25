@@ -1,6 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useRevalidator } from "react-router";
-import { transfers, terminal } from "./transfer-store.js";
+import { transfers, settled } from "./transfer-store.js";
 import { filebonsaiService } from "../../../src/lib/api/filebonsai-service.js";
 
 export function UploadControl({ parentId }: { parentId: string }) {
@@ -18,7 +18,7 @@ export function TransferPanel() {
   const available = items.filter(item => item.upload?.state === "AVAILABLE").length;
   useEffect(() => { if (available) void revalidator.revalidate(); }, [available]);
   useEffect(() => {
-    if (!items.some(item => !terminal(item.upload?.state))) return;
+    if (!items.some(item => !settled(item))) return;
     const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
@@ -31,7 +31,7 @@ export function TransferPanel() {
       <strong>{item.file.name}</strong>
       <p role="status">{item.message}</p>
       {item.busy ? <progress aria-label={`Upload ${item.file.name}`} /> : null}
-      {!terminal(item.upload?.state) ? <div className="transfer-actions">
+      {!settled(item) ? <div className="transfer-actions">
         <button className="secondary-button" disabled={item.busy} onClick={() => void transfers.run(item.key, "check")}>Check status</button>
         {(!item.busy && (!item.upload || ["INITIATED", "STAGED"].includes(item.upload.state))) ?
           <button className="secondary-button" onClick={() => void transfers.run(item.key, "continue")}>{item.upload?.state === "STAGED" ? "Finish upload" : "Retry from byte zero"}</button> : null}
