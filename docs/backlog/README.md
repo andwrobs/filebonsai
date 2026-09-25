@@ -32,7 +32,8 @@ still written when the work starts, as decision 0006 requires.
    - **Spike:** dated, sourced findings and a recommendation. Keep experiments out of the
      main code paths.
 6. When the item is done, delete it from its epic file and from the index below, in the same
-   change that records observed results in `status.md`. Git keeps the history.
+   change that records observed results in `status.md`. Git keeps the history. Deliver the
+   change through a pull request, as `AGENTS.md` describes.
 
 ## Changing the backlog
 

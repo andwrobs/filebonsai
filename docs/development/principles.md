@@ -14,6 +14,8 @@ Favor concrete, inspectable outputs and concise mobile-readable summaries. Conti
 from verified repository state rather than reopening settled stack/product choices.
 Routine in-scope work does not need repeated confirmation, but publishing, paid
 infrastructure, credentials, destructive production actions, and scope expansion do.
+Pushing a task branch and opening its pull request in this repository is routine
+delivery, not publishing. Merging still needs the maintainer.
 
 Keep collaboration terse and useful. Do not repeat the request, narrate routine tool
 work, or turn each passing check into a separate status update. Report a decision,

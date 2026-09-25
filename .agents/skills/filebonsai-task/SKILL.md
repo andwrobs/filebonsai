@@ -11,6 +11,7 @@ active product/architecture/API standards relevant to the requested slice.
 Before editing, state the outcome, owned paths, dependencies, observable acceptance
 criteria, and checks. Resolve a material convention or contract decision before broad
 implementation. Do not invent a persistent task graph or copy status into another file.
+When the task is a backlog item, follow `docs/backlog/README.md` to pick it up and retire it.
 
 1. Inspect the current implementation and reproduce the relevant baseline.
 2. Implement the smallest coherent slice.
@@ -29,6 +30,10 @@ implementation. Do not invent a persistent task graph or copy status into anothe
    integrated run, or when changed paths or acceptance criteria materially expand,
    pause and report the added cost and scope.
 7. Update `docs/development/status.md` only when verified state or ordering changed.
+   Delete a finished backlog item in the same change.
+8. Deliver on a `<agent>/<short-slug>` branch from current `main`, in its own worktree.
+   Commit only the owned paths, push, and open or update the pull request with the
+   `filebonsai-pr` skill. Do not commit to `main` or merge without an explicit request.
 
 Bound routine command output and inspect targeted failure reports instead of importing
 full build, generator, or container logs. Do not reread unchanged material already in
