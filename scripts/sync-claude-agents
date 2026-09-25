@@ -1,0 +1,85 @@
+#!/usr/bin/env python3
+"""Generate Claude Code subagents in .claude/agents/ from .codex/agents/*.toml.
+
+The Codex profiles are the source. Run without arguments to regenerate, or with
+--check to fail when the generated files are missing, stale, or orphaned.
+"""
+
+import json
+import sys
+import tomllib
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+SOURCE = ROOT / ".codex" / "agents"
+TARGET = ROOT / ".claude" / "agents"
+
+# Codex sandbox modes mapped to Claude tool allowlists. None inherits every tool.
+TOOLS = {
+    "read-only": "Read, Grep, Glob, Bash",
+    "workspace-write": None,
+}
+
+
+def render(profile: dict, source: Path) -> tuple[str, str]:
+    name = profile["name"].replace("_", "-")
+    mode = profile.get("sandbox_mode", "workspace-write")
+    if mode not in TOOLS:
+        sys.exit(f"{source.name}: unsupported sandbox_mode {mode!r}")
+    lines = [
+        "---",
+        f"name: {name}",
+        f"description: {json.dumps(profile['description'])}",
+    ]
+    if TOOLS[mode]:
+        lines.append(f"tools: {TOOLS[mode]}")
+    lines += [
+        "---",
+        f"<!-- Generated from .codex/agents/{source.name} by scripts/sync-claude-agents. Do not edit. -->",
+        "",
+        profile["developer_instructions"].strip(),
+        "",
+    ]
+    return f"{name}.md", "\n".join(lines)
+
+
+def main() -> int:
+    check = sys.argv[1:] == ["--check"]
+    if sys.argv[1:] and not check:
+        sys.exit("usage: scripts/sync-claude-agents [--check]")
+
+    expected = {}
+    for source in sorted(SOURCE.glob("*.toml")):
+        with source.open("rb") as f:
+            filename, content = render(tomllib.load(f), source)
+        expected[filename] = content
+
+    existing = {p.name for p in TARGET.glob("*.md")} if TARGET.exists() else set()
+    stale = sorted(
+        name for name, content in expected.items()
+        if not (TARGET / name).exists() or (TARGET / name).read_text() != content
+    )
+    orphaned = sorted(existing - expected.keys())
+
+    if check:
+        for name in stale:
+            print(f"out of date: .claude/agents/{name}")
+        for name in orphaned:
+            print(f"orphaned: .claude/agents/{name}")
+        if stale or orphaned:
+            print("run scripts/sync-claude-agents")
+            return 1
+        return 0
+
+    TARGET.mkdir(parents=True, exist_ok=True)
+    for name in stale:
+        (TARGET / name).write_text(expected[name])
+        print(f"wrote .claude/agents/{name}")
+    for name in orphaned:
+        (TARGET / name).unlink()
+        print(f"removed .claude/agents/{name}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
