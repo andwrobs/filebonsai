@@ -31,6 +31,9 @@ Git history when provenance is needed.
 
 - [`development/status.md`](development/status.md): verified implementation state,
   next sequence, and unresolved decisions.
+- [`backlog/README.md`](backlog/README.md): candidate work by epic, with outcomes,
+  acceptance criteria, dependencies, and how to pick up and retire items. Not
+  committed order.
 - [`development/principles.md`](development/principles.md): product-building,
   collaboration, and learning goals that affect how work is presented.
 - [`development/local-setup.md`](development/local-setup.md): local prerequisites and

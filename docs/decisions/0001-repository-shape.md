@@ -12,7 +12,9 @@ Do not add a root Maven aggregator while only one Java module exists.
 `docs/` contains only active product, architecture, API, decision, and development
 truth. `docs/README.md` indexes it, and `docs/development/status.md` is the single live
 status/sequence. Superseded handoffs, alternate specifications, generated task graphs,
-and archival copies belong in Git history rather than a browsable reference tree.
+and archival copies belong in Git history rather than a browsable reference tree. The
+hand-maintained candidate backlog in `docs/backlog/` is the one exception
+([0008](0008-checked-in-backlog.md)).
 
 Agent execution authority lives in root `AGENTS.md`. Repository skills add bounded
 task procedures; specialized Codex profiles add role focus. They do not replicate
