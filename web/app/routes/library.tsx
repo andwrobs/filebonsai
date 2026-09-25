@@ -12,6 +12,7 @@ import { useId, useState } from "react";
 import type { Entry, FolderEntry } from "../../src/lib/api/api-types.js";
 import { filebonsaiService } from "../../src/lib/api/filebonsai-service.js";
 import { catalogHref, entryMeta, errorMessage, uniqueEntries } from "../features/catalog/catalog-data.js";
+import { AppSidebar } from "../features/shell/app-sidebar.js";
 
 interface LibraryData {
   children: Entry[];
@@ -81,18 +82,7 @@ export default function Library() {
 
   return (
     <main className="library-shell">
-      <aside className="sidebar" aria-label="Library navigation">
-        <Link className="brand" to="/">
-          Filebonsai
-        </Link>
-        <nav>
-          <Link className="sidebar-link current" to="/">Library</Link>
-          <span className="sidebar-link muted">Recent</span>
-          <span className="sidebar-link muted">Shared</span>
-          <span className="sidebar-link muted">Archive</span>
-        </nav>
-        <p className="sidebar-note">Your storage stays in your control.</p>
-      </aside>
+      <AppSidebar current="library" />
 
       <section className="library-content" aria-busy={revalidator.state !== "idle"}>
         <header className="library-header">

@@ -65,6 +65,7 @@ class AccessHttpPostgresTest {
         registry.add("filebonsai.storage.local.root", TRANSFER_ROOT::toString);
         registry.add("filebonsai.storage.provider", () -> "local");
         registry.add("filebonsai.transfers.maximum-bytes", () -> MAXIMUM_UPLOAD_BYTES);
+        registry.add("filebonsai.storage.display-name", () -> "Test disk");
     }
 
     @Autowired
@@ -353,6 +354,88 @@ class AccessHttpPostgresTest {
     }
 
     @Test
+    void summarizesStorageWithoutPathsAndCountsOnlyCommittedVersions() throws Exception {
+        mvc.perform(get("/api/v1/storage"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("AUTH_REQUIRED"));
+
+        Csrf anonymous = csrf();
+        MvcResult login = login(anonymous, null, PASSWORD);
+        Cookie session = login.getResponse().getCookie(LocalOwnerAccess.SESSION_COOKIE);
+        Cookie csrf = login.getResponse().getCookie(LocalOwnerAccess.CSRF_COOKIE);
+        String empty = mvc.perform(get("/api/v1/storage").cookie(session))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(jsonPath("$.connection.displayName").value("Test disk"))
+                .andExpect(jsonPath("$.connection.providerKind").value("local"))
+                .andExpect(jsonPath("$.capabilities.sha256Verification").value(true))
+                .andExpect(jsonPath("$.capabilities.resumableUploads").value(false))
+                .andExpect(jsonPath("$.capabilities.rangeDownloads").value(false))
+                .andExpect(jsonPath("$.usedBytes").value("0"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        assertThat(empty).doesNotContain(TRANSFER_ROOT.toString()).doesNotContain("objects/");
+        // Serialized by the application's own mapper: only these fields may leave the server.
+        List<String> fields = new java.util.ArrayList<>();
+        var pending = new java.util.ArrayDeque<java.util.Map.Entry<String, com.fasterxml.jackson.databind.JsonNode>>();
+        pending.add(java.util.Map.entry("", mapper.readTree(empty)));
+        while (!pending.isEmpty()) {
+            var next = pending.poll();
+            next.getValue().fields().forEachRemaining(field -> {
+                String path = next.getKey().isEmpty() ? field.getKey() : next.getKey() + "." + field.getKey();
+                if (field.getValue().isObject()) {
+                    pending.add(java.util.Map.entry(path, field.getValue()));
+                } else {
+                    fields.add(path);
+                }
+            });
+        }
+        assertThat(fields)
+                .containsExactlyInAnyOrder(
+                        "connection.displayName",
+                        "connection.providerKind",
+                        "capabilities.sha256Verification",
+                        "capabilities.resumableUploads",
+                        "capabilities.rangeDownloads",
+                        "usedBytes");
+
+        byte[] content = "committed bytes".getBytes(StandardCharsets.UTF_8);
+        String uploadId = mapper.readTree(mvc.perform(post("/api/v1/uploads")
+                                .cookie(session, csrf)
+                                .header(LocalOwnerAccess.CSRF_HEADER, csrf.getValue())
+                                .header("Idempotency-Key", UUID.randomUUID())
+                                .contentType("application/json")
+                                .content(mapper.writeValueAsString(java.util.Map.of(
+                                        "parentId",
+                                        rootA,
+                                        "name",
+                                        "usage.bin",
+                                        "sizeBytes",
+                                        Integer.toString(content.length)))))
+                        .andExpect(status().isCreated())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString())
+                .path("id")
+                .asText();
+        mvc.perform(put("/api/v1/uploads/" + uploadId + "/content")
+                        .cookie(session, csrf)
+                        .header(LocalOwnerAccess.CSRF_HEADER, csrf.getValue())
+                        .contentType("application/octet-stream")
+                        .content(content))
+                .andExpect(jsonPath("$.state").value("STAGED"));
+        mvc.perform(get("/api/v1/storage").cookie(session))
+                .andExpect(jsonPath("$.usedBytes").value("0"));
+        mvc.perform(post("/api/v1/uploads/" + uploadId + "/complete")
+                        .cookie(session, csrf)
+                        .header(LocalOwnerAccess.CSRF_HEADER, csrf.getValue()))
+                .andExpect(jsonPath("$.state").value("AVAILABLE"));
+        mvc.perform(get("/api/v1/storage").cookie(session))
+                .andExpect(jsonPath("$.usedBytes").value(Integer.toString(content.length)));
+    }
+
+    @Test
     void returnsGenericFailuresWithoutSerializingCredentials() throws Exception {
         Csrf anonymous = csrf();
         String invalidPassword = "totally wrong password";
@@ -558,8 +641,35 @@ class AccessHttpPostgresTest {
                         .path("UploadLimitsResponse")
                         .path("required"))
                 .anySatisfy(field -> assertThat(field.asText()).isEqualTo("maximumBytes"));
+        var storage = document.path("paths").path("/api/v1/storage").path("get");
+        assertThat(storage.path("operationId").asText()).isEqualTo("getStorageSummary");
+        assertThat(storage.path("responses").fieldNames()).toIterable().containsExactlyInAnyOrder("200", "401", "500");
+        var storageSchemas = document.path("components").path("schemas");
+        assertThat(storageSchemas.path("StorageSummaryResponse").path("required"))
+                .extracting(com.fasterxml.jackson.databind.JsonNode::asText)
+                .containsExactlyInAnyOrder("connection", "capabilities", "usedBytes");
+        var usedBytes =
+                storageSchemas.path("StorageSummaryResponse").path("properties").path("usedBytes");
+        assertThat(usedBytes.path("type").asText()).isEqualTo("string");
+        assertThat(usedBytes.path("pattern").asText()).isEqualTo("^(0|[1-9][0-9]*)$");
+        assertThat(storageSchemas.path("StorageCapabilitiesResponse").path("required"))
+                .extracting(com.fasterxml.jackson.databind.JsonNode::asText)
+                .containsExactlyInAnyOrder("sha256Verification", "resumableUploads", "rangeDownloads");
+        assertThat(storageSchemas
+                        .path("StorageConnectionResponse")
+                        .path("properties")
+                        .fieldNames())
+                .toIterable()
+                .containsExactlyInAnyOrder("displayName", "providerKind");
+        assertThat(storageSchemas
+                        .path("StorageConnectionResponse")
+                        .path("properties")
+                        .path("providerKind")
+                        .has("enum"))
+                .isFalse();
         for (var operation : java.util.List.of(
                 uploadLimits,
+                storage,
                 document.path("paths").path("/api/v1/entries/{id}").path("get"),
                 document.path("paths").path("/api/v1/entries/{id}/children").path("get"),
                 document.path("paths").path("/api/v1/folders").path("post"))) {

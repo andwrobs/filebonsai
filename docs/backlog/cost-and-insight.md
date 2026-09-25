@@ -12,6 +12,8 @@ See [the backlog index](README.md) for how to pick up and retire items.
 
 Depends on: none
 
+Context: M1-09's `usedBytes` on `GET /api/v1/storage` sums `file_versions.size_bytes` per workspace on every request, and `file_versions` has no index on `workspace_id`. That is fine at M1 scale. Either serve that total from the rollups or add an index on `(workspace_id) INCLUDE (size_bytes)`. Avoid a single counter row updated during publication, because every publish would contend on it.
+
 **Why.** Space maps, estimates and Tidy tallies all need folder sizes.
 
 **Outcome.** Bytes and file counts per folder (recursive), per connection or tier, and per type, with an API for a folder's usage.
@@ -66,7 +68,9 @@ Depends on: none
 
 `P2` · `M` · Build · Backend, Web · Public API change
 
-Depends on: [COST-01](#cost-01-usage-rollups), [COST-03](#cost-03-decision-cost-estimate-model), [M1-09](finish-m1.md#m1-09-read-only-storage-page)
+Depends on: [COST-01](#cost-01-usage-rollups), [COST-03](#cost-03-decision-cost-estimate-model)
+
+Context: M1-09 added the read-only Storage page (`/storage`) over `GET /api/v1/storage`, which reports committed `usedBytes` for the workspace. Extend that page and response rather than adding a second surface.
 
 **Why.** The design reference shows '128 GB of 1 TB · Estimate: $2.11/mo'.
 

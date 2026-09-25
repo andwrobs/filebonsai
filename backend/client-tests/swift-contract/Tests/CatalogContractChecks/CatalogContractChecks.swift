@@ -96,6 +96,28 @@ final class CatalogContractChecks: XCTestCase {
         XCTAssertEqual(limits.maximumBytes, "9007199254740993")
     }
 
+    func testDecodesStorageSummaryWithUnknownProviderKindAndExactUsage() throws {
+        let json = Data(
+            """
+            {
+              "connection": { "displayName": "Family archive", "providerKind": "future-provider" },
+              "capabilities": {
+                "sha256Verification": true,
+                "resumableUploads": false,
+                "rangeDownloads": false,
+                "futureCapability": true
+              },
+              "usedBytes": "9007199254740993"
+            }
+            """.utf8)
+
+        let summary = try decoder.decode(StorageSummaryResponse.self, from: json)
+        XCTAssertEqual(summary.connection.providerKind, "future-provider")
+        XCTAssertTrue(summary.capabilities.sha256Verification)
+        XCTAssertFalse(summary.capabilities.resumableUploads)
+        XCTAssertEqual(summary.usedBytes, "9007199254740993")
+    }
+
     private var decoder: JSONDecoder {
         CodableHelper.jsonDecoder
     }

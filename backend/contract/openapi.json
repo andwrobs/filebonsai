@@ -587,6 +587,46 @@
         "tags" : [ "Catalog" ]
       }
     },
+    "/api/v1/storage" : {
+      "get" : {
+        "description" : "Read-only. Reports configuration and committed usage; it does not probe the provider. Upload size limits come from getUploadLimits.",
+        "operationId" : "getStorageSummary",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StorageSummaryResponse"
+                }
+              }
+            },
+            "description" : "Configured connection, capabilities, and committed usage"
+          },
+          "401" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description" : "AUTH_REQUIRED"
+          },
+          "500" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description" : "INTERNAL_ERROR"
+          }
+        },
+        "summary" : "Read the configured storage connection",
+        "tags" : [ "Storage" ]
+      }
+    },
     "/api/v1/upload-limits" : {
       "get" : {
         "description" : "Lets clients reject oversized files before beginUpload. The server remains authoritative and still returns 413 TOO_LARGE for any upload above the limit.",
@@ -1504,6 +1544,57 @@
           "updatedAt" : {
             "type" : "string",
             "format" : "date-time"
+          }
+        }
+      },
+      "StorageCapabilitiesResponse" : {
+        "required" : [ "rangeDownloads", "resumableUploads", "sha256Verification" ],
+        "type" : "object",
+        "properties" : {
+          "rangeDownloads" : {
+            "type" : "boolean",
+            "description" : "False means downloads always send the whole original."
+          },
+          "resumableUploads" : {
+            "type" : "boolean",
+            "description" : "False means an interrupted upload is sent again from byte zero."
+          },
+          "sha256Verification" : {
+            "type" : "boolean",
+            "description" : "True means every upload's size and SHA-256 are verified before the file becomes available."
+          }
+        }
+      },
+      "StorageConnectionResponse" : {
+        "required" : [ "displayName", "providerKind" ],
+        "type" : "object",
+        "properties" : {
+          "displayName" : {
+            "maxLength" : 80,
+            "type" : "string",
+            "description" : "Operator-chosen name, or the provider's default. Never a bucket, account, endpoint, or path."
+          },
+          "providerKind" : {
+            "type" : "string",
+            "description" : "Open vocabulary; known values are local and r2. Clients must show an unknown value rather than fail.",
+            "example" : "local"
+          }
+        }
+      },
+      "StorageSummaryResponse" : {
+        "required" : [ "capabilities", "connection", "usedBytes" ],
+        "type" : "object",
+        "properties" : {
+          "capabilities" : {
+            "$ref" : "#/components/schemas/StorageCapabilitiesResponse"
+          },
+          "connection" : {
+            "$ref" : "#/components/schemas/StorageConnectionResponse"
+          },
+          "usedBytes" : {
+            "pattern" : "^(0|[1-9][0-9]*)$",
+            "type" : "string",
+            "description" : "Exact decimal sum of committed file versions in this workspace. Uploads that are not yet available are excluded."
           }
         }
       },

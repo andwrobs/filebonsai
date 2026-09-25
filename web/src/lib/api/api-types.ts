@@ -8,6 +8,7 @@ export type Entry = components["schemas"]["EntryResponse"];
 export type EntryPage = components["schemas"]["EntryPageResponse"];
 export type FileEntry = components["schemas"]["FileEntryResponse"];
 export type FolderEntry = components["schemas"]["FolderEntryResponse"];
+export type StorageSummary = components["schemas"]["StorageSummaryResponse"];
 export type UploadLimits = components["schemas"]["UploadLimitsResponse"];
 
 export type GetCsrfOperation = operations["getCsrf"];

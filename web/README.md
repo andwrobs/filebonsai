@@ -37,6 +37,11 @@ completion offers a status check; it never assumes the original is available.
 Cancellation is server-confirmed and fences late body responses. Each explicit transfer
 operation refreshes CSRF to accommodate session rotation.
 
+The read-only Storage page (`/storage`) shows the configured connection's display name
+and provider, committed bytes, the upload limit, and transfer guarantees. It loads its
+data in the component because SPA mode allows a `HydrateFallback` only on the root
+route, so the page owns its loading, error, and unavailable states.
+
 Keep the tab open: selected files and transfer tracking are held in memory and are not
 restored after reload. Original downloads fetch a Blob before handing it to the browser,
 so this control buffers the original rather than streaming directly to disk.

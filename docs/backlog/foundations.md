@@ -231,3 +231,22 @@ Depends on: none
 - Generated TypeScript and Swift clients still compile and decode
 
 **Checks:** `contract`
+
+## ENG-13 Structured errors for failures outside controllers
+
+`P2` · `S` · Build · Backend
+
+Depends on: none
+
+**Why.** `ApiExceptionHandler` only covers exceptions thrown from controllers. During the M1-09 rendered check, with PostgreSQL stopped, `AccessSessionFilter` failed while authenticating. `GET /api/v1/storage` then returned Spring's default error body (`timestamp`, `status`, `error`, `path`) instead of the `code`/`message`/`status`/`requestId` shape that api/conventions.md promises. Clients can't tell this apart from a proxy failure, and the response carries no request ID to correlate with logs.
+
+**Outcome.** Every `/api/**` failure, including those raised in filters or while the database is unavailable, returns the API error shape with a request ID. Database unavailability maps to a retryable status.
+
+**Acceptance**
+
+- PostgreSQL HTTP test with the database made unreachable asserts the API error shape and request ID
+- No stack traces, SQL or connection details in the body
+
+**Invariants:** INV-11  
+**Read:** `docs/api/conventions.md`  
+**Checks:** `backend`

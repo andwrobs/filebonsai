@@ -91,6 +91,10 @@ export class FilebonsaiService {
     });
   }
 
+  getStorageSummary() {
+    return this.#client.GET("/api/v1/storage");
+  }
+
   getUploadLimits() {
     return this.#client.GET("/api/v1/upload-limits");
   }
