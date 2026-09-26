@@ -64,9 +64,32 @@ observed results; use Git history for prior plans and completed migrations.
   (the smaller of the staging and publisher limits, the value begin-upload enforces).
   The web transfer store reads it once per tab and refuses larger files before
   `beginUpload`, naming the limit; an unreadable limit or a `413` defers to the server.
+- Authenticated `GET /api/v1/storage` describes the configured connection (operator
+  display name, open-vocabulary provider kind), transfer capabilities, and committed
+  `usedBytes` for the member's workspace. It carries no bucket, account, endpoint,
+  credential, or path. The web `/storage` page shows it with the upload limit and has its
+  own loading, error, and unavailable states; the sidebar links Library and Storage on
+  desktop and mobile.
 
 ## Latest observed checks
 
+- Storage page (M1-09): `cd backend && ./scripts/verify.sh` passed with 87 backend tests
+  (1 opt-in R2 proof skipped), OpenAPI export, TypeScript client 8 tests, and Swift
+  client 9 tests, including `StorageSummaryResponse` decoding with an unknown provider
+  kind. `PostgresCatalogTest` checks the exact committed sum (9,007,199,254,740,993), a
+  principal in two workspaces seeing only each workspace's own versions, and zero for a
+  non-member. The PostgreSQL HTTP test checks anonymous `401`, the configured display
+  name, `no-store`, the exact serialized field set, no storage-root path in the body, and
+  `usedBytes` staying `0` while an upload is `STAGED`, then matching after completion.
+  An allow-list serialization test covers both providers and an upper-case `R2` setting. `cd web && npm test && npm run
+  typecheck:run && npm run build` passed with 26 tests. Rendered against a disposable
+  PostgreSQL-profile backend at 1440×900 and 390×844: signed-out redirect to sign-in;
+  populated page with a 73-character display name wrapping, 700 KB stored while a
+  300 KiB upload stayed `STAGED` and uncounted, and the 1 MB limit; loading while
+  PostgreSQL was paused; unavailable with PostgreSQL stopped; and the error state with a
+  request ID from an intercepted `500 INTERNAL_ERROR` (client fixture). No mobile
+  horizontal overflow. With PostgreSQL stopped, the API returned Spring's default error
+  body rather than the API error shape (recorded as ENG-13).
 - Upload limits (M1-04): `cd backend && ./scripts/verify.sh` passed on Java 25.0.3 with
   PostgreSQL 17.11 through Docker Desktop 24.0.5: 83 backend tests (1 opt-in R2 proof
   skipped), OpenAPI export, TypeScript client 7 tests and Swift client 8 tests,

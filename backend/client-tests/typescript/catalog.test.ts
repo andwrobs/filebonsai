@@ -9,6 +9,7 @@ import { EntryPageResponseFromJSON } from "../../clients/typescript/models/Entry
 import { EntryResponseFromJSON } from "../../clients/typescript/models/EntryResponse";
 import { FileEntryResponseFromJSON } from "../../clients/typescript/models/FileEntryResponse";
 import { FolderEntryResponseFromJSON } from "../../clients/typescript/models/FolderEntryResponse";
+import { StorageSummaryResponseFromJSON } from "../../clients/typescript/models/StorageSummaryResponse";
 import { UploadLimitsResponseFromJSON } from "../../clients/typescript/models/UploadLimitsResponse";
 import { UploadResponseFromJSON } from "../../clients/typescript/models/UploadResponse";
 
@@ -93,4 +94,18 @@ test("decodes upload limits as an exact decimal byte count", () => {
 
   assert.equal(limits.maximumBytes, "9007199254740993");
   assert.equal("futureLimit" in limits, false);
+});
+
+test("decodes a storage summary with an unknown provider kind and exact usage", () => {
+  const summary = StorageSummaryResponseFromJSON({
+    connection: { displayName: "Family archive", providerKind: "future-provider" },
+    capabilities: { sha256Verification: true, resumableUploads: false, rangeDownloads: false, futureCapability: true },
+    usedBytes: "9007199254740993",
+  });
+
+  assert.equal(summary.connection.providerKind, "future-provider");
+  assert.equal(summary.capabilities.sha256Verification, true);
+  assert.equal(summary.capabilities.resumableUploads, false);
+  assert.equal("futureCapability" in summary.capabilities, false);
+  assert.equal(summary.usedBytes, "9007199254740993");
 });

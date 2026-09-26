@@ -83,10 +83,9 @@ M1 promises that a clean checkout becomes a working, recoverable library. Close 
 | [M1-06](finish-m1.md#m1-06-prove-second-principal-isolation-over-http) Prove second-principal isolation over HTTP | Proof | P1 | M | none |
 | [M1-07](finish-m1.md#m1-07-container-image-and-compose-from-a-clean-checkout) Container image and Compose from a clean checkout | Build | P1 | L | [M1-08](finish-m1.md#m1-08-serve-the-web-app-from-the-backend-at-one-origin) |
 | [M1-08](finish-m1.md#m1-08-serve-the-web-app-from-the-backend-at-one-origin) Serve the web app from the backend at one origin | Build | P1 | M | none |
-| [M1-09](finish-m1.md#m1-09-read-only-storage-page) Read-only Storage page | Build | P1 | M | none |
 | [M1-10](finish-m1.md#m1-10-honest-determinate-upload-progress) Honest determinate upload progress | Build | P2 | S | none |
 | [M1-11](finish-m1.md#m1-11-drag-and-drop-upload) Drag-and-drop upload | Build | P2 | S | none |
-| [M1-12](finish-m1.md#m1-12-m1-exit-review) M1 exit review | Proof | P1 | M | [M1-01](finish-m1.md#m1-01-map-m1-failure-outcomes-in-the-web-client), [M1-02](finish-m1.md#m1-02-breadcrumbs-from-real-ancestors), [M1-03](finish-m1.md#m1-03-rediscover-and-cancel-open-uploads), [M1-05](finish-m1.md#m1-05-prove-interruption-and-restart-recovery-in-the-browser), [M1-06](finish-m1.md#m1-06-prove-second-principal-isolation-over-http), [M1-07](finish-m1.md#m1-07-container-image-and-compose-from-a-clean-checkout), [M1-09](finish-m1.md#m1-09-read-only-storage-page) |
+| [M1-12](finish-m1.md#m1-12-m1-exit-review) M1 exit review | Proof | P1 | M | [M1-01](finish-m1.md#m1-01-map-m1-failure-outcomes-in-the-web-client), [M1-02](finish-m1.md#m1-02-breadcrumbs-from-real-ancestors), [M1-03](finish-m1.md#m1-03-rediscover-and-cancel-open-uploads), [M1-05](finish-m1.md#m1-05-prove-interruption-and-restart-recovery-in-the-browser), [M1-06](finish-m1.md#m1-06-prove-second-principal-isolation-over-http), [M1-07](finish-m1.md#m1-07-container-image-and-compose-from-a-clean-checkout) |
 
 ### [Foundations](foundations.md)
 
@@ -106,6 +105,7 @@ Harnesses that make every later slice cheaper to prove.
 | [ENG-10](foundations.md#eng-10-measured-resource-baselines-for-transfers) Measured resource baselines for transfers | Proof | P2 | M | none |
 | [ENG-11](foundations.md#eng-11-migration-upgrade-test-harness) Migration upgrade test harness | Build | P2 | M | none |
 | [ENG-12](foundations.md#eng-12-anchor-byte-count-patterns-in-the-contract) Anchor byte-count patterns in the contract | Build | P3 | S | none |
+| [ENG-13](foundations.md#eng-13-structured-errors-for-failures-outside-controllers) Structured errors for failures outside controllers | Build | P2 | S | none |
 
 ### [Everyday library](everyday-library.md)
 
@@ -204,7 +204,7 @@ Show where the bytes are and roughly what they cost, with dated sources. These a
 | [COST-01](cost-and-insight.md#cost-01-usage-rollups) Usage rollups | Build | P2 | M | none |
 | [COST-02](cost-and-insight.md#cost-02-space-map) Space map | Build | P2 | M | [COST-01](cost-and-insight.md#cost-01-usage-rollups) |
 | [COST-03](cost-and-insight.md#cost-03-decision-cost-estimate-model) Decision: cost estimate model | Decision | P2 | S | none |
-| [COST-04](cost-and-insight.md#cost-04-monthly-estimate-on-the-storage-page) Monthly estimate on the Storage page | Build | P2 | M | [COST-01](cost-and-insight.md#cost-01-usage-rollups), [COST-03](cost-and-insight.md#cost-03-decision-cost-estimate-model), [M1-09](finish-m1.md#m1-09-read-only-storage-page) |
+| [COST-04](cost-and-insight.md#cost-04-monthly-estimate-on-the-storage-page) Monthly estimate on the Storage page | Build | P2 | M | [COST-01](cost-and-insight.md#cost-01-usage-rollups), [COST-03](cost-and-insight.md#cost-03-decision-cost-estimate-model) |
 | [COST-05](cost-and-insight.md#cost-05-what-if-preview) What-if preview | Build | P3 | S | [COST-04](cost-and-insight.md#cost-04-monthly-estimate-on-the-storage-page), [TIER-01](storage-tiers.md#tier-01-decision-connections-tiers-and-placement) |
 | [COST-06](cost-and-insight.md#cost-06-advisory-archival-rules-m5) Advisory archival rules (M5) | Build | P3 | M | [TDY-04](tidy-mode.md#tdy-04-tidy-deck-candidates-api), [TDY-03](tidy-mode.md#tdy-03-access-recency-signal) |
 | [COST-07](cost-and-insight.md#cost-07-growth-trend) Growth trend | Build | P3 | S | [COST-01](cost-and-insight.md#cost-01-usage-rollups) |

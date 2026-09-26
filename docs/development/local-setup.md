@@ -69,7 +69,10 @@ The PostgreSQL profile stores local objects below `FILEBONSAI_STORAGE_ROOT` (def
 `./data`). Upload defaults are 128 MiB, 15 minutes per streaming attempt, four
 concurrent writers, and 24-hour intent expiry. Override them with
 `FILEBONSAI_MAXIMUM_UPLOAD_BYTES`, `FILEBONSAI_MAXIMUM_UPLOAD_DURATION`,
-`FILEBONSAI_MAXIMUM_CONCURRENT_WRITES`, and `FILEBONSAI_UPLOAD_EXPIRY`.
+`FILEBONSAI_MAXIMUM_CONCURRENT_WRITES`, and `FILEBONSAI_UPLOAD_EXPIRY`. Set
+`FILEBONSAI_STORAGE_DISPLAY_NAME` (1–80 characters, no control characters) to name the
+connection on the Storage page; it defaults to `Local disk` or `Cloudflare R2`. Do not
+put a bucket name or path in it unless you want signed-in users to see it.
 
 ## Optional Cloudflare R2 adapter
 

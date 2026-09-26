@@ -161,32 +161,6 @@ Context: PR #1 (merged 2026-09-23) runs the web app from its own Dockerfile on t
 
 **Checks:** `backend`; Production web build served by the backend and inspected in a browser
 
-## M1-09 Read-only Storage page
-
-`P1` · `M` · Build · Backend, Web · Public API change
-
-Depends on: none
-
-Context: M1-04 added `GET /api/v1/upload-limits` (`UploadLimitsResponse`, the effective limit begin-upload enforces). Show that value rather than deriving another one.
-
-**Why.** design.md requires an M1 Storage surface that shows the configured connection, capabilities and limits, with no credential editor. The sidebar currently has a disabled placeholder.
-
-**Outcome.** An authenticated read-only summary of the active connection (display name, provider kind), capabilities, limits and bytes used, plus a web Storage page.
-
-**Acceptance**
-
-- A serialization test proves the DTO has no credentials, bucket keys, account IDs, endpoints or paths
-- Bytes used count committed versions only
-- Loading, error and unavailable states rendered
-
-**Settle first**
-
-- Is the bucket name sensitive? Default: show the operator's display name only
-
-**Invariants:** INV-11  
-**Read:** `docs/product/design.md`  
-**Checks:** `contract`; `web`; `rendered`
-
 ## M1-10 Honest determinate upload progress
 
 `P2` · `S` · Build · Web
@@ -229,7 +203,7 @@ Depends on: none
 
 `P1` · `M` · Proof · Ops, Web, Backend
 
-Depends on: [M1-01](#m1-01-map-m1-failure-outcomes-in-the-web-client), [M1-02](#m1-02-breadcrumbs-from-real-ancestors), [M1-03](#m1-03-rediscover-and-cancel-open-uploads), [M1-05](#m1-05-prove-interruption-and-restart-recovery-in-the-browser), [M1-06](#m1-06-prove-second-principal-isolation-over-http), [M1-07](#m1-07-container-image-and-compose-from-a-clean-checkout), [M1-09](#m1-09-read-only-storage-page)
+Depends on: [M1-01](#m1-01-map-m1-failure-outcomes-in-the-web-client), [M1-02](#m1-02-breadcrumbs-from-real-ancestors), [M1-03](#m1-03-rediscover-and-cancel-open-uploads), [M1-05](#m1-05-prove-interruption-and-restart-recovery-in-the-browser), [M1-06](#m1-06-prove-second-principal-isolation-over-http), [M1-07](#m1-07-container-image-and-compose-from-a-clean-checkout)
 
 **Why.** Declare M1 done with evidence, or name what's left.
 

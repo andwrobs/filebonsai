@@ -163,6 +163,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/storage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the configured storage connection
+         * @description Read-only. Reports configuration and committed usage; it does not probe the provider. Upload size limits come from getUploadLimits.
+         */
+        get: operations["getStorageSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/upload-limits": {
         parameters: {
             query?: never;
@@ -368,6 +388,29 @@ export interface components {
             parentId: string | null;
             /** Format: date-time */
             updatedAt: string;
+        };
+        StorageCapabilitiesResponse: {
+            /** @description False means downloads always send the whole original. */
+            rangeDownloads: boolean;
+            /** @description False means an interrupted upload is sent again from byte zero. */
+            resumableUploads: boolean;
+            /** @description True means every upload's size and SHA-256 are verified before the file becomes available. */
+            sha256Verification: boolean;
+        };
+        StorageConnectionResponse: {
+            /** @description Operator-chosen name, or the provider's default. Never a bucket, account, endpoint, or path. */
+            displayName: string;
+            /**
+             * @description Open vocabulary; known values are local and r2. Clients must show an unknown value rather than fail.
+             * @example local
+             */
+            providerKind: string;
+        };
+        StorageSummaryResponse: {
+            capabilities: components["schemas"]["StorageCapabilitiesResponse"];
+            connection: components["schemas"]["StorageConnectionResponse"];
+            /** @description Exact decimal sum of committed file versions in this workspace. Uploads that are not yet available are excluded. */
+            usedBytes: string;
         };
         UploadLimitsResponse: {
             /** @description Largest accepted file size as an exact decimal byte count. Clients may reject larger files before beginning an upload; the server still enforces the limit. */
@@ -843,6 +886,44 @@ export interface operations {
             };
             /** @description NAME_CONFLICT or IDEMPOTENCY_CONFLICT */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description INTERNAL_ERROR */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    getStorageSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Configured connection, capabilities, and committed usage */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorageSummaryResponse"];
+                };
+            };
+            /** @description AUTH_REQUIRED */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

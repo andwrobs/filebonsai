@@ -276,6 +276,84 @@ class PostgresCatalogTest {
     }
 
     @Test
+    void sumsCommittedVersionsExactlyAndOnlyForMembersOfTheWorkspace() {
+        // The same principal belongs to a second workspace that also holds a committed version.
+        UUID otherWorkspace = UUID.fromString("10000000-0000-4000-8000-000000000009");
+        OffsetDateTime now = OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC);
+        database.insertInto(WORKSPACES)
+                .columns(WORKSPACES.ID)
+                .values(otherWorkspace)
+                .execute();
+        database.insertInto(WORKSPACE_MEMBERS)
+                .columns(WORKSPACE_MEMBERS.WORKSPACE_ID, WORKSPACE_MEMBERS.PRINCIPAL_ID, WORKSPACE_MEMBERS.ROLE)
+                .values(otherWorkspace, PRINCIPAL, "owner")
+                .execute();
+        UUID otherRoot = UUID.randomUUID();
+        UUID otherFile = UUID.randomUUID();
+        UUID otherVersion = UUID.randomUUID();
+        UUID otherObject = UUID.randomUUID();
+        database.insertInto(CATALOG_ENTRIES)
+                .columns(
+                        CATALOG_ENTRIES.ID,
+                        CATALOG_ENTRIES.WORKSPACE_ID,
+                        CATALOG_ENTRIES.KIND,
+                        CATALOG_ENTRIES.CREATED_AT,
+                        CATALOG_ENTRIES.UPDATED_AT,
+                        CATALOG_ENTRIES.CURRENT_VERSION_ID)
+                .values(otherRoot, otherWorkspace, "folder", now, now, null)
+                .execute();
+        insertEntryName(database, otherWorkspace, otherRoot, null, "Library", now);
+        database.transaction(configuration -> {
+            DSLContext transaction = DSL.using(configuration);
+            transaction
+                    .insertInto(PHYSICAL_OBJECTS)
+                    .columns(
+                            PHYSICAL_OBJECTS.ID,
+                            PHYSICAL_OBJECTS.WORKSPACE_ID,
+                            PHYSICAL_OBJECTS.STORAGE_KEY,
+                            PHYSICAL_OBJECTS.SIZE_BYTES,
+                            PHYSICAL_OBJECTS.CREATED_AT)
+                    .values(otherObject, otherWorkspace, "objects/40/0009", 7L, now)
+                    .execute();
+            transaction
+                    .insertInto(CATALOG_ENTRIES)
+                    .columns(
+                            CATALOG_ENTRIES.ID,
+                            CATALOG_ENTRIES.WORKSPACE_ID,
+                            CATALOG_ENTRIES.KIND,
+                            CATALOG_ENTRIES.CREATED_AT,
+                            CATALOG_ENTRIES.UPDATED_AT,
+                            CATALOG_ENTRIES.CURRENT_VERSION_ID)
+                    .values(otherFile, otherWorkspace, "file", now, now, otherVersion)
+                    .execute();
+            transaction
+                    .insertInto(FILE_VERSIONS)
+                    .columns(
+                            FILE_VERSIONS.ID,
+                            FILE_VERSIONS.WORKSPACE_ID,
+                            FILE_VERSIONS.ENTRY_ID,
+                            FILE_VERSIONS.OBJECT_ID,
+                            FILE_VERSIONS.ORDINAL,
+                            FILE_VERSIONS.SIZE_BYTES,
+                            FILE_VERSIONS.CREATED_AT)
+                    .values(otherVersion, otherWorkspace, otherFile, otherObject, 1L, 7L, now)
+                    .execute();
+            insertEntryName(transaction, otherWorkspace, otherFile, otherRoot, "notes.txt", now);
+        });
+
+        assertThat(catalog.committedBytes(scope).decimal()).isEqualTo("9007199254740993");
+        assertThat(catalog.committedBytes(new CatalogScope(PRINCIPAL, otherWorkspace))
+                        .decimal())
+                .isEqualTo("7");
+        assertThat(catalog.committedBytes(new CatalogScope(UUID.randomUUID(), WORKSPACE))
+                        .value())
+                .isZero();
+        assertThat(catalog.committedBytes(new CatalogScope(PRINCIPAL, UUID.randomUUID()))
+                        .value())
+                .isZero();
+    }
+
+    @Test
     void versionsAndObjectMetadataAreImmutable() {
         assertThatThrownBy(() -> database.update(FILE_VERSIONS)
                         .set(FILE_VERSIONS.SIZE_BYTES, 1L)
@@ -519,6 +597,11 @@ class PostgresCatalogTest {
     }
 
     private void insertEntryName(DSLContext context, UUID entry, UUID parent, String name, OffsetDateTime now) {
+        insertEntryName(context, WORKSPACE, entry, parent, name, now);
+    }
+
+    private void insertEntryName(
+            DSLContext context, UUID workspace, UUID entry, UUID parent, String name, OffsetDateTime now) {
         context.insertInto(CATALOG_NAMES)
                 .columns(
                         CATALOG_NAMES.ID,
@@ -529,7 +612,7 @@ class PostgresCatalogTest {
                         CATALOG_NAMES.ENTRY_ID,
                         CATALOG_NAMES.EXPIRES_AT,
                         CATALOG_NAMES.CREATED_AT)
-                .values(UUID.randomUUID(), WORKSPACE, parent, name, "entry", entry, null, now)
+                .values(UUID.randomUUID(), workspace, parent, name, "entry", entry, null, now)
                 .execute();
     }
 

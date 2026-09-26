@@ -15,6 +15,7 @@ import com.filebonsai.catalog.application.CatalogCursor;
 import com.filebonsai.catalog.application.CatalogFailure;
 import com.filebonsai.catalog.application.CatalogScope;
 import com.filebonsai.catalog.application.CreateFolder;
+import com.filebonsai.catalog.application.GetCommittedBytes;
 import com.filebonsai.catalog.application.GetEntry;
 import com.filebonsai.catalog.application.GetWorkspaceRoot;
 import com.filebonsai.catalog.application.ListChildren;
@@ -23,6 +24,7 @@ import com.filebonsai.catalog.domain.Entry;
 import com.filebonsai.catalog.domain.EntryId;
 import com.filebonsai.catalog.domain.FileName;
 import com.filebonsai.catalog.domain.VersionId;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -36,7 +38,8 @@ import org.jooq.Record;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 
-public final class PostgresCatalog implements GetEntry, GetWorkspaceRoot, ListChildren, CreateFolder {
+public final class PostgresCatalog
+        implements GetEntry, GetWorkspaceRoot, ListChildren, CreateFolder, GetCommittedBytes {
     private static final String ENTRY_CLAIM = "entry";
     private static final String RESERVATION_CLAIM = "reservation";
     private static final String FOLDER = "folder";
@@ -70,6 +73,18 @@ public final class PostgresCatalog implements GetEntry, GetWorkspaceRoot, ListCh
             throw new CatalogFailure(ENTRY_NOT_FOUND, "Workspace root was not found");
         }
         return folder(database, scope, new EntryId(rootId));
+    }
+
+    @Override
+    public ByteCount committedBytes(CatalogScope scope) {
+        // Versions are inserted only in the publication transaction, so staged uploads are never counted.
+        BigDecimal total = database.select(DSL.coalesce(DSL.sum(FILE_VERSIONS.SIZE_BYTES), BigDecimal.ZERO))
+                .from(FILE_VERSIONS)
+                .where(FILE_VERSIONS.WORKSPACE_ID.eq(scope.workspaceId()))
+                .and(member(scope))
+                .fetchSingle()
+                .value1();
+        return new ByteCount(total.longValueExact());
     }
 
     @Override

@@ -52,6 +52,23 @@ as new optional or nullable fields so existing clients keep decoding.
 renaming a value is a breaking API change because generated clients decode it as an
 enum; internal recovery markers must not become public states.
 
+## Storage summary
+
+`GET /api/v1/storage` is an authenticated, read-only description of the configured
+connection. It reports configuration and never probes the provider.
+`connection.displayName` is the operator's `filebonsai.storage.display-name`, or
+`Local disk` or `Cloudflare R2` when that is blank. `connection.providerKind` is an open
+vocabulary (`local`, `r2`), so clients show unknown values instead of failing. The
+response never includes a bucket, account ID, endpoint, credential, storage key, or
+path. `capabilities` states the transfer guarantees as booleans:
+`sha256Verification`, `resumableUploads` (false, because M1 retries from byte zero),
+and `rangeDownloads` (false). Existing capabilities stay required; new ones arrive as
+optional booleans. `usedBytes` is the decimal-string sum of committed file versions in
+the caller's workspace, so uploads that are not yet available are excluded. It is a
+logical total, not provider billing: it ignores staging files and uncommitted objects,
+and it would count a physical object once per version if versions ever share one.
+Upload limits stay on `GET /api/v1/upload-limits`.
+
 ## Local access boundary
 
 The PostgreSQL profile has one local owner. Bootstrap is an administrative startup
