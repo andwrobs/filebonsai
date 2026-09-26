@@ -7,17 +7,18 @@
     "build": "react-router build",
     "dev": "react-router dev",
     "generate:schema": "openapi-typescript ../backend/contract/openapi.json -o src/lib/api/generated/schema.ts",
-    "test": "node --import tsx --test src/lib/api/filebonsai-service.test.ts app/features/catalog/catalog-data.test.ts app/features/transfers/transfer-store.test.ts app/features/storage/storage-data.test.ts",
+    "test": "node --import tsx --test src/lib/api/filebonsai-service.test.ts app/features/catalog/catalog-data.test.ts app/features/transfers/transfer-store.test.ts app/features/storage/storage-data.test.ts app/styles/tokens.test.ts",
     "typecheck:run": "react-router typegen && tsc --noEmit"
   },
   "dependencies": {
     "@react-router/node": "8.4.0",
     "@tanstack/react-form": "1.33.5",
+    "isbot": "5.2.2",
+    "lucide-react": "1.48.0",
     "openapi-fetch": "0.17.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "react-router": "8.4.0",
-    "isbot": "5.2.2"
+    "react-router": "8.4.0"
   },
   "devDependencies": {
     "@react-router/dev": "8.4.0",

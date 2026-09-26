@@ -45,3 +45,13 @@ route, so the page owns its loading, error, and unavailable states.
 Keep the tab open: selected files and transfer tracking are held in memory and are not
 restored after reload. Original downloads fetch a Blob before handing it to the browser,
 so this control buffers the original rather than streaming directly to disk.
+
+## Design tokens and layout
+
+`app/styles/tokens.css` holds every color, type size, spacing step, radius, density,
+and shell region size. Screens use those roles; `app/styles/tokens.test.ts` fails the
+test run on a raw color anywhere else under `app/` and on AA contrast regressions.
+`routes/app-shell.tsx` is a pathless layout route shared by Library and Storage. It
+shows a sidebar from 1100px, an icon rail from 768px, and top and bottom bars below
+that. The folder list uses container queries, so it adapts to its own width rather than
+the window. Icons come from `lucide-react` (ISC license).

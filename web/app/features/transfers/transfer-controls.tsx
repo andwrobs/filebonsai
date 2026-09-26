@@ -1,44 +1,71 @@
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { ChevronDown, ChevronUp, Download, Upload } from "lucide-react";
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { useRevalidator } from "react-router";
 import { transfers, settled } from "./transfer-store.js";
 import { filebonsaiService } from "../../../src/lib/api/filebonsai-service.js";
 
-export function UploadControl({ parentId }: { parentId: string }) {
-  return <label className="upload-control">Upload files
-    <input type="file" multiple aria-label="Upload files" onChange={event => {
+// "toolbar" is the labelled page action; "fab" is the floating phone action; "inline" sits in empty states.
+export function UploadControl({ parentId, variant = "toolbar" }: { parentId: string; variant?: "toolbar" | "fab" | "inline" }) {
+  const input = useRef<HTMLInputElement>(null);
+  const className = variant === "fab" ? "fab" : variant === "toolbar" ? "button primary toolbar-upload" : "button primary";
+  return <>
+    <button aria-label={variant === "fab" ? "Upload files" : undefined} className={className} onClick={() => input.current?.click()} type="button">
+      <Upload aria-hidden="true" className="button-icon" strokeWidth={2} />
+      {variant === "fab" ? null : <span>Upload</span>}
+    </button>
+    <input ref={input} type="file" multiple hidden tabIndex={-1} aria-label="Upload files" onChange={event => {
       for (const file of Array.from(event.target.files ?? [])) transfers.add(file, parentId);
       event.target.value = "";
     }} />
-  </label>;
+  </>;
 }
 
-export function TransferPanel() {
+export function TransferTray() {
   const items = useSyncExternalStore(transfers.subscribe, transfers.snapshot, transfers.snapshot);
   const revalidator = useRevalidator();
+  const [expanded, setExpanded] = useState(true);
+  const bodyId = useId();
   const available = items.filter(item => item.upload?.state === "AVAILABLE").length;
+  const active = items.filter(item => !settled(item)).length;
+  const attention = items.filter(item => item.refused || ["FAILED", "EXPIRED"].includes(item.upload?.state ?? "")).length;
   useEffect(() => { if (available) void revalidator.revalidate(); }, [available]);
+  // Open while anything is moving or needs a decision; fold away once every upload settled cleanly.
+  useEffect(() => { setExpanded(active > 0 || attention > 0); }, [active, attention]);
   useEffect(() => {
-    if (!items.some(item => !settled(item))) return;
+    if (!active) return;
     const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
-  }, [items]);
+  }, [active]);
   if (!items.length) return null;
-  return <section className="transfer-panel" aria-labelledby="transfers-heading">
-    <h2 id="transfers-heading">Transfers</h2>
-    <p>Uploads continue while you browse folders. Keep this tab open. Retry sends the whole file from byte zero.</p>
-    <ul>{items.map(item => <li key={item.key}>
-      <strong>{item.file.name}</strong>
-      <p role="status">{item.message}</p>
-      {item.busy ? <progress aria-label={`Upload ${item.file.name}`} /> : null}
-      {!settled(item) ? <div className="transfer-actions">
-        <button className="secondary-button" disabled={item.busy} onClick={() => void transfers.run(item.key, "check")}>Check status</button>
-        {(!item.busy && (!item.upload || ["INITIATED", "STAGED"].includes(item.upload.state))) ?
-          <button className="secondary-button" onClick={() => void transfers.run(item.key, "continue")}>{item.upload?.state === "STAGED" ? "Finish upload" : "Retry from byte zero"}</button> : null}
-        {((!item.busy && !item.upload) || (item.upload && ["INITIATED", "RECEIVING", "STAGED"].includes(item.upload.state))) ?
-          <button className="secondary-button" onClick={() => void transfers.run(item.key, "cancel")}>Cancel upload</button> : null}
-      </div> : null}
-    </li>)}</ul>
+  return <section className="transfer-tray" data-expanded={expanded} aria-labelledby="transfers-heading">
+    <header className="transfer-tray-header">
+      <h2 id="transfers-heading">Transfers</h2>
+      <p className="transfer-summary">{[
+        active ? `${active} in progress` : "",
+        attention ? `${attention} need attention` : "",
+        items.length - active - attention ? `${items.length - active - attention} finished` : "",
+      ].filter(Boolean).join(" · ")}</p>
+      <button aria-controls={bodyId} aria-expanded={expanded} className="icon-button" onClick={() => setExpanded(value => !value)} type="button">
+        {expanded ? <ChevronDown aria-hidden="true" /> : <ChevronUp aria-hidden="true" />}
+        <span className="visually-hidden">{expanded ? "Hide transfers" : "Show transfers"}</span>
+      </button>
+    </header>
+    <div className="transfer-tray-body" hidden={!expanded} id={bodyId}>
+      <p className="transfer-note">Uploads continue while you browse folders. Keep this tab open. Retry sends the whole file from byte zero.</p>
+      <ul>{items.map(item => <li key={item.key}>
+        <strong>{item.file.name}</strong>
+        <p role="status">{item.message}</p>
+        {item.busy ? <progress aria-label={`Upload ${item.file.name}`} /> : null}
+        {!settled(item) ? <div className="transfer-actions">
+          <button className="button secondary" disabled={item.busy} onClick={() => void transfers.run(item.key, "check")}>Check status</button>
+          {(!item.busy && (!item.upload || ["INITIATED", "STAGED"].includes(item.upload.state))) ?
+            <button className="button secondary" onClick={() => void transfers.run(item.key, "continue")}>{item.upload?.state === "STAGED" ? "Finish upload" : "Retry from byte zero"}</button> : null}
+          {((!item.busy && !item.upload) || (item.upload && ["INITIATED", "RECEIVING", "STAGED"].includes(item.upload.state))) ?
+            <button className="button secondary" onClick={() => void transfers.run(item.key, "cancel")}>Cancel upload</button> : null}
+        </div> : null}
+      </li>)}</ul>
+    </div>
   </section>;
 }
 
@@ -59,8 +86,10 @@ export function DownloadControl({ id, name }: { id: string; name: string }) {
     } catch { setMessage("Download failed. Check your session or connection and try again."); }
     finally { setBusy(false); }
   }
-  return <span className="download-control">
-    <button className="secondary-button" disabled={busy} aria-label={`Download ${name}`} onClick={() => void download()}>{busy ? "Downloading…" : "Download original"}</button>
-    {message ? <span role="status">{message}</span> : null}
-  </span>;
+  return <>
+    <button aria-busy={busy} aria-label={`Download ${name}`} className="icon-button entry-action" disabled={busy} onClick={() => void download()} title="Download original" type="button">
+      <Download aria-hidden="true" />
+    </button>
+    <span className="entry-status" role="status">{busy ? "Downloading…" : message}</span>
+  </>;
 }
