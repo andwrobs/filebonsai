@@ -31,6 +31,9 @@ test("modified labels shorten with recency", () => {
   assert.equal(label("2026-09-24T23:59:00Z"), "Yesterday");
   assert.equal(label("2026-08-28T12:00:00Z"), "Aug 28");
   assert.equal(label("2025-12-31T12:00:00Z"), "Dec 31, 2025");
+  // Calendar days, not 24-hour spans: the spring-forward day had only 23 hours.
+  assert.equal(formatModified("2026-03-08T12:00:00-06:00", new Date("2026-03-09T00:30:00-06:00"), "en-US", "America/Denver"), "Yesterday");
+  assert.equal(formatModified("2026-01-01T12:00:00Z", new Date("2026-01-02T08:00:00Z"), "en-US", "UTC"), "Yesterday");
 });
 
 test("compact meta leads with size for files and kind for folders", () => {

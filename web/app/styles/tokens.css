@@ -11,6 +11,8 @@
   --color-surface-accent: #eaf2ec;
   --color-border: #e4e1d7;
   --color-border-strong: #cbc7ba;
+  /* Input boundaries identify the control, so they meet 3:1 (WCAG 1.4.11). */
+  --color-control-border: #858c86;
 
   /* Text. Every text role meets WCAG AA on every surface above. */
   --color-text: #1f2a24;

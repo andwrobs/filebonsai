@@ -60,7 +60,7 @@ a { color: var(--color-accent-text); }
 .icon-button svg { height: var(--icon-size); width: var(--icon-size); }
 .button:disabled, .icon-button:disabled { cursor: not-allowed; opacity: 0.6; }
 input:not([type="file"]) {
-  background: var(--color-surface); border: 1px solid var(--color-border-strong); border-radius: var(--radius-md);
+  background: var(--color-surface); border: 1px solid var(--color-control-border); border-radius: var(--radius-md);
   font-size: 1rem; min-height: var(--control-height); padding: 0 var(--space-3); width: 100%;
 }
 .field-error, .form-error { color: var(--color-danger); font-size: var(--text-sm); font-weight: var(--weight-semibold); }
@@ -316,13 +316,11 @@ input:not([type="file"]) {
   .bottom-nav .nav-icon { height: 1.375rem; width: 1.375rem; }
   .fab {
     align-items: center; background: var(--color-accent); border: 0; border-radius: var(--radius-pill);
-    bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + var(--space-4)); box-shadow: var(--shadow-floating);
+    bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + var(--tray-height, 0px) + var(--space-4)); box-shadow: var(--shadow-floating);
     color: var(--color-on-accent); display: inline-flex; height: 3.5rem; justify-content: center;
     position: fixed; right: max(var(--space-4), env(safe-area-inset-right)); width: 3.5rem; z-index: 15;
   }
   .fab:hover { background: var(--color-accent-hover); }
   .fab .button-icon { height: 1.5rem; width: 1.5rem; }
   .transfer-tray { bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom)); }
-  .app-shell:has(.transfer-tray) .fab { bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + var(--tray-header-height) + var(--space-4)); }
-  .app-shell:has(.transfer-tray[data-expanded="true"]) .fab { display: none; }
 }

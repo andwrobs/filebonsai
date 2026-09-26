@@ -45,6 +45,9 @@ test("focus and control boundaries meet the 3:1 non-text minimum", () => {
     assert.ok(contrast("focus", surface) >= 3, `focus on ${surface}: ${contrast("focus", surface).toFixed(2)}`);
   }
   assert.ok(contrast("accent", "surface") >= 3);
+  for (const surface of ["canvas", "surface", "surface-accent"]) {
+    assert.ok(contrast("control-border", surface) >= 3, `control-border on ${surface}: ${contrast("control-border", surface).toFixed(2)}`);
+  }
 });
 
 test("raw colors live only in the token file", () => {

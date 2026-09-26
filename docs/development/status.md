@@ -68,8 +68,8 @@ observed results; use Git history for prior plans and completed migrations.
   display name, open-vocabulary provider kind), transfer capabilities, and committed
   `usedBytes` for the member's workspace. It carries no bucket, account, endpoint,
   credential, or path. The web `/storage` page shows it with the upload limit and has its
-  own loading, error, and unavailable states; the sidebar links Library and Storage on
-  desktop and mobile.
+  own loading, error, and unavailable states. The shell links Library and Storage in
+  every layout.
 - The web shell follows the design reference with one token file
   (`web/app/styles/tokens.css`) for color, type, spacing, radius, density, and region
   sizes. `tokens.test.ts` fails on raw colors elsewhere and on AA contrast regressions.
@@ -80,8 +80,9 @@ observed results; use Git history for prior plans and completed migrations.
   safe-area padding. The folder list is a dense table (icon, name, kind, size,
   modified, download). Its container queries drop the kind column and then stack
   rows into two lines as the list narrows. Kind is display-only and comes from the
-  filename extension. Uploads sit in a bottom tray that stays open while work is
-  active or needs attention and folds away once everything settles. The sidebar's
+  filename extension. Uploads sit in a bottom tray. It opens when an upload starts or
+  needs attention and folds away once everything settles. On phones the floating
+  upload button sits above the tray at its measured height. The sidebar's
   Storage entry shows the connection name and committed bytes. The Recent, Shared,
   and Archive placeholders are gone. Breadcrumbs still show only Library and the
   current folder (M1-02).
@@ -94,12 +95,17 @@ observed results; use Git history for prior plans and completed migrations.
   The check ran against a disposable PostgreSQL-profile backend: a PostgreSQL 17.6
   container, a generated owner password, and a synthetic library of 70 entries. In the
   Claude desktop in-app browser at 1440×900, 1024×768, 768×1024, 390×844, and
-  375×667, no size scrolled horizontally. At phone sizes every visible control
-  measured at least 44px. The run covered sign-in, the root, a nested folder, an
+  375×667, no size scrolled horizontally. At phone sizes, with touch emulated (coarse
+  pointer), every visible control measured at least 44px. With a fine pointer, icon
+  buttons are 36px. The run covered sign-in, the root, a nested folder, an
   empty folder, a 45-item folder, long names without spaces, and folder creation
   with validation. Two uploads reached `AVAILABLE` through the tray. Original download,
-  the Storage page, and keyboard focus order with the skip link also passed. The
-  sign-in page was inspected only at 1440×900. Creating a folder with an existing
+  the Storage page, and keyboard focus order with the skip link also passed. After
+  review repairs, a second disposable backend rechecked 390×844 and 1440×900. That
+  run covered sign-in at 390×844 and the tray folding away after two uploads settled.
+  A 135 MB file was refused before sending. The tray reopened with the refusal and
+  the floating upload button sat above it, then moved down when the tray collapsed.
+  Input borders now meet 3:1. Creating a folder with an existing
   sibling's name returned `500` instead of `409 NAME_CONFLICT`. That bug predates
   this change and is recorded as M1-13.
 - Storage page (M1-09): `cd backend && ./scripts/verify.sh` passed with 87 backend tests
@@ -219,8 +225,8 @@ observed results; use Git history for prior plans and completed migrations.
    real Cloudflare R2 bucket, repair any provider mismatch, and record bounded
    streaming/recovery evidence before claiming R2 support or adding another provider.
 2. Web library, in this order: the inspector with the fields the API already returns
-   (LIB-06), in-browser preview of originals (PRV-09), table/grid views (LIB-04), and
-   the inspector's integrity fields (LIB-14).
+   (LIB-06), in-browser preview of originals (PRV-09), server-side sort (LIB-03)
+   then table/grid views (LIB-04), and the inspector's integrity fields (LIB-14).
 3. iOS Catalog remains deferred by user preference. When resumed, implement the
    SwiftUI/TCA slice through a generated transport and handwritten application adapter.
 

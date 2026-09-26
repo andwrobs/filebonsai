@@ -43,7 +43,8 @@ export function formatModified(iso: string, now = new Date(), locale?: string, t
   const day = (value: Date) => new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(value);
   const today = day(now);
   if (day(date) === today) return new Intl.DateTimeFormat(locale, { timeZone, hour: "numeric", minute: "2-digit" }).format(date);
-  if (day(date) === day(new Date(now.getTime() - 86_400_000))) return "Yesterday";
+  const [year, month, date_] = today.split("-").map(Number);
+  if (day(date) === new Date(Date.UTC(year, month - 1, date_ - 1)).toISOString().slice(0, 10)) return "Yesterday";
   const sameYear = day(date).slice(0, 4) === today.slice(0, 4);
   return new Intl.DateTimeFormat(locale, { timeZone, month: "short", day: "numeric", ...(sameYear ? {} : { year: "numeric" }) }).format(date);
 }

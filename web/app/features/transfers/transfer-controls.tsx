@@ -29,19 +29,35 @@ export function TransferTray() {
   const active = items.filter(item => !settled(item)).length;
   const attention = items.filter(item => item.refused || ["FAILED", "EXPIRED"].includes(item.upload?.state ?? "")).length;
   useEffect(() => { if (available) void revalidator.revalidate(); }, [available]);
-  // Open while anything is moving or needs a decision; fold away once every upload settled cleanly.
-  useEffect(() => { setExpanded(active > 0 || attention > 0); }, [active, attention]);
+  // Open when new work starts or needs a decision; fold away once every upload settled cleanly.
+  const previous = useRef({ active: 0, attention: 0 });
+  useEffect(() => {
+    if (active > previous.current.active || attention > previous.current.attention) setExpanded(true);
+    else if (!active && !attention) setExpanded(false);
+    previous.current = { active, attention };
+  }, [active, attention]);
+  // Publish the tray height so floating actions can sit above it instead of covering it.
+  const tray = useRef<HTMLElement>(null);
+  const shown = items.length > 0;
+  useEffect(() => {
+    const node = tray.current;
+    const shell = node?.closest<HTMLElement>(".app-shell");
+    if (!node || !shell) return;
+    const observer = new ResizeObserver(() => shell.style.setProperty("--tray-height", `${node.offsetHeight}px`));
+    observer.observe(node);
+    return () => { observer.disconnect(); shell.style.removeProperty("--tray-height"); };
+  }, [shown]);
   useEffect(() => {
     if (!active) return;
     const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [active]);
-  if (!items.length) return null;
-  return <section className="transfer-tray" data-expanded={expanded} aria-labelledby="transfers-heading">
+  if (!shown) return null;
+  return <section ref={tray} className="transfer-tray" data-expanded={expanded} aria-labelledby="transfers-heading">
     <header className="transfer-tray-header">
       <h2 id="transfers-heading">Transfers</h2>
-      <p className="transfer-summary">{[
+      <p className="transfer-summary" role="status">{[
         active ? `${active} in progress` : "",
         attention ? `${attention} need attention` : "",
         items.length - active - attention ? `${items.length - active - attention} finished` : "",
