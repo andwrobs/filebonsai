@@ -126,6 +126,10 @@ Make the daily loop of finding, looking and acting feel like the design directio
 | [LIB-11](everyday-library.md#lib-11-large-folder-performance) Large-folder performance | Proof | P3 | M | [ENG-03](foundations.md#eng-03-synthetic-demo-library-generator) |
 | [LIB-12](everyday-library.md#lib-12-accessibility-audit-and-fixes) Accessibility audit and fixes | Build | P2 | M | [ENG-02](foundations.md#eng-02-playwright-end-to-end-harness) |
 | [LIB-13](everyday-library.md#lib-13-warm-dark-theme) Warm dark theme | Build | P3 | S | [LIB-01](everyday-library.md#lib-01-design-tokens-and-shell-foundation) |
+| [LIB-15](everyday-library.md#lib-15-inspector-hierarchy-and-description-polish) Inspector hierarchy and description polish | Build | P2 | M | [LIB-06](everyday-library.md#lib-06-inspector-panel) |
+| [LIB-16](everyday-library.md#lib-16-storage-summary-and-explanatory-panels) Storage summary and explanatory panels | Build | P2 | M | [LIB-01](everyday-library.md#lib-01-design-tokens-and-shell-foundation) |
+| [LIB-17](everyday-library.md#lib-17-panel-interaction-and-feedback-polish) Panel interaction and feedback polish | Build | P2 | M | [LIB-15](everyday-library.md#lib-15-inspector-hierarchy-and-description-polish), [LIB-16](everyday-library.md#lib-16-storage-summary-and-explanatory-panels) |
+| [LIB-18](everyday-library.md#lib-18-panel-visual-regression-coverage) Panel visual regression coverage | Proof | P2 | M | [ENG-02](foundations.md#eng-02-playwright-end-to-end-harness), [LIB-15](everyday-library.md#lib-15-inspector-hierarchy-and-description-polish), [LIB-16](everyday-library.md#lib-16-storage-summary-and-explanatory-panels) |
 
 ### [Organize](organize.md)
 
@@ -180,20 +184,26 @@ Swipe through files one card at a time and decide what stays, what gets archived
 
 ### [Storage tiers & placement](storage-tiers.md)
 
-Files stay where they are in the library while their bytes move between hot, cool and cold storage. Each move is verified before it takes effect and the old copy is retired afterwards.
+Connect storage from the app or operator configuration with explicit ownership and server-held credentials. Files keep their library location while verified copies move between tiers.
 
 | Item | Kind | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- |
 | [TIER-00](storage-tiers.md#tier-00-real-r2-compatibility-proof-m2) Real R2 compatibility proof (M2) (blocked on you) | Proof | P1 | L | none |
-| [TIER-01](storage-tiers.md#tier-01-decision-connections-tiers-and-placement) Decision: connections, tiers and placement | Decision | P1 | M | [TIER-00](storage-tiers.md#tier-00-real-r2-compatibility-proof-m2) |
+| [TIER-01](storage-tiers.md#tier-01-decision-connections-tiers-and-placement) Decision: connections, tiers and placement | Decision | P1 | M | [TIER-00](storage-tiers.md#tier-00-real-r2-compatibility-proof-m2), [TIER-10](storage-tiers.md#tier-10-decision-secure-app-managed-connections) |
 | [TIER-02](storage-tiers.md#tier-02-spike-r2-infrequent-access-behaviour) Spike: R2 Infrequent Access behaviour (blocked on you) | Spike | P2 | S | none |
-| [TIER-03](storage-tiers.md#tier-03-storage-connection-registry) Storage connection registry | Build | P2 | M | [TIER-01](storage-tiers.md#tier-01-decision-connections-tiers-and-placement) |
-| [TIER-04](storage-tiers.md#tier-04-multiple-verified-copies-per-version) Multiple verified copies per version | Build | P2 | L | [TIER-03](storage-tiers.md#tier-03-storage-connection-registry) |
+| [TIER-03](storage-tiers.md#tier-03-storage-connection-registry) Storage connection registry | Build | P2 | L | [TIER-10](storage-tiers.md#tier-10-decision-secure-app-managed-connections) |
+| [TIER-04](storage-tiers.md#tier-04-multiple-verified-copies-per-version) Multiple verified copies per version | Build | P2 | L | [TIER-03](storage-tiers.md#tier-03-storage-connection-registry), [TIER-01](storage-tiers.md#tier-01-decision-connections-tiers-and-placement), [TIER-14](storage-tiers.md#tier-14-activate-rotate-and-retire-connections-safely) |
 | [TIER-05](storage-tiers.md#tier-05-move-bytes-between-tiers) Move bytes between tiers | Build | P2 | XL | [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer), [TIER-04](storage-tiers.md#tier-04-multiple-verified-copies-per-version) |
 | [TIER-06](storage-tiers.md#tier-06-folder-placement-policies) Folder placement policies | Build | P3 | M | [TIER-05](storage-tiers.md#tier-05-move-bytes-between-tiers), [COST-03](cost-and-insight.md#cost-03-decision-cost-estimate-model) |
 | [TIER-07](storage-tiers.md#tier-07-design-archive-retrieval-model) Design: archive retrieval model | Decision | P3 | S | [TIER-01](storage-tiers.md#tier-01-decision-connections-tiers-and-placement) |
 | [TIER-08](storage-tiers.md#tier-08-decision-second-provider-for-cold-or-offsite-storage) Decision: second provider for cold or offsite storage | Decision | P3 | S | [TIER-00](storage-tiers.md#tier-00-real-r2-compatibility-proof-m2) |
 | [TIER-09](storage-tiers.md#tier-09-local-hot-cache-for-cloud-files) Local hot cache for cloud files | Build | P3 | M | [TIER-04](storage-tiers.md#tier-04-multiple-verified-copies-per-version) |
+| [TIER-10](storage-tiers.md#tier-10-decision-secure-app-managed-connections) Decision: secure app-managed connections | Decision | P1 | M | none |
+| [TIER-11](storage-tiers.md#tier-11-server-credential-custody) Server credential custody | Build | P2 | M | [TIER-10](storage-tiers.md#tier-10-decision-secure-app-managed-connections), [TIER-03](storage-tiers.md#tier-03-storage-connection-registry) |
+| [TIER-12](storage-tiers.md#tier-12-owner-connection-drafts-and-safe-probes) Owner connection drafts and safe probes | Build | P2 | L | [TIER-03](storage-tiers.md#tier-03-storage-connection-registry), [TIER-11](storage-tiers.md#tier-11-server-credential-custody) |
+| [TIER-13](storage-tiers.md#tier-13-add-storage-from-the-app) Add storage from the app | Build | P2 | M | [TIER-12](storage-tiers.md#tier-12-owner-connection-drafts-and-safe-probes), [TIER-14](storage-tiers.md#tier-14-activate-rotate-and-retire-connections-safely), [CFG-09](configurable-shell.md#cfg-09-runtime-ui-capabilities-api), [LIB-16](everyday-library.md#lib-16-storage-summary-and-explanatory-panels) |
+| [TIER-14](storage-tiers.md#tier-14-activate-rotate-and-retire-connections-safely) Activate, rotate and retire connections safely | Build | P2 | L | [TIER-12](storage-tiers.md#tier-12-owner-connection-drafts-and-safe-probes), [TIER-00](storage-tiers.md#tier-00-real-r2-compatibility-proof-m2) |
+| [TIER-15](storage-tiers.md#tier-15-storage-administration-security-and-recovery-proof) Storage administration security and recovery proof | Proof | P1 | M | [TIER-13](storage-tiers.md#tier-13-add-storage-from-the-app), [TIER-14](storage-tiers.md#tier-14-activate-rotate-and-retire-connections-safely) |
 
 ### [Cost & insight](cost-and-insight.md)
 
@@ -225,18 +235,21 @@ A library you can prove is intact and can rebuild from an export. This is M4.
 
 ### [Configurable shell](configurable-shell.md)
 
-Same app, your layout: modules, regions, presets and per-folder views, without affecting permissions or losing the way back.
+Runtime UI capabilities, synced preferences and owner settings have separate boundaries. Modules, regions, presets and per-folder views change the experience without changing permissions.
 
 | Item | Kind | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- |
 | [CFG-01](configurable-shell.md#cfg-01-decision-configurable-shell-model) Decision: configurable shell model | Decision | P2 | M | none |
 | [CFG-02](configurable-shell.md#cfg-02-module-registry-and-layout-engine) Module registry and layout engine | Build | P2 | L | [CFG-01](configurable-shell.md#cfg-01-decision-configurable-shell-model), [LIB-01](everyday-library.md#lib-01-design-tokens-and-shell-foundation) |
 | [CFG-03](configurable-shell.md#cfg-03-customize-layout-panel) Customize Layout panel | Build | P3 | M | [CFG-02](configurable-shell.md#cfg-02-module-registry-and-layout-engine) |
-| [CFG-04](configurable-shell.md#cfg-04-preferences-api) Preferences API | Build | P3 | M | [CFG-01](configurable-shell.md#cfg-01-decision-configurable-shell-model) |
+| [CFG-04](configurable-shell.md#cfg-04-preferences-api) Preferences API | Build | P2 | M | [CFG-01](configurable-shell.md#cfg-01-decision-configurable-shell-model) |
 | [CFG-05](configurable-shell.md#cfg-05-per-folder-view-settings) Per-folder view settings | Build | P3 | M | [CFG-04](configurable-shell.md#cfg-04-preferences-api), [LIB-03](everyday-library.md#lib-03-server-side-sort-for-folder-listings), [LIB-04](everyday-library.md#lib-04-table-and-grid-views) |
 | [CFG-06](configurable-shell.md#cfg-06-layout-import-and-export) Layout import and export | Build | P3 | S | [CFG-02](configurable-shell.md#cfg-02-module-registry-and-layout-engine) |
 | [CFG-07](configurable-shell.md#cfg-07-saved-views-smart-folders) Saved views (smart folders) | Build | P3 | M | [LIB-07](everyday-library.md#lib-07-name-search), [ORG-08](organize.md#org-08-tags) |
 | [CFG-08](configurable-shell.md#cfg-08-operator-configuration-reference) Operator configuration reference | Build | P3 | S | none |
+| [CFG-09](configurable-shell.md#cfg-09-runtime-ui-capabilities-api) Runtime UI capabilities API | Build | P2 | M | none |
+| [CFG-10](configurable-shell.md#cfg-10-personal-settings-and-sync-feedback) Personal settings and sync feedback | Build | P2 | M | [CFG-02](configurable-shell.md#cfg-02-module-registry-and-layout-engine), [CFG-04](configurable-shell.md#cfg-04-preferences-api), [CFG-09](configurable-shell.md#cfg-09-runtime-ui-capabilities-api), [LIB-16](everyday-library.md#lib-16-storage-summary-and-explanatory-panels) |
+| [CFG-11](configurable-shell.md#cfg-11-decision-owner-settings-and-deployment-guardrails) Decision: owner settings and deployment guardrails | Decision | P2 | M | none |
 
 ### [Access & sharing](access-and-sharing.md)
 

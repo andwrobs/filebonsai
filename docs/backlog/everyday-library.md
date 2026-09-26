@@ -6,6 +6,11 @@ The running app is a single list with a create-folder form. The design reference
 
 See [the backlog index](README.md) for how to pick up and retire items.
 
+The panel work below covers both entry details and the descriptive cards/help on
+Storage and Settings. It builds on the existing inspector rather than creating a
+second details surface. LIB-14 is reserved by the inspector-integrity split in
+[PR #11](https://github.com/andwrobs/filebonsai/pull/11); new items start at LIB-15.
+
 ## LIB-01 Design tokens and shell foundation
 
 `P1` · `M` · Build · Web
@@ -254,3 +259,91 @@ Depends on: [LIB-01](#lib-01-design-tokens-and-shell-foundation)
 - Dark mode is separate from shell configurability (design.md): confirm it's wanted now
 
 **Checks:** `web`; `rendered`
+
+## LIB-15 Inspector hierarchy and description polish
+
+`P2` · `M` · Build · Web
+
+Depends on: [LIB-06](#lib-06-inspector-panel)
+
+In flight: [PR #11](https://github.com/andwrobs/filebonsai/pull/11) separates the basic inspector from later integrity fields. Reconcile with that split when picking this up.
+
+**Why.** A list of metadata is useful, but details should be easy to scan while browsing and comfortable to read on a phone.
+
+**Outcome.** A composed inspector with a compact file identity header, a clearly grouped Details section, a primary open/download action, and progressive disclosure for technical fields. Notes use ORG-13 when implemented; previews use the preview epic. No placeholder editor, invented summary, or empty feature tabs.
+
+**Acceptance**
+
+- Typography, label/value alignment, spacing, dividers, icons, selection and focus use the shell tokens; important values remain readable without opening tooltips
+- Long filenames wrap; IDs and available digests use selectable monospace text and accessible copy feedback; dates have an unambiguous full-date/time explanation
+- No selection, folder, file, unavailable field, loading, removed/inaccessible entry and failure states are deliberate; changing focus never leaves another entry's details or actions visible
+- Wide screens keep a useful list beside the inspector; narrower screens use a drawer/sheet with a reachable close action, bounded scrolling, safe-area padding and restored focus
+- Panel width/open state have sensible defaults and reset; any local persistence is scoped to the viewer and hands off cleanly to CFG-04 later
+- Keyboard browsing, 200% zoom, reduced motion, long localized text and a phone with the transfer tray open remain usable
+
+**Read:** `docs/product/design.md`, `docs/development/principles.md`
+
+**Checks:** `web`; `rendered` at desktop, tablet and phone widths
+
+## LIB-16 Storage summary and explanatory panels
+
+`P2` · `M` · Build · Web
+
+Depends on: [LIB-01](#lib-01-design-tokens-and-shell-foundation)
+
+**Why.** Storage currently mixes headline numbers, capability explanations and operator guidance with similar visual weight.
+
+**Outcome.** Polish the existing Storage page into a concise connection summary, comparable usage/limit facts and expandable explanations. Establish reusable presentation patterns for description text, definition rows, status labels, help disclosure and action footers, adopted by Settings when it exists.
+
+**Acceptance**
+
+- Connection name/provider, committed usage and per-file upload limit have a clear reading order; supporting copy explains what a number means in one sentence
+- Committed bytes are labeled as library usage, not a bill or bucket capacity; missing capacity never produces an invented percentage ring, progress bar or cost estimate
+- Distinguish configured, last checked, checking, unavailable and failed only when the corresponding evidence exists; the current read-only summary never implies a live health check
+- Keep task-relevant help near its control, with longer setup/security explanation behind disclosure; essential error recovery never relies on hover
+- Loading skeletons preserve useful geometry; unknown values read as unknown, not zero; independent failures retain usable information and offer a focused retry
+- Reflow long connection names and descriptions at 390px/200% zoom; status is never color-only; cards follow heading and definition-list semantics
+- The future Add connection flow belongs to TIER-13; do not show a working-looking setup button before that capability exists
+
+**Invariants:** INV-11, INV-14
+
+**Checks:** `web`; `rendered`
+
+## LIB-17 Panel interaction and feedback polish
+
+`P2` · `M` · Build · Web
+
+Depends on: [LIB-15](#lib-15-inspector-hierarchy-and-description-polish), [LIB-16](#lib-16-storage-summary-and-explanatory-panels)
+
+**Why.** Opening a sheet, copying a value, saving a setting and recovering from failure should feel like the same application.
+
+**Outcome.** Consistent panel headers, close/back behavior, inline validation, busy controls, copy/save feedback and restrained open/close transitions across implemented details and settings surfaces.
+
+**Acceptance**
+
+- Hover, keyboard focus, selected, disabled, pending, success and failure are visually distinct using existing tokens; reserve layout space for validation where practical
+- Dialog/sheet focus is contained and restored; an inline inspector does not trap focus; Escape follows one documented overlay order without dismissing unrelated transfers
+- Saving prevents duplicate actions and announces its actual result; a failed save retains non-secret edits and gives a retry path; unsaved changes are handled explicitly
+- Reduced motion removes spatial transitions; screen readers receive short useful status messages; no repeated announcements while polling
+- Back navigation, virtual keyboard and simultaneous inspector/transfer tray use do not obscure the active control or discard a transfer
+
+**Checks:** `web`; `rendered`; keyboard and screen-reader inspection
+
+## LIB-18 Panel visual regression coverage
+
+`P2` · `M` · Proof · Web
+
+Depends on: [ENG-02](foundations.md#eng-02-playwright-end-to-end-harness), [LIB-15](#lib-15-inspector-hierarchy-and-description-polish), [LIB-16](#lib-16-storage-summary-and-explanatory-panels)
+
+**Why.** A polished happy-path screenshot does not protect long descriptions, narrow screens or failure recovery.
+
+**Outcome.** A small deterministic visual/state matrix for the inspector and Storage, extended by each Settings/onboarding slice when it ships. Capture representative combinations, not every permutation.
+
+**Acceptance**
+
+- Cover 1440×900, a tablet breakpoint and 390×844; include long names, missing metadata, many rows, loading, failure and a busy transfer tray
+- Pin browser/fonts/time/fixtures and animation handling; fixtures are visibly synthetic and contain no credentials, signed URLs, internal paths or real provider details
+- Include 200% zoom, keyboard focus, reduced motion and touch targets; dark-theme coverage starts when LIB-13 ships
+- Render against the PostgreSQL-profile backend; distinguish injected failure fixtures from observed backend behavior; inspect diffs rather than automatically accepting new baselines
+
+**Checks:** `web`; `rendered`; visual snapshots and accessibility evidence
