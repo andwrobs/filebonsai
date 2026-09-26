@@ -89,6 +89,13 @@ final class CatalogContractChecks: XCTestCase {
         XCTAssertNil(upload.computedSha256)
     }
 
+    func testDecodesUploadLimitsAsAnExactDecimalByteCount() throws {
+        let json = Data("{\"maximumBytes\":\"9007199254740993\",\"futureLimit\":\"1\"}".utf8)
+
+        let limits = try decoder.decode(UploadLimitsResponse.self, from: json)
+        XCTAssertEqual(limits.maximumBytes, "9007199254740993")
+    }
+
     private var decoder: JSONDecoder {
         CodableHelper.jsonDecoder
     }

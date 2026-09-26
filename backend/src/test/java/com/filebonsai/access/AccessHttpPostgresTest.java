@@ -48,6 +48,8 @@ class AccessHttpPostgresTest {
     private static final UUID ROOT_B = UUID.fromString("00000000-0000-4000-8000-000000000002");
     private static final Path TRANSFER_ROOT =
             Path.of(System.getProperty("java.io.tmpdir"), "filebonsai-transfer-http-" + UUID.randomUUID());
+    // Deliberately not the 128 MiB default, so the exposed limit must come from configuration.
+    private static final long MAXIMUM_UPLOAD_BYTES = 50_000_000;
 
     @Container
     static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:17-alpine");
@@ -62,6 +64,7 @@ class AccessHttpPostgresTest {
         registry.add("filebonsai.access.login.max-attempts", () -> 3);
         registry.add("filebonsai.storage.local.root", TRANSFER_ROOT::toString);
         registry.add("filebonsai.storage.provider", () -> "local");
+        registry.add("filebonsai.transfers.maximum-bytes", () -> MAXIMUM_UPLOAD_BYTES);
     }
 
     @Autowired
@@ -313,6 +316,43 @@ class AccessHttpPostgresTest {
     }
 
     @Test
+    void exposesTheConfiguredUploadLimitOnlyToAuthenticatedClientsAndStillEnforcesIt() throws Exception {
+        mvc.perform(get("/api/v1/upload-limits"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("AUTH_REQUIRED"));
+
+        Csrf anonymous = csrf();
+        MvcResult login = login(anonymous, null, PASSWORD);
+        Cookie session = login.getResponse().getCookie(LocalOwnerAccess.SESSION_COOKIE);
+        Cookie csrf = login.getResponse().getCookie(LocalOwnerAccess.CSRF_COOKIE);
+        String limit = Long.toString(MAXIMUM_UPLOAD_BYTES);
+        mvc.perform(get("/api/v1/upload-limits").cookie(session))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(jsonPath("$.maximumBytes").value(limit));
+
+        for (var attempt : List.of(
+                java.util.Map.entry(Long.toString(MAXIMUM_UPLOAD_BYTES + 1), 413), java.util.Map.entry(limit, 201))) {
+            var result = mvc.perform(post("/api/v1/uploads")
+                            .cookie(session, csrf)
+                            .header(LocalOwnerAccess.CSRF_HEADER, csrf.getValue())
+                            .header("Idempotency-Key", UUID.randomUUID())
+                            .contentType("application/json")
+                            .content(mapper.writeValueAsString(java.util.Map.of(
+                                    "parentId",
+                                    rootA,
+                                    "name",
+                                    "limit-" + attempt.getKey(),
+                                    "sizeBytes",
+                                    attempt.getKey()))))
+                    .andExpect(status().is(attempt.getValue()));
+            if (attempt.getValue() == 413) {
+                result.andExpect(jsonPath("$.code").value("TOO_LARGE"));
+            }
+        }
+    }
+
+    @Test
     void returnsGenericFailuresWithoutSerializingCredentials() throws Exception {
         Csrf anonymous = csrf();
         String invalidPassword = "totally wrong password";
@@ -492,7 +532,34 @@ class AccessHttpPostgresTest {
                         .path("type")
                         .asText())
                 .isEqualTo("string");
+        var uploadLimits = document.path("paths").path("/api/v1/upload-limits").path("get");
+        assertThat(uploadLimits.path("operationId").asText()).isEqualTo("getUploadLimits");
+        assertThat(uploadLimits.path("responses").fieldNames())
+                .toIterable()
+                .containsExactlyInAnyOrder("200", "401", "500");
+        assertThat(uploadLimits
+                        .path("responses")
+                        .path("200")
+                        .path("content")
+                        .path("application/json")
+                        .path("schema")
+                        .path("$ref")
+                        .asText())
+                .endsWith("/UploadLimitsResponse");
+        var maximumBytes = document.path("components")
+                .path("schemas")
+                .path("UploadLimitsResponse")
+                .path("properties")
+                .path("maximumBytes");
+        assertThat(maximumBytes.path("type").asText()).isEqualTo("string");
+        assertThat(maximumBytes.path("pattern").asText()).isEqualTo("^(0|[1-9][0-9]*)$");
+        assertThat(document.path("components")
+                        .path("schemas")
+                        .path("UploadLimitsResponse")
+                        .path("required"))
+                .anySatisfy(field -> assertThat(field.asText()).isEqualTo("maximumBytes"));
         for (var operation : java.util.List.of(
+                uploadLimits,
                 document.path("paths").path("/api/v1/entries/{id}").path("get"),
                 document.path("paths").path("/api/v1/entries/{id}/children").path("get"),
                 document.path("paths").path("/api/v1/folders").path("post"))) {

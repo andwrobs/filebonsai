@@ -214,3 +214,20 @@ Depends on: none
 
 **Invariants:** INV-16  
 **Checks:** `postgres`
+
+## ENG-12 Anchor byte-count patterns in the contract
+
+`P3` · `S` · Build · Backend · Public API change
+
+Depends on: none
+
+**Why.** `BeginUploadRequest.sizeBytes` and `UploadResponse.sizeBytes` declare the unanchored pattern `0|[1-9][0-9]*`, while `CurrentVersionResponse.sizeBytes` is anchored. OpenAPI patterns use JavaScript regex semantics, so any string containing a digit matches, and generated validators inherit that. `UploadLimitsResponse.maximumBytes` (M1-04) already uses `^(0|[1-9][0-9]*)$`.
+
+**Outcome.** Every decimal byte-count field in the exported contract uses one anchored pattern.
+
+**Acceptance**
+
+- The OpenAPI export test asserts the anchored pattern on each byte-count field
+- Generated TypeScript and Swift clients still compile and decode
+
+**Checks:** `contract`

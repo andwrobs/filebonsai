@@ -587,6 +587,46 @@
         "tags" : [ "Catalog" ]
       }
     },
+    "/api/v1/upload-limits" : {
+      "get" : {
+        "description" : "Lets clients reject oversized files before beginUpload. The server remains authoritative and still returns 413 TOO_LARGE for any upload above the limit.",
+        "operationId" : "getUploadLimits",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UploadLimitsResponse"
+                }
+              }
+            },
+            "description" : "Effective upload limits"
+          },
+          "401" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description" : "AUTH_REQUIRED"
+          },
+          "500" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description" : "INTERNAL_ERROR"
+          }
+        },
+        "summary" : "Read effective upload limits",
+        "tags" : [ "Transfers" ]
+      }
+    },
     "/api/v1/uploads" : {
       "post" : {
         "description" : "The Idempotency-Key UUID is scoped to the authenticated workspace and principal.",
@@ -1464,6 +1504,17 @@
           "updatedAt" : {
             "type" : "string",
             "format" : "date-time"
+          }
+        }
+      },
+      "UploadLimitsResponse" : {
+        "required" : [ "maximumBytes" ],
+        "type" : "object",
+        "properties" : {
+          "maximumBytes" : {
+            "pattern" : "^(0|[1-9][0-9]*)$",
+            "type" : "string",
+            "description" : "Largest accepted file size as an exact decimal byte count. Clients may reject larger files before beginning an upload; the server still enforces the limit."
           }
         }
       },

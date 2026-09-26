@@ -163,6 +163,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/upload-limits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read effective upload limits
+         * @description Lets clients reject oversized files before beginUpload. The server remains authoritative and still returns 413 TOO_LARGE for any upload above the limit.
+         */
+        get: operations["getUploadLimits"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/uploads": {
         parameters: {
             query?: never;
@@ -348,6 +368,10 @@ export interface components {
             parentId: string | null;
             /** Format: date-time */
             updatedAt: string;
+        };
+        UploadLimitsResponse: {
+            /** @description Largest accepted file size as an exact decimal byte count. Clients may reject larger files before beginning an upload; the server still enforces the limit. */
+            maximumBytes: string;
         };
         UploadResponse: {
             computedSha256: string | null;
@@ -819,6 +843,44 @@ export interface operations {
             };
             /** @description NAME_CONFLICT or IDEMPOTENCY_CONFLICT */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description INTERNAL_ERROR */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    getUploadLimits: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Effective upload limits */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadLimitsResponse"];
+                };
+            };
+            /** @description AUTH_REQUIRED */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

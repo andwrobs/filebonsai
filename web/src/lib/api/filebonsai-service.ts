@@ -91,6 +91,10 @@ export class FilebonsaiService {
     });
   }
 
+  getUploadLimits() {
+    return this.#client.GET("/api/v1/upload-limits");
+  }
+
   async beginUpload(body: import("./generated/schema.js").components["schemas"]["BeginUploadRequest"], idempotencyKey: string) {
     return this.#client.POST("/api/v1/uploads", {
       params: { header: { "X-CSRF-TOKEN": await this.#requireCsrf(), "Idempotency-Key": idempotencyKey } }, body,

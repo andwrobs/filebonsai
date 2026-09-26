@@ -118,6 +118,29 @@ class PostgresR2TransfersTest {
     }
 
     @Test
+    void exposesTheSmallerOfTheStagingAndProviderLimits() throws Exception {
+        long providerLimit = 128L * 1024 * 1024;
+        var largerStaging = new LocalObjectStorage(temporaryDirectory.resolve("large-staging"), providerLimit + 1);
+        var smallerStaging = new LocalObjectStorage(temporaryDirectory.resolve("small-staging"), 1024);
+        for (var entry :
+                Map.of(largerStaging, providerLimit, smallerStaging, 1024L).entrySet()) {
+            var limited = new PostgresLocalTransfers(database, entry.getKey(), published, Duration.ofHours(24));
+            long limit = entry.getValue();
+            assertThat(limited.limits(scope).maximumBytes()).isEqualTo(new ByteCount(limit));
+            assertThatThrownBy(() -> limited.begin(
+                            scope,
+                            ROOT,
+                            new FileName("over-" + limit),
+                            new ByteCount(limit + 1),
+                            null,
+                            UUID.randomUUID()))
+                    .isInstanceOfSatisfying(
+                            UploadFailure.class,
+                            failure -> assertThat(failure.reason()).isEqualTo(UploadFailure.Reason.TOO_LARGE));
+        }
+    }
+
+    @Test
     void smallAndEmptyBodiesPublishOnlyAfterCloudDigestVerification() throws Exception {
         byte[] body = "cloud bytes".getBytes(java.nio.charset.StandardCharsets.UTF_8);
         var upload = begin("small.bin", body);
