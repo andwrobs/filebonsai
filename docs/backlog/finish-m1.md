@@ -203,7 +203,7 @@ Depends on: none
 
 `P1` · `M` · Proof · Ops, Web, Backend
 
-Depends on: [M1-01](#m1-01-map-m1-failure-outcomes-in-the-web-client), [M1-02](#m1-02-breadcrumbs-from-real-ancestors), [M1-03](#m1-03-rediscover-and-cancel-open-uploads), [M1-05](#m1-05-prove-interruption-and-restart-recovery-in-the-browser), [M1-06](#m1-06-prove-second-principal-isolation-over-http), [M1-07](#m1-07-container-image-and-compose-from-a-clean-checkout)
+Depends on: [M1-01](#m1-01-map-m1-failure-outcomes-in-the-web-client), [M1-02](#m1-02-breadcrumbs-from-real-ancestors), [M1-03](#m1-03-rediscover-and-cancel-open-uploads), [M1-05](#m1-05-prove-interruption-and-restart-recovery-in-the-browser), [M1-06](#m1-06-prove-second-principal-isolation-over-http), [M1-07](#m1-07-container-image-and-compose-from-a-clean-checkout), [M1-13](#m1-13-folder-name-conflicts-return-500)
 
 **Why.** Declare M1 done with evidence, or name what's left.
 
@@ -218,3 +218,22 @@ Depends on: [M1-01](#m1-01-map-m1-failure-outcomes-in-the-web-client), [M1-02](#
 
 **Read:** `docs/product/overview.md`, `docs/product/design.md`  
 **Checks:** Scripted or recorded run of each scenario
+
+## M1-13 Folder name conflicts return 500
+
+`P1` · `S` · Build · Backend
+
+Depends on: none
+
+**Why.** Creating a folder whose name matches an existing sibling returns `500`, and the web client shows an unexpected-error message. conventions.md requires `409 NAME_CONFLICT`. The unique index still prevents the duplicate. Observed on 2026-09-26 against the PostgreSQL profile: `DuplicateKeyException` on `uq_catalog_names_sibling`.
+
+**Outcome.** Sibling-name collisions on folder creation, concurrent ones included, return `409 NAME_CONFLICT`, and the web client shows its existing duplicate-name message.
+
+**Acceptance**
+
+- A PostgreSQL test creates a folder beside an existing entry with the same normalized name under a new idempotency key and gets NAME_CONFLICT
+- Concurrent duplicate creates yield one success and one NAME_CONFLICT, never 500
+- Begin-upload with a name that collides with an existing entry is checked the same way
+
+**Invariants:** INV-08  
+**Checks:** `postgres`

@@ -2,39 +2,17 @@
 
 Make the daily loop of finding, looking and acting feel like the design direction: calm, dense and keyboard-first.
 
-The running app is a single list with a create-folder form. The design reference shows a folder tree, grid and table views, an inspector, search, Starred and Recent. Each item here closes part of that gap without shipping mock-only controls.
+The running app has a responsive shell (sidebar, icon rail, or bottom navigation), a dense folder list and a create-folder form. The design reference shows a folder tree, grid and table views, an inspector, search, Starred and Recent. Each item here closes part of that gap without shipping mock-only controls.
 
 See [the backlog index](README.md) for how to pick up and retire items.
-
-## LIB-01 Design tokens and shell foundation
-
-`P1` · `M` · Build · Web
-
-Depends on: none
-
-**Why.** app.css hard-codes colors and mixes Georgia and Inter. The design direction needs one token set before more screens arrive.
-
-**Outcome.** CSS custom-property tokens for color roles, spacing, radius, type scale and density; a licensed icon set; a text wordmark; existing screens migrated. Global tokens have a single writer.
-
-**Acceptance**
-
-- No raw hex values outside the token file
-- AA contrast for text and action roles
-- Icon license recorded
-
-**Settle first**
-
-- Icon family and license (Lucide under ISC is a good default)
-- Keep the system serif or choose a licensed display face
-
-**Read:** `docs/product/design.md`  
-**Checks:** `web`; `rendered`
 
 ## LIB-02 Folder tree sidebar
 
 `P2` · `M` · Build · Web, Backend · Public API change
 
-Depends on: [LIB-01](#lib-01-design-tokens-and-shell-foundation)
+Depends on: none
+
+Context: LIB-01/LIB-10 added the responsive shell: tokens in `web/app/styles/tokens.css` (raw colors anywhere else fail `tokens.test.ts`), Lucide icons, and the `routes/app-shell.tsx` layout route with sidebar, icon rail and bottom navigation. The tree goes in the sidebar's existing navigation; the rail and phone layouts need the sheet this item describes.
 
 **Why.** The design reference relies on a visible folder tree for orientation.
 
@@ -71,7 +49,9 @@ Depends on: none
 
 `P2` · `M` · Build · Web
 
-Depends on: [LIB-01](#lib-01-design-tokens-and-shell-foundation), [LIB-03](#lib-03-server-side-sort-for-folder-listings)
+Depends on: [LIB-03](#lib-03-server-side-sort-for-folder-listings)
+
+Context: LIB-01/LIB-10 added the responsive shell: tokens in `web/app/styles/tokens.css` (raw colors anywhere else fail `tokens.test.ts`), Lucide icons, and the `routes/app-shell.tsx` layout route with sidebar, icon rail and bottom navigation. The folder list already has icon, name, kind, size and modified columns that drop and stack through container queries; this item adds sortable headers and the grid.
 
 **Why.** The design reference shows a dense table and a calm grid over the same data.
 
@@ -105,22 +85,22 @@ Depends on: none
 
 ## LIB-06 Inspector panel
 
-`P2` · `M` · Build · Web, Backend · Public API change
+`P2` · `M` · Build · Web
 
-Depends on: [LIB-01](#lib-01-design-tokens-and-shell-foundation)
+Depends on: none
 
-**Why.** The design reference shows details beside the list. File responses don't expose SHA-256 today.
+**Why.** The design reference shows details beside the list, and today the only way to learn about a file is to download it.
 
-**Outcome.** A collapsible inspector for the selected entry showing kind, size, created and modified dates, SHA-256 with a copy button, version count, storage connection display name and ID. On mobile it's a bottom sheet.
+**Outcome.** A collapsible inspector for the focused entry built from fields the API already returns: name, kind (from the extension), size, created and modified dates, and the entry ID with a copy button, plus the download action. It is a third column on wide screens, a drawer below 1100px and a bottom sheet on phones. No API change; LIB-14 adds the integrity fields.
 
 **Acceptance**
 
-- The DTO adds only non-sensitive fields
+- Opens and closes from the keyboard and pointer; focus returns to the row
 - Tabs appear only once their features exist (no mock-only controls)
 - Open state remembered per viewer
+- Rendered at every shell size with long names
 
-**Invariants:** INV-11  
-**Checks:** `contract`; `web`; `rendered`
+**Checks:** `web`; `rendered`
 
 ## LIB-07 Name search
 
@@ -149,7 +129,9 @@ Depends on: [M1-02](finish-m1.md#m1-02-breadcrumbs-from-real-ancestors)
 
 `P2` · `M` · Build · Web · Fun
 
-Depends on: [LIB-01](#lib-01-design-tokens-and-shell-foundation)
+Depends on: none
+
+Context: LIB-01/LIB-10 added the responsive shell: tokens in `web/app/styles/tokens.css` (raw colors anywhere else fail `tokens.test.ts`), Lucide icons, and the `routes/app-shell.tsx` layout route with sidebar, icon rail and bottom navigation.
 
 **Why.** A keyboard-first file library should have Cmd+K.
 
@@ -169,7 +151,7 @@ Depends on: [LIB-01](#lib-01-design-tokens-and-shell-foundation)
 
 Depends on: none
 
-**Why.** The sidebar shows disabled Recent and Archive entries.
+**Why.** The design reference's sidebar has Starred and Recent, and the app has neither.
 
 **Outcome.** Starred is a per-principal pin (table plus API). Recent lists recently added or updated files, derived from versions. Both sidebar entries become real.
 
@@ -180,24 +162,6 @@ Depends on: none
 
 **Invariants:** INV-01  
 **Checks:** `postgres`; `contract`; `web`; `rendered`
-
-## LIB-10 Mobile layout pass
-
-`P2` · `M` · Build · Web
-
-Depends on: [LIB-01](#lib-01-design-tokens-and-shell-foundation)
-
-**Why.** The mobile direction (A2/B2) uses bottom navigation and a one-handed list.
-
-**Outcome.** Bottom navigation, a floating upload button, list rows with overflow menus, action sheets instead of hover menus, and safe-area handling.
-
-**Acceptance**
-
-- Rendered at 390×844 and 375×667
-- No horizontal scroll; touch targets at least 44px
-- The transfer tray stays reachable
-
-**Checks:** `web`; `rendered`
 
 ## LIB-11 Large-folder performance
 
@@ -237,7 +201,9 @@ Depends on: [ENG-02](foundations.md#eng-02-playwright-end-to-end-harness)
 
 `P3` · `S` · Build · Web · Fun
 
-Depends on: [LIB-01](#lib-01-design-tokens-and-shell-foundation)
+Depends on: none
+
+Context: LIB-01/LIB-10 added the responsive shell: tokens in `web/app/styles/tokens.css` (raw colors anywhere else fail `tokens.test.ts`), Lucide icons, and the `routes/app-shell.tsx` layout route with sidebar, icon rail and bottom navigation. Add the dark palette as a second set of the same tokens; `tokens.test.ts` checks contrast for the light set and should cover both.
 
 **Why.** Many people browse at night. The token work makes a dark theme cheap.
 
@@ -254,3 +220,21 @@ Depends on: [LIB-01](#lib-01-design-tokens-and-shell-foundation)
 - Dark mode is separate from shell configurability (design.md): confirm it's wanted now
 
 **Checks:** `web`; `rendered`
+
+## LIB-14 Inspector integrity fields
+
+`P2` · `S` · Build · Backend, Web · Public API change
+
+Depends on: [LIB-06](#lib-06-inspector-panel)
+
+**Why.** File responses don't expose the SHA-256, version count or storage connection, which are what make a file's details trustworthy.
+
+**Outcome.** The file DTO adds the current version's SHA-256, the version count and the storage connection display name. The inspector shows them, with a copy button for the digest.
+
+**Acceptance**
+
+- The DTO adds only non-sensitive fields: no object keys, paths, bucket names or provider IDs
+- Generated TypeScript and Swift clients decode the new fields
+
+**Invariants:** INV-11  
+**Checks:** `contract`; `web`; `rendered`

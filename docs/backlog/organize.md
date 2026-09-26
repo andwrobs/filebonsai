@@ -44,6 +44,7 @@ Depends on: [ORG-01](#org-01-decision-how-entries-change)
 - A pending upload's reservation causes a conflict
 - Unicode and 255-byte names; another workspace's entry returns 404
 - Physical storage untouched
+- On touch screens, row actions move into an overflow menu or action sheet once a row has more than one action
 
 **Invariants:** INV-01, INV-02, INV-05, INV-08  
 **Checks:** `postgres`; `contract`; `web`; `rendered`

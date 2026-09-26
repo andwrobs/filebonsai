@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router";
 
 import { filebonsaiService } from "../../src/lib/api/filebonsai-service.js";
 import { formatBytes } from "../features/catalog/catalog-data.js";
-import { AppSidebar } from "../features/shell/app-sidebar.js";
 import { capabilityRows, loadStorage, providerLabel, type StorageLoad } from "../features/storage/storage-data.js";
 
 export function meta() {
@@ -30,44 +29,39 @@ export default function Storage() {
   }, [attempt, navigate]);
 
   return (
-    <main className="library-shell">
-      <AppSidebar current="storage" />
-      <section className="library-content" aria-busy={state.status === "loading"}>
+    <div className="page" aria-busy={state.status === "loading"}>
         {state.status === "ready" ? (
           <StorageSummaryView maximumBytes={state.maximumBytes} summary={state.summary} />
         ) : state.status === "failed" ? (
-          <div className="storage-error" role="alert">
+          <div className="page-message" role="alert">
             <p className="eyebrow">{state.failure.kind === "unavailable" ? "Unavailable" : "Error"}</p>
             <h1>{state.failure.kind === "unavailable" ? "Storage details are unavailable" : "Could not load storage details"}</h1>
             <p>{state.failure.message}</p>
             {state.failure.requestId ? <p className="storage-note">Request ID: {state.failure.requestId}</p> : null}
-            <div className="transfer-actions">
-              <button className="primary-button" onClick={() => setAttempt((value) => value + 1)} type="button">Try again</button>
-              <Link className="secondary-button" to="/">Return to Library</Link>
+            <div className="page-message-actions">
+              <button className="button primary" onClick={() => setAttempt((value) => value + 1)} type="button">Try again</button>
+              <Link className="button secondary" to="/">Return to Library</Link>
             </div>
           </div>
         ) : (
-          <header className="library-header">
-            <div>
-              <p className="eyebrow">Read-only</p>
+          <header className="page-toolbar">
+            <div className="page-heading">
               <h1>Storage</h1>
-              <p className="breadcrumb" role="status">Loading storage details…</p>
+              <p className="page-subtitle" role="status">Loading storage details…</p>
             </div>
           </header>
         )}
-      </section>
-    </main>
+    </div>
   );
 }
 
 function StorageSummaryView({ summary, maximumBytes }: Extract<StorageLoad, { status: "ready" }>) {
   return (
     <>
-      <header className="library-header">
-        <div>
-          <p className="eyebrow">Read-only</p>
-          <h1>Storage</h1>
-          <p className="breadcrumb">The server operator configures storage; this page cannot change it.</p>
+      <header className="page-toolbar">
+        <div className="page-heading">
+          <h1>Storage <span className="badge">Read-only</span></h1>
+          <p className="page-subtitle">The server operator configures storage; this page cannot change it.</p>
         </div>
       </header>
 
@@ -98,10 +92,8 @@ function StorageSummaryView({ summary, maximumBytes }: Extract<StorageLoad, { st
         </section>
       </div>
 
-      <section aria-labelledby="capabilities-heading">
-        <div className="section-heading">
-          <h2 id="capabilities-heading">How this connection handles files</h2>
-        </div>
+      <section className="storage-capabilities" aria-labelledby="capabilities-heading">
+        <h2 className="section-title" id="capabilities-heading">How this connection handles files</h2>
         <ul className="capability-list">
           {capabilityRows(summary).map((row) => (
             <li key={row.label}>

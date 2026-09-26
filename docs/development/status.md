@@ -1,6 +1,6 @@
 # Verified status and next work
 
-Updated 2026-09-25. This is the only live status and sequencing document. Record only
+Updated 2026-09-26. This is the only live status and sequencing document. Record only
 observed results; use Git history for prior plans and completed migrations.
 
 ## Current implementation
@@ -68,11 +68,46 @@ observed results; use Git history for prior plans and completed migrations.
   display name, open-vocabulary provider kind), transfer capabilities, and committed
   `usedBytes` for the member's workspace. It carries no bucket, account, endpoint,
   credential, or path. The web `/storage` page shows it with the upload limit and has its
-  own loading, error, and unavailable states; the sidebar links Library and Storage on
-  desktop and mobile.
+  own loading, error, and unavailable states. The shell links Library and Storage in
+  every layout.
+- The web shell follows the design reference with one token file
+  (`web/app/styles/tokens.css`) for color, type, spacing, radius, density, and region
+  sizes. `tokens.test.ts` fails on raw colors elsewhere and on AA contrast regressions.
+  Icons are Lucide (ISC); the identity is a text wordmark in system sans-serif. A
+  pathless layout route keeps navigation and the transfer tray mounted across Library
+  and Storage. The shell shows a full sidebar from 1100px and an icon rail from 768px.
+  Below 768px it has a top bar, bottom navigation, and a floating upload button, with
+  safe-area padding. The folder list is a dense table (icon, name, kind, size,
+  modified, download). Its container queries drop the kind column and then stack
+  rows into two lines as the list narrows. Kind is display-only and comes from the
+  filename extension. Uploads sit in a bottom tray. It opens when an upload starts or
+  needs attention and folds away once everything settles. On phones the floating
+  upload button sits above the tray at its measured height. The sidebar's
+  Storage entry shows the connection name and committed bytes. The Recent, Shared,
+  and Archive placeholders are gone. Breadcrumbs still show only Library and the
+  current folder (M1-02).
 
 ## Latest observed checks
 
+- Responsive shell (LIB-01, LIB-10): `cd web && npm test && npm run typecheck:run &&
+  npm run build` passed with 32 tests, strict TypeScript, and a production SPA build.
+  The tests include new kind and date helpers, token contrast, and a no-raw-colors scan.
+  The check ran against a disposable PostgreSQL-profile backend: a PostgreSQL 17.6
+  container, a generated owner password, and a synthetic library of 70 entries. In the
+  Claude desktop in-app browser at 1440×900, 1024×768, 768×1024, 390×844, and
+  375×667, no size scrolled horizontally. At phone sizes, with touch emulated (coarse
+  pointer), every visible control measured at least 44px. With a fine pointer, icon
+  buttons are 36px. The run covered sign-in, the root, a nested folder, an
+  empty folder, a 45-item folder, long names without spaces, and folder creation
+  with validation. Two uploads reached `AVAILABLE` through the tray. Original download,
+  the Storage page, and keyboard focus order with the skip link also passed. After
+  review repairs, a second disposable backend rechecked 390×844 and 1440×900. That
+  run covered sign-in at 390×844 and the tray folding away after two uploads settled.
+  A 135 MB file was refused before sending. The tray reopened with the refusal and
+  the floating upload button sat above it, then moved down when the tray collapsed.
+  Input borders now meet 3:1. Creating a folder with an existing
+  sibling's name returned `500` instead of `409 NAME_CONFLICT`. That bug predates
+  this change and is recorded as M1-13.
 - Storage page (M1-09): `cd backend && ./scripts/verify.sh` passed with 87 backend tests
   (1 opt-in R2 proof skipped), OpenAPI export, TypeScript client 8 tests, and Swift
   client 9 tests, including `StorageSummaryResponse` decoding with an unknown provider
@@ -189,7 +224,10 @@ observed results; use Git history for prior plans and completed migrations.
 1. Cloud transfer: run the decision 0007 compatibility proof against a disposable
    real Cloudflare R2 bucket, repair any provider mismatch, and record bounded
    streaming/recovery evidence before claiming R2 support or adding another provider.
-2. iOS Catalog remains deferred by user preference. When resumed, implement the
+2. Web library, in this order: the inspector with the fields the API already returns
+   (LIB-06), in-browser preview of originals (PRV-09), server-side sort (LIB-03)
+   then table/grid views (LIB-04), and the inspector's integrity fields (LIB-14).
+3. iOS Catalog remains deferred by user preference. When resumed, implement the
    SwiftUI/TCA slice through a generated transport and handwritten application adapter.
 
 Each item is split into a bounded task at execution time with owned paths, dependencies,

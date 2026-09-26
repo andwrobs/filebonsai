@@ -50,7 +50,9 @@ Depends on: [M1-11](finish-m1.md#m1-11-drag-and-drop-upload)
 
 `P3` · `S` · Build · Web · Fun
 
-Depends on: [LIB-01](everyday-library.md#lib-01-design-tokens-and-shell-foundation)
+Depends on: none
+
+Context: LIB-01/LIB-10 added the responsive shell: tokens in `web/app/styles/tokens.css` (raw colors anywhere else fail `tokens.test.ts`), Lucide icons, and the `routes/app-shell.tsx` layout route with sidebar, icon rail and bottom navigation. The root layout already sets `viewport-fit=cover` and the phone shell honours safe-area insets.
 
 **Why.** It should be at home on a phone's home screen.
 
