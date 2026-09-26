@@ -45,6 +45,11 @@ export function inspectorView(state: InspectorState, folder: FolderEntry, childr
   return { entry, open: docked ? state.dockedOpen : here && state.overlayOpen };
 }
 
+/** Moving to another folder or across the docked breakpoint ends any drawer or sheet for good. */
+export function settleInspector(state: InspectorState, folderId: string): InspectorState {
+  return { ...state, entryId: state.folderId === folderId ? state.entryId : null, folderId, overlayOpen: false };
+}
+
 export function closeInspector(state: InspectorState, docked: boolean): InspectorState {
   return docked ? { ...state, dockedOpen: false } : { ...state, overlayOpen: false };
 }

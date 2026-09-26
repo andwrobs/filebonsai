@@ -5,6 +5,7 @@ import {
   closeInspector,
   inspectorView,
   readDockedOpen,
+  settleInspector,
   toggleEntry,
   toggleInspector,
   writeDockedOpen,
@@ -78,6 +79,17 @@ test("the toolbar toggle reopens on the last entry chosen in this folder only", 
   // After navigating, the overlay starts closed and a reopen shows the new folder.
   assert.deepEqual(inspectorView(shown, recipes, [], false), { entry: recipes, open: false });
   assert.deepEqual(inspectorView(toggleInspector(shown, recipes, [], false), recipes, [], false), { entry: recipes, open: true });
+});
+
+test("a drawer or sheet left behind does not come back with the folder or the breakpoint", () => {
+  const shown = toggleEntry(closed, travel, children, false, recipes.id);
+  // Open folder, then Back: the overlay stays closed and nothing is still chosen.
+  const back = settleInspector(settleInspector(shown, recipes.id), travel.id);
+  assert.deepEqual(inspectorView(back, travel, children, false), { entry: travel, open: false });
+  // Widening past the breakpoint and narrowing again keeps the choice but not the overlay.
+  const narrowedAgain = settleInspector(shown, travel.id);
+  const view = inspectorView(narrowedAgain, travel, children, false);
+  assert.deepEqual({ entry: view.entry.id, open: view.open }, { entry: recipes.id, open: false });
 });
 
 test("an open docked column stays open across folders and shows each folder", () => {

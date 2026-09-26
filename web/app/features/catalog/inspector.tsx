@@ -19,6 +19,7 @@ import {
   closeInspector,
   inspectorView,
   readDockedOpen,
+  settleInspector,
   toggleEntry,
   toggleInspector,
   viewerStorage,
@@ -49,30 +50,38 @@ export function useInspector(folder: FolderEntry, children: readonly Entry[]) {
     folderId: folder.id,
     overlayOpen: false,
   }));
+  const [layout, setLayout] = useState({ docked, folderId: folder.id });
+  const [restorePending, setRestorePending] = useState(false);
   const opener = useRef<HTMLElement | null>(null);
   const focusRequest = useRef(false);
-  const restoreFocus = useRef(false);
   const toggleButton = useRef<HTMLButtonElement>(null);
+  // Settle during render so a stale drawer or sheet never mounts, not even for one frame.
+  if (layout.docked !== docked || layout.folderId !== folder.id) {
+    setLayout({ docked, folderId: folder.id });
+    if (state.overlayOpen) setRestorePending(true);
+    setState(settleInspector(state, folder.id));
+  }
   useEffect(() => writeDockedOpen(viewerStorage(), state.dockedOpen), [state.dockedOpen]);
   // After the close commits: a modal dialog keeps the page inert until it is gone.
   useEffect(() => {
-    if (!restoreFocus.current) return;
-    restoreFocus.current = false;
+    if (!restorePending) return;
+    setRestorePending(false);
     const target = opener.current;
     opener.current = null;
     // The opener can vanish (a folder reloads); the toolbar toggle is always there.
     (target?.isConnected ? target : toggleButton.current)?.focus();
-  });
+  }, [restorePending]);
   const view = inspectorView(state, folder, children, docked);
 
   function close() {
-    restoreFocus.current = true;
     setState(closeInspector(state, docked));
+    setRestorePending(true);
   }
 
+  // Whatever was pressed last, opening or closing, is where focus comes back to.
   function apply(next: InspectorState, trigger: HTMLElement) {
-    if (!inspectorView(next, folder, children, docked).open) return close();
     opener.current = trigger;
+    if (!inspectorView(next, folder, children, docked).open) return close();
     focusRequest.current = true;
     setState(next);
   }

@@ -100,7 +100,7 @@ observed results; use Git history for prior plans and completed migrations.
 ## Latest observed checks
 
 - Inspector (LIB-06): `cd web && npm test && npm run typecheck:run && npm run build`
-  passed with 39 tests, strict TypeScript, and a production SPA build. New tests cover
+  passed with 40 tests, strict TypeScript, and a production SPA build. New tests cover
   the inspector's open/target rules, storage that refuses access, full dates, and exact
   byte counts. The check ran against a disposable PostgreSQL-profile backend: a
   PostgreSQL 17.6 container, a generated owner password, and a synthetic 47-entry
@@ -117,6 +117,12 @@ observed results; use Git history for prior plans and completed migrations.
   inspector fetched the original and passed a blob to the browser; the save step was
   intercepted so no file was written. Copy ID showed its fallback message because the
   in-app browser denies clipboard writes, so a successful copy was not observed.
+  A fresh read-only review found two problems. A drawer or sheet could reopen after
+  Back navigation or after crossing the 1100px breakpoint twice. Closing from the
+  toolbar also moved focus to a row. After the repairs, the rendered recheck passed.
+  Back at 390×844 left the sheet closed. Going 1024×768 → 1440×900 → 1024×768 closed
+  the drawer, returned focus to its row button, and did not reopen it. Closing the
+  docked column from the toolbar kept focus on the toolbar button.
 - Responsive shell (LIB-01, LIB-10): `cd web && npm test && npm run typecheck:run &&
   npm run build` passed with 32 tests, strict TypeScript, and a production SPA build.
   The tests include new kind and date helpers, token contrast, and a no-raw-colors scan.
