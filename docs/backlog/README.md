@@ -183,6 +183,18 @@ Swipe through files one card at a time and decide what stays, what gets archived
 | [TDY-08](tidy-mode.md#tdy-08-duplicate-resolution-card) Duplicate resolution card | Build | P3 | S | [TDY-06](tidy-mode.md#tdy-06-swipe-deck-ui), [ORG-10](organize.md#org-10-duplicate-finder) |
 | [TDY-09](tidy-mode.md#tdy-09-tidy-recap) Tidy recap | Build | P3 | S | [ORG-11](organize.md#org-11-activity-and-audit-log), [TDY-05](tidy-mode.md#tdy-05-tidy-decision-batches) |
 
+### [Reflect](reflect.md)
+
+Beautiful views of the files that matter most: a zoomable timeline, a map, and quick ways to pick favourites and prune the rest.
+
+| Item | Kind | Priority | Size | Depends on |
+| --- | --- | --- | --- | --- |
+| [RFL-01](reflect.md#rfl-01-decision-reflective-views-and-picks) Decision: reflective views and picks | Decision | P2 | M | none |
+| [RFL-02](reflect.md#rfl-02-timeline-clusters-and-picks-api) Timeline clusters and picks API | Build | P3 | L | [RFL-01](reflect.md#rfl-01-decision-reflective-views-and-picks), [PRV-04](previews-and-media.md#prv-04-photo-metadata-extraction) |
+| [RFL-03](reflect.md#rfl-03-timeline-canvas) Timeline canvas | Build | P3 | L | [RFL-02](reflect.md#rfl-02-timeline-clusters-and-picks-api), [PRV-02](previews-and-media.md#prv-02-image-thumbnail-pipeline), [PRV-03](previews-and-media.md#prv-03-gallery-grid-and-lightbox), [ENG-03](foundations.md#eng-03-synthetic-demo-library-generator) |
+| [RFL-04](reflect.md#rfl-04-pick-and-prune-a-group) Pick and prune a group | Build | P3 | M | [RFL-03](reflect.md#rfl-03-timeline-canvas), [TDY-06](tidy-mode.md#tdy-06-swipe-deck-ui) |
+| [RFL-05](reflect.md#rfl-05-photo-map-with-heat-layer) Photo map with heat layer | Build | P3 | L | [PRV-08](previews-and-media.md#prv-08-spike-map-of-geotagged-photos), [RFL-01](reflect.md#rfl-01-decision-reflective-views-and-picks) |
+
 ### [Storage tiers & placement](storage-tiers.md)
 
 Connect storage from the app or operator configuration with explicit ownership and server-held credentials. Files keep their library location while verified copies move between tiers.

@@ -31,6 +31,22 @@ performance, provider compatibility, or durability require observed evidence.
 - The web client uses React/TypeScript. The iOS client uses SwiftUI, UIKit where useful,
   and TCA dependency boundaries. No near-term Android commitment exists.
 
+## Vision: files worth revisiting
+
+Reliable storage is the foundation, not the whole point. Over time Filebonsai should
+let people make beautiful views of their most important files. The library then
+becomes a place to reflect on their life and organize their thoughts in playful ways,
+as well as a place to keep things. Candidate views include a zoomable timeline canvas
+where moments cluster and open up as you zoom, a map with a heat layer of where photos
+were taken, and swipe tools for picking favourites and quickly pruning or archiving a
+whole group of files.
+
+These views follow the rest of the product's rules. They are ways of looking at the
+library and never change authorization. The owner's choices always override automatic
+picks. Archive and trash go through review and can be undone. Location stays private
+to the owner, and no AI service is required. Candidate work lives in the
+[Reflect backlog](../backlog/reflect.md); none of it is a milestone commitment yet.
+
 ## Delivery milestones
 
 | Milestone | Observable outcome | Boundary |
