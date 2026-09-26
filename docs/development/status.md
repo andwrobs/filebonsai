@@ -86,9 +86,43 @@ observed results; use Git history for prior plans and completed migrations.
   Storage entry shows the connection name and committed bytes. The Recent, Shared,
   and Archive placeholders are gone. Breadcrumbs still show only Library and the
   current folder (M1-02).
+- The Library has an inspector (`web/app/features/catalog/inspector.tsx`). Each row has
+  a Details button. The toolbar's Details toggle shows the current folder when no row
+  is chosen. The inspector shows name, kind, rounded and exact size, created and
+  modified date and time, and the entry ID with a copy button. Files get Download and
+  child folders get Open folder. There are no tabs. From 1100px it is a sticky third
+  column, and this browser's local storage remembers whether it is open. Below 1100px
+  it is a modal drawer, and below 768px a bottom sheet; neither opens by itself. Esc
+  and Close return focus to the button that opened it. Folder names are links that
+  cover their row, so rows can also hold buttons. The list's column container queries
+  now measure the list, not the page.
 
 ## Latest observed checks
 
+- Inspector (LIB-06): `cd web && npm test && npm run typecheck:run && npm run build`
+  passed with 40 tests, strict TypeScript, and a production SPA build. New tests cover
+  the inspector's open/target rules, storage that refuses access, full dates, and exact
+  byte counts. The check ran against a disposable PostgreSQL-profile backend: a
+  PostgreSQL 17.6 container, a generated owner password, and a synthetic 47-entry
+  folder. That folder included a 92-character folder name and a 100-character file
+  name, neither with spaces. In the Claude desktop in-app browser the inspector was
+  docked at 1440×900 and 1100×800, a drawer at 1024×768 and 768×1024, and a sheet at
+  390×844 and 375×667 with touch emulated. No size scrolled horizontally. At phone
+  sizes every inspector control measured 44px. Enter on a row's Details button opened
+  the inspector and focused its heading. Esc and Close returned focus to that button.
+  The drawer kept Tab inside, locked page scrolling, and closed on a backdrop click but
+  not on a click inside it. After a reload at 1440×900 the docked inspector reopened on
+  the folder itself without moving focus, and at 1024×768 the drawer stayed closed.
+  Open folder from the phone sheet navigated and closed the sheet. Download from the
+  inspector fetched the original and passed a blob to the browser; the save step was
+  intercepted so no file was written. Copy ID showed its fallback message because the
+  in-app browser denies clipboard writes, so a successful copy was not observed.
+  A fresh read-only review found two problems. A drawer or sheet could reopen after
+  Back navigation or after crossing the 1100px breakpoint twice. Closing from the
+  toolbar also moved focus to a row. After the repairs, the rendered recheck passed.
+  Back at 390×844 left the sheet closed. Going 1024×768 → 1440×900 → 1024×768 closed
+  the drawer, returned focus to its row button, and did not reopen it. Closing the
+  docked column from the toolbar kept focus on the toolbar button.
 - Responsive shell (LIB-01, LIB-10): `cd web && npm test && npm run typecheck:run &&
   npm run build` passed with 32 tests, strict TypeScript, and a production SPA build.
   The tests include new kind and date helpers, token contrast, and a no-raw-colors scan.
@@ -224,9 +258,9 @@ observed results; use Git history for prior plans and completed migrations.
 1. Cloud transfer: run the decision 0007 compatibility proof against a disposable
    real Cloudflare R2 bucket, repair any provider mismatch, and record bounded
    streaming/recovery evidence before claiming R2 support or adding another provider.
-2. Web library, in this order: the inspector with the fields the API already returns
-   (LIB-06), in-browser preview of originals (PRV-09), server-side sort (LIB-03)
-   then table/grid views (LIB-04), and the inspector's integrity fields (LIB-14).
+2. Web library, in this order: in-browser preview of originals (PRV-09), server-side
+   sort (LIB-03) then table/grid views (LIB-04), and the inspector's integrity fields
+   (LIB-14).
 3. iOS Catalog remains deferred by user preference. When resumed, implement the
    SwiftUI/TCA slice through a generated transport and handwritten application adapter.
 

@@ -118,15 +118,14 @@ Make the daily loop of finding, looking and acting feel like the design directio
 | [LIB-03](everyday-library.md#lib-03-server-side-sort-for-folder-listings) Server-side sort for folder listings | Build | P2 | M | none |
 | [LIB-04](everyday-library.md#lib-04-table-and-grid-views) Table and grid views | Build | P2 | M | [LIB-03](everyday-library.md#lib-03-server-side-sort-for-folder-listings) |
 | [LIB-05](everyday-library.md#lib-05-selection-model) Selection model | Build | P2 | M | none |
-| [LIB-06](everyday-library.md#lib-06-inspector-panel) Inspector panel | Build | P2 | M | none |
 | [LIB-07](everyday-library.md#lib-07-name-search) Name search | Build | P2 | M | [M1-02](finish-m1.md#m1-02-breadcrumbs-from-real-ancestors) |
 | [LIB-08](everyday-library.md#lib-08-command-palette-and-keyboard-shortcuts) Command palette and keyboard shortcuts | Build | P2 | M | none |
 | [LIB-09](everyday-library.md#lib-09-starred-and-recent) Starred and Recent | Build | P2 | M | none |
 | [LIB-11](everyday-library.md#lib-11-large-folder-performance) Large-folder performance | Proof | P3 | M | [ENG-03](foundations.md#eng-03-synthetic-demo-library-generator) |
 | [LIB-12](everyday-library.md#lib-12-accessibility-audit-and-fixes) Accessibility audit and fixes | Build | P2 | M | [ENG-02](foundations.md#eng-02-playwright-end-to-end-harness) |
 | [LIB-13](everyday-library.md#lib-13-warm-dark-theme) Warm dark theme | Build | P3 | S | none |
-| [LIB-14](everyday-library.md#lib-14-inspector-integrity-fields) Inspector integrity fields | Build | P2 | S | [LIB-06](everyday-library.md#lib-06-inspector-panel) |
-| [LIB-15](everyday-library.md#lib-15-inspector-hierarchy-and-description-polish) Inspector hierarchy and description polish | Build | P2 | M | [LIB-06](everyday-library.md#lib-06-inspector-panel) |
+| [LIB-14](everyday-library.md#lib-14-inspector-integrity-fields) Inspector integrity fields | Build | P2 | S | none |
+| [LIB-15](everyday-library.md#lib-15-inspector-hierarchy-and-description-polish) Inspector hierarchy and description polish | Build | P2 | M | none |
 | [LIB-16](everyday-library.md#lib-16-storage-summary-and-explanatory-panels) Storage summary and explanatory panels | Build | P2 | M | none |
 | [LIB-17](everyday-library.md#lib-17-panel-interaction-and-feedback-polish) Panel interaction and feedback polish | Build | P2 | M | [LIB-15](everyday-library.md#lib-15-inspector-hierarchy-and-description-polish), [LIB-16](everyday-library.md#lib-16-storage-summary-and-explanatory-panels) |
 | [LIB-18](everyday-library.md#lib-18-panel-visual-regression-coverage) Panel visual regression coverage | Proof | P2 | M | [ENG-02](foundations.md#eng-02-playwright-end-to-end-harness), [LIB-15](everyday-library.md#lib-15-inspector-hierarchy-and-description-polish), [LIB-16](everyday-library.md#lib-16-storage-summary-and-explanatory-panels) |
@@ -143,13 +142,13 @@ Rename, move, trash, versions and tags. Every change is metadata, reversible whe
 | [ORG-04](organize.md#org-04-trash-and-restore) Trash and restore | Build | P1 | L | [ORG-01](organize.md#org-01-decision-how-entries-change) |
 | [ORG-05](organize.md#org-05-permanent-deletion-and-object-garbage-collection) Permanent deletion and object garbage collection | Build | P2 | L | [ORG-04](organize.md#org-04-trash-and-restore), [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer) |
 | [ORG-06](organize.md#org-06-upload-a-new-version-of-a-file) Upload a new version of a file | Build | P2 | L | [ORG-01](organize.md#org-01-decision-how-entries-change) |
-| [ORG-07](organize.md#org-07-version-history) Version history | Build | P2 | M | [ORG-06](organize.md#org-06-upload-a-new-version-of-a-file), [LIB-06](everyday-library.md#lib-06-inspector-panel) |
-| [ORG-08](organize.md#org-08-tags) Tags | Build | P2 | M | [LIB-06](everyday-library.md#lib-06-inspector-panel) |
+| [ORG-07](organize.md#org-07-version-history) Version history | Build | P2 | M | [ORG-06](organize.md#org-06-upload-a-new-version-of-a-file) |
+| [ORG-08](organize.md#org-08-tags) Tags | Build | P2 | M | none |
 | [ORG-09](organize.md#org-09-download-a-folder-as-zip) Download a folder as ZIP | Build | P2 | M | none |
 | [ORG-10](organize.md#org-10-duplicate-finder) Duplicate finder | Build | P2 | M | none |
 | [ORG-11](organize.md#org-11-activity-and-audit-log) Activity and audit log | Build | P2 | M | [ORG-01](organize.md#org-01-decision-how-entries-change) |
 | [ORG-12](organize.md#org-12-undo-for-reversible-actions) Undo for reversible actions | Build | P3 | S | [ORG-02](organize.md#org-02-rename), [ORG-03](organize.md#org-03-move), [ORG-04](organize.md#org-04-trash-and-restore) |
-| [ORG-13](organize.md#org-13-file-notes) File notes | Build | P3 | S | [LIB-06](everyday-library.md#lib-06-inspector-panel) |
+| [ORG-13](organize.md#org-13-file-notes) File notes | Build | P3 | S | none |
 
 ### [Previews & media](previews-and-media.md)
 
@@ -165,7 +164,7 @@ See a file before downloading it. Derived assets inherit authorization and never
 | [PRV-06](previews-and-media.md#prv-06-video-posters-and-range-downloads) Video posters and range downloads | Build | P3 | L | [PRV-02](previews-and-media.md#prv-02-image-thumbnail-pipeline) |
 | [PRV-07](previews-and-media.md#prv-07-on-this-day) On this day | Build | P3 | S | [PRV-04](previews-and-media.md#prv-04-photo-metadata-extraction), [PRV-03](previews-and-media.md#prv-03-gallery-grid-and-lightbox) |
 | [PRV-08](previews-and-media.md#prv-08-spike-map-of-geotagged-photos) Spike: map of geotagged photos | Spike | P3 | S | [PRV-04](previews-and-media.md#prv-04-photo-metadata-extraction) |
-| [PRV-09](previews-and-media.md#prv-09-preview-originals-in-the-browser) Preview originals in the browser | Build | P2 | M | [LIB-06](everyday-library.md#lib-06-inspector-panel) |
+| [PRV-09](previews-and-media.md#prv-09-preview-originals-in-the-browser) Preview originals in the browser | Build | P2 | M | none |
 
 ### [Tidy mode](tidy-mode.md)
 

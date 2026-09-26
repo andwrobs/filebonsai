@@ -87,25 +87,6 @@ Depends on: none
 
 **Checks:** `web`; `rendered`
 
-## LIB-06 Inspector panel
-
-`P2` · `M` · Build · Web
-
-Depends on: none
-
-**Why.** The design reference shows details beside the list, and today the only way to learn about a file is to download it.
-
-**Outcome.** A collapsible inspector for the focused entry built from fields the API already returns: name, kind (from the extension), size, created and modified dates, and the entry ID with a copy button, plus the download action. It is a third column on wide screens, a drawer below 1100px and a bottom sheet on phones. No API change; LIB-14 adds the integrity fields.
-
-**Acceptance**
-
-- Opens and closes from the keyboard and pointer; focus returns to the row
-- Tabs appear only once their features exist (no mock-only controls)
-- Open state remembered per viewer
-- Rendered at every shell size with long names
-
-**Checks:** `web`; `rendered`
-
 ## LIB-07 Name search
 
 `P2` · `M` · Build · Backend, Web · Public API change
@@ -229,7 +210,9 @@ Context: LIB-01/LIB-10 added the responsive shell: tokens in `web/app/styles/tok
 
 `P2` · `S` · Build · Backend, Web · Public API change
 
-Depends on: [LIB-06](#lib-06-inspector-panel)
+Depends on: none
+
+Context: LIB-06 added the inspector in `web/app/features/catalog/inspector.tsx`. It is a docked column from 1100px, a modal drawer below that and a bottom sheet on phones. Each row's Details button or the toolbar toggle opens it, and it shows the current folder when nothing is chosen. The Details list has size, dates and the ID; there are no tabs yet. Add the new fields to that list.
 
 **Why.** File responses don't expose the SHA-256, version count or storage connection, which are what make a file's details trustworthy.
 
@@ -247,7 +230,9 @@ Depends on: [LIB-06](#lib-06-inspector-panel)
 
 `P2` · `M` · Build · Web
 
-Depends on: [LIB-06](#lib-06-inspector-panel)
+Depends on: none
+
+Context: LIB-06 added the inspector in `web/app/features/catalog/inspector.tsx`. It is a docked column from 1100px, a modal drawer below that and a bottom sheet on phones. Each row's Details button or the toolbar toggle opens it, and it shows the current folder when nothing is chosen. The Details list has size, dates and the ID; there are no tabs yet.
 
 Integrity fields (SHA-256, version count, storage connection) come from [LIB-14](#lib-14-inspector-integrity-fields); place them in the technical disclosure once it ships.
 

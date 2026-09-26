@@ -1,5 +1,5 @@
 import { useForm } from "@tanstack/react-form";
-import { ChevronLeft, FolderOpen, FolderPlus } from "lucide-react";
+import { ChevronLeft, FolderOpen, FolderPlus, Info } from "lucide-react";
 import {
   isRouteErrorResponse,
   Link,
@@ -9,7 +9,7 @@ import {
 } from "react-router";
 import { useId, useState } from "react";
 
-import type { Entry, FolderEntry } from "../../src/lib/api/api-types.js";
+import type { Entry, FileEntry, FolderEntry } from "../../src/lib/api/api-types.js";
 import { filebonsaiService } from "../../src/lib/api/filebonsai-service.js";
 import {
   catalogHref,
@@ -21,7 +21,8 @@ import {
   uniqueEntries,
 } from "../features/catalog/catalog-data.js";
 import { EntryIcon } from "../features/catalog/entry-icon.js";
-import { DownloadControl, UploadControl } from "../features/transfers/transfer-controls.js";
+import { InspectorPanel, useInspector, type Inspector } from "../features/catalog/inspector.js";
+import { DownloadIconButton, UploadControl, useOriginalDownload } from "../features/transfers/transfer-controls.js";
 
 interface LibraryData {
   children: Entry[];
@@ -70,6 +71,8 @@ export default function Library() {
   const [isCreating, setIsCreating] = useState(false);
   const [submitError, setSubmitError] = useState<string>();
   const nameId = useId();
+  const inspectorId = useId();
+  const inspector = useInspector(folder, children);
   const now = new Date();
   const form = useForm({
     defaultValues: { name: "" },
@@ -112,118 +115,177 @@ export default function Library() {
             <span className="button-label">New folder</span>
           </button>
           <UploadControl parentId={folder.id} />
+          <button
+            aria-controls={inspector.open ? inspectorId : undefined}
+            aria-expanded={inspector.open}
+            className="button secondary inspector-toggle"
+            onClick={(event) => inspector.toggle(event.currentTarget)}
+            ref={inspector.toggleButton}
+            type="button"
+          >
+            <Info aria-hidden="true" className="button-icon" />
+            <span className="button-label">Details</span>
+          </button>
         </div>
       </header>
 
-      {isCreating ? (
-        <section className="folder-form" aria-labelledby="new-folder-heading">
-          <h2 id="new-folder-heading">Create folder</h2>
-          <p className="folder-form-hint">Names are preserved exactly as entered.</p>
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              void form.handleSubmit();
-            }}
-          >
-            <form.Field
-              name="name"
-              validators={{
-                onChange: ({ value }) => {
-                  if (!value) return "Enter a folder name.";
-                  if (value.length > 255) return "Folder names must be 255 characters or fewer.";
-                  return undefined;
-                },
-              }}
-            >
-              {(field) => (
-                <label className="field" htmlFor={nameId}>
-                  <span className="field-label">Folder name</span>
-                  <input
-                    autoFocus
-                    id={nameId}
-                    onBlur={field.handleBlur}
-                    onChange={(event) => field.handleChange(event.target.value)}
-                    value={field.state.value}
-                  />
-                  {field.state.meta.errors.length ? (
-                    <span className="field-error">{field.state.meta.errors.join(" ")}</span>
-                  ) : null}
-                </label>
-              )}
-            </form.Field>
-            <div className="form-actions">
-              <button className="button secondary" onClick={() => setIsCreating(false)} type="button">Cancel</button>
-              <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting] as const}>
-                {([canSubmit, isSubmitting]) => (
-                  <button className="button primary" disabled={!canSubmit || isSubmitting} type="submit">
-                    {isSubmitting ? "Creating…" : "Create folder"}
-                  </button>
-                )}
-              </form.Subscribe>
-            </div>
-          </form>
-          {submitError ? <p className="form-error" role="alert">{submitError}</p> : null}
-        </section>
-      ) : null}
-
-      <section className="entries" aria-busy={revalidator.state !== "idle"} aria-labelledby="items-heading">
-        <h2 className="visually-hidden" id="items-heading">Items</h2>
-        {children.length === 0 ? (
-          <div className="empty-state">
-            <FolderOpen aria-hidden="true" className="empty-state-icon" strokeWidth={1.5} />
-            <h3>This folder is empty</h3>
-            <p>Upload files or create a folder to start organizing your Library.</p>
-            <div className="empty-state-actions">
-              <button className="button secondary" onClick={() => setIsCreating(true)} type="button">Create folder</button>
-              <UploadControl parentId={folder.id} variant="inline" />
-            </div>
-          </div>
-        ) : (
-          <>
-            <div aria-hidden="true" className="entry-columns">
-              <span />
-              <span>Name</span>
-              <span className="entry-kind">Kind</span>
-              <span className="entry-size">Size</span>
-              <span className="entry-modified">Modified</span>
-              <span />
-            </div>
-            <ul className="entry-list">
-              {children.map((entry) => {
-                const kind = entryKind(entry);
-                const cells = (
-                  <>
-                    <EntryIcon family={kind.family} />
-                    <span className="entry-name">{entry.name}</span>
-                    <span className="entry-kind">{kind.label}</span>
-                    <span className="entry-size">{entry.kind === "file" ? formatBytes(entry.currentVersion.sizeBytes) : "—"}</span>
-                    <span className="entry-modified"><time dateTime={entry.updatedAt}>{formatModified(entry.updatedAt, now)}</time></span>
-                    <span className="entry-compact">{entryMeta(entry, now)}</span>
-                  </>
-                );
-                return (
-                  <li key={entry.id}>
-                    {entry.kind === "folder" ? (
-                      <Link className="entry-row" to={catalogHref(entry.id)}>{cells}</Link>
-                    ) : (
-                      <div className="entry-row">
-                        {cells}
-                        <DownloadControl id={entry.id} name={entry.name} />
-                      </div>
+      <div className="library-body" data-inspector={inspector.open && inspector.docked ? "docked" : undefined}>
+        <div className="library-content">
+          {isCreating ? (
+            <section className="folder-form" aria-labelledby="new-folder-heading">
+              <h2 id="new-folder-heading">Create folder</h2>
+              <p className="folder-form-hint">Names are preserved exactly as entered.</p>
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  void form.handleSubmit();
+                }}
+              >
+                <form.Field
+                  name="name"
+                  validators={{
+                    onChange: ({ value }) => {
+                      if (!value) return "Enter a folder name.";
+                      if (value.length > 255) return "Folder names must be 255 characters or fewer.";
+                      return undefined;
+                    },
+                  }}
+                >
+                  {(field) => (
+                    <label className="field" htmlFor={nameId}>
+                      <span className="field-label">Folder name</span>
+                      <input
+                        autoFocus
+                        id={nameId}
+                        onBlur={field.handleBlur}
+                        onChange={(event) => field.handleChange(event.target.value)}
+                        value={field.state.value}
+                      />
+                      {field.state.meta.errors.length ? (
+                        <span className="field-error">{field.state.meta.errors.join(" ")}</span>
+                      ) : null}
+                    </label>
+                  )}
+                </form.Field>
+                <div className="form-actions">
+                  <button className="button secondary" onClick={() => setIsCreating(false)} type="button">Cancel</button>
+                  <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting] as const}>
+                    {([canSubmit, isSubmitting]) => (
+                      <button className="button primary" disabled={!canSubmit || isSubmitting} type="submit">
+                        {isSubmitting ? "Creating…" : "Create folder"}
+                      </button>
                     )}
-                  </li>
-                );
-              })}
-            </ul>
-            <p className="entries-count">{children.length} {children.length === 1 ? "item" : "items"}</p>
-          </>
-        )}
-        {nextCursor ? <p className="pagination-note">More items are available; loading additional pages is coming next.</p> : null}
-      </section>
+                  </form.Subscribe>
+                </div>
+              </form>
+              {submitError ? <p className="form-error" role="alert">{submitError}</p> : null}
+            </section>
+          ) : null}
+
+          <section className="entries" aria-busy={revalidator.state !== "idle"} aria-labelledby="items-heading">
+            <h2 className="visually-hidden" id="items-heading">Items</h2>
+            {children.length === 0 ? (
+              <div className="empty-state">
+                <FolderOpen aria-hidden="true" className="empty-state-icon" strokeWidth={1.5} />
+                <h3>This folder is empty</h3>
+                <p>Upload files or create a folder to start organizing your Library.</p>
+                <div className="empty-state-actions">
+                  <button className="button secondary" onClick={() => setIsCreating(true)} type="button">Create folder</button>
+                  <UploadControl parentId={folder.id} variant="inline" />
+                </div>
+              </div>
+            ) : (
+              <>
+                <div aria-hidden="true" className="entry-columns">
+                  <span />
+                  <span>Name</span>
+                  <span className="entry-kind">Kind</span>
+                  <span className="entry-size">Size</span>
+                  <span className="entry-modified">Modified</span>
+                  <span />
+                </div>
+                <ul className="entry-list">
+                  {children.map((entry) => (
+                    <EntryRow entry={entry} inspector={inspector} inspectorId={inspectorId} key={entry.id} now={now} />
+                  ))}
+                </ul>
+                <p className="entries-count">{children.length} {children.length === 1 ? "item" : "items"}</p>
+              </>
+            )}
+            {nextCursor ? <p className="pagination-note">More items are available; loading additional pages is coming next.</p> : null}
+          </section>
+        </div>
+        <InspectorPanel id={inspectorId} inspector={inspector} />
+      </div>
 
       <UploadControl parentId={folder.id} variant="fab" />
     </div>
+  );
+}
+
+function EntryRow({ entry, inspector, inspectorId, now }: {
+  entry: Entry;
+  inspector: Inspector;
+  inspectorId: string;
+  now: Date;
+}) {
+  const kind = entryKind(entry);
+  const inspected = inspector.open && inspector.entry.id === entry.id;
+  return (
+    <li data-inspected={inspected || undefined}>
+      <div className="entry-row">
+        <EntryIcon family={kind.family} />
+        {entry.kind === "folder" ? (
+          <Link className="entry-name entry-link" to={catalogHref(entry.id)}>{entry.name}</Link>
+        ) : (
+          <span className="entry-name">{entry.name}</span>
+        )}
+        <span className="entry-kind">{kind.label}</span>
+        <span className="entry-size">{entry.kind === "file" ? formatBytes(entry.currentVersion.sizeBytes) : "—"}</span>
+        <span className="entry-modified"><time dateTime={entry.updatedAt}>{formatModified(entry.updatedAt, now)}</time></span>
+        <span className="entry-compact">{entryMeta(entry, now)}</span>
+        {entry.kind === "file" ? <FileRowActions entry={entry} inspector={inspector} inspectorId={inspectorId} inspected={inspected} /> : (
+          <span className="entry-actions">
+            <DetailsButton entry={entry} inspector={inspector} inspectorId={inspectorId} inspected={inspected} />
+          </span>
+        )}
+      </div>
+    </li>
+  );
+}
+
+function FileRowActions({ entry, ...details }: { entry: FileEntry; inspector: Inspector; inspectorId: string; inspected: boolean }) {
+  const { busy, download, status } = useOriginalDownload(entry.id, entry.name);
+  return (
+    <>
+      <span className="entry-actions">
+        <DownloadIconButton busy={busy} download={download} name={entry.name} />
+        <DetailsButton entry={entry} {...details} />
+      </span>
+      <span className="entry-status" role="status">{status}</span>
+    </>
+  );
+}
+
+function DetailsButton({ entry, inspected, inspector, inspectorId }: {
+  entry: Entry;
+  inspected: boolean;
+  inspector: Inspector;
+  inspectorId: string;
+}) {
+  return (
+    <button
+      aria-controls={inspected ? inspectorId : undefined}
+      aria-expanded={inspected}
+      aria-label={`Details for ${entry.name}`}
+      className="icon-button"
+      onClick={(event) => inspector.toggleEntry(entry.id, event.currentTarget)}
+      title="Details"
+      type="button"
+    >
+      <Info aria-hidden="true" />
+    </button>
   );
 }
 

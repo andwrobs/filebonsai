@@ -45,11 +45,15 @@
   --color-kind-code: #2f7a78;
   --color-kind-file: #6f7c73;
 
+  /* Dims the page behind the inspector drawer and sheet. */
+  --color-scrim: #1f2a2466;
+
   --shadow-raised: 0 1px 2px #1f2a2414, 0 8px 24px #1f2a2414;
   --shadow-floating: 0 2px 6px #1f2a2429, 0 12px 28px #1f2a241f;
 
   /* Type: system faces only, pinned for screenshots. */
   --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   --text-xs: 0.75rem;
   --text-sm: 0.8125rem;
   --text-md: 0.875rem;
@@ -91,6 +95,7 @@
   --mobile-bar-height: 3.25rem;
   --bottom-nav-height: 3.75rem;
   --tray-header-height: 3rem;
+  --inspector-width: 20rem;
   --content-gutter: clamp(1rem, 0.6rem + 1.6vw, 2rem);
 
   --duration-fast: 120ms;

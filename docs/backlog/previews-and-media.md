@@ -151,7 +151,9 @@ Depends on: [PRV-04](#prv-04-photo-metadata-extraction)
 
 `P2` · `M` · Build · Web
 
-Depends on: [LIB-06](everyday-library.md#lib-06-inspector-panel)
+Depends on: none
+
+Context: LIB-06 added the inspector in `web/app/features/catalog/inspector.tsx`. It is a docked column from 1100px, a modal drawer below that and a bottom sheet on phones. Each row's Details button or the toolbar toggle opens it, and it shows the current folder when nothing is chosen. The Details list has size, dates and the ID; there are no tabs yet. Place the preview above Details.
 
 **Why.** Looking at a file shouldn't need a download, and the thumbnail pipeline (PRV-02) is several items away.
 
