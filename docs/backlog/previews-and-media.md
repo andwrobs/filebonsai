@@ -146,3 +146,23 @@ Depends on: [PRV-04](#prv-04-photo-metadata-extraction)
 - Clear recommendation
 
 **Checks:** `spike-notes`
+
+## PRV-09 Preview originals in the browser
+
+`P2` · `M` · Build · Web
+
+Depends on: [LIB-06](everyday-library.md#lib-06-inspector-panel)
+
+**Why.** Looking at a file shouldn't need a download, and the thumbnail pipeline (PRV-02) is several items away.
+
+**Outcome.** The inspector shows the original through the existing authorized download: raster images (JPEG, PNG, GIF, WebP, AVIF) in an `<img>` and plain text as escaped text, both under a size cap. The client gives the Blob an explicit image or text type chosen from the extension. Other kinds, oversized files and failures fall back to the download button.
+
+**Acceptance**
+
+- HTML, SVG, PDF and Markdown are never rendered as documents or markup; they wait for PRV-01 and PRV-05
+- The cap is checked against the entry's size before the body is fetched
+- Object URLs are revoked when the preview closes
+- Loading, too-large, unsupported and failed states rendered
+
+**Invariants:** INV-12, INV-15  
+**Checks:** `web`; `rendered`

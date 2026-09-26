@@ -28,7 +28,9 @@ Depends on: none
 
 `P2` · `L` · Build · Web
 
-Depends on: [CFG-01](#cfg-01-decision-configurable-shell-model), [LIB-01](everyday-library.md#lib-01-design-tokens-and-shell-foundation)
+Depends on: [CFG-01](#cfg-01-decision-configurable-shell-model)
+
+Context: LIB-01/LIB-10 added the responsive shell: tokens in `web/app/styles/tokens.css` (raw colors anywhere else fail `tokens.test.ts`), Lucide icons, and the `routes/app-shell.tsx` layout route with sidebar, icon rail and bottom navigation. Regions are fixed CSS today; the registry replaces them rather than adding a second layout system.
 
 **Why.** The first real configurability.
 

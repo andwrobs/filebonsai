@@ -26,10 +26,10 @@ export default function LibraryHome() {
 export function ErrorBoundary({ error }: { error: unknown }) {
   const status = isRouteErrorResponse(error) ? error.status : 500;
   return (
-    <main className="route-error">
+    <div className="page-message" role="alert">
       <p className="eyebrow">{status === 401 ? "Sign in" : "Unavailable"}</p>
       <h1>{status === 401 ? "Open your Library" : "The Library is unavailable."}</h1>
-      {status === 401 ? <Link className="primary-button" to="/sign-in">Sign in</Link> : null}
-    </main>
+      {status === 401 ? <Link className="button primary" to="/sign-in">Sign in</Link> : null}
+    </div>
   );
 }

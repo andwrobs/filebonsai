@@ -54,17 +54,16 @@ export default function SignIn() {
   return <main className="sign-in-shell">
     <section className="sign-in-card" aria-labelledby="sign-in-heading">
       <p className="sign-in-brand">Filebonsai</p>
-      <p className="eyebrow">Your Library</p>
       <h1 id="sign-in-heading">Sign in</h1>
       <p className="sign-in-intro">Enter the password for the local owner account.</p>
       <form onSubmit={event => void submit(event)}>
         <label htmlFor="owner-password">Password</label>
         <input autoComplete="current-password" autoFocus id="owner-password" name="password" required type="password" />
         {message ? <p className="form-error" role="alert">{message}</p> : null}
-        <button className="primary-button" disabled={busy} type="submit">{busy ? "Signing in…" : "Sign in"}</button>
+        <button className="button primary" disabled={busy} type="submit">{busy ? "Signing in…" : "Sign in"}</button>
       </form>
       {oidcProvider === "authentik"
-        ? <a className="secondary-button sign-in-oidc" href="/oauth2/authorization/authentik">Continue with Authentik</a>
+        ? <a className="button secondary sign-in-oidc" href="/oauth2/authorization/authentik">Continue with Authentik</a>
         : null}
       <p className="sign-in-help">First time here? Ask the server operator to set up the owner account.</p>
     </section>
@@ -72,10 +71,12 @@ export default function SignIn() {
 }
 
 export function ErrorBoundary() {
-  return <main className="route-error">
-    <p className="eyebrow">Unavailable</p>
-    <h1>Sign-in is unavailable</h1>
-    <p>Check the server connection, then try again.</p>
-    <a className="primary-button" href="/sign-in">Try again</a>
+  return <main className="sign-in-shell">
+    <div className="page-message" role="alert">
+      <p className="eyebrow">Unavailable</p>
+      <h1>Sign-in is unavailable</h1>
+      <p>Check the server connection, then try again.</p>
+      <a className="button primary" href="/sign-in">Try again</a>
+    </div>
   </main>;
 }

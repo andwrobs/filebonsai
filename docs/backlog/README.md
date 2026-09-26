@@ -85,7 +85,8 @@ M1 promises that a clean checkout becomes a working, recoverable library. Close 
 | [M1-08](finish-m1.md#m1-08-serve-the-web-app-from-the-backend-at-one-origin) Serve the web app from the backend at one origin | Build | P1 | M | none |
 | [M1-10](finish-m1.md#m1-10-honest-determinate-upload-progress) Honest determinate upload progress | Build | P2 | S | none |
 | [M1-11](finish-m1.md#m1-11-drag-and-drop-upload) Drag-and-drop upload | Build | P2 | S | none |
-| [M1-12](finish-m1.md#m1-12-m1-exit-review) M1 exit review | Proof | P1 | M | [M1-01](finish-m1.md#m1-01-map-m1-failure-outcomes-in-the-web-client), [M1-02](finish-m1.md#m1-02-breadcrumbs-from-real-ancestors), [M1-03](finish-m1.md#m1-03-rediscover-and-cancel-open-uploads), [M1-05](finish-m1.md#m1-05-prove-interruption-and-restart-recovery-in-the-browser), [M1-06](finish-m1.md#m1-06-prove-second-principal-isolation-over-http), [M1-07](finish-m1.md#m1-07-container-image-and-compose-from-a-clean-checkout) |
+| [M1-12](finish-m1.md#m1-12-m1-exit-review) M1 exit review | Proof | P1 | M | [M1-01](finish-m1.md#m1-01-map-m1-failure-outcomes-in-the-web-client), [M1-02](finish-m1.md#m1-02-breadcrumbs-from-real-ancestors), [M1-03](finish-m1.md#m1-03-rediscover-and-cancel-open-uploads), [M1-05](finish-m1.md#m1-05-prove-interruption-and-restart-recovery-in-the-browser), [M1-06](finish-m1.md#m1-06-prove-second-principal-isolation-over-http), [M1-07](finish-m1.md#m1-07-container-image-and-compose-from-a-clean-checkout), [M1-13](finish-m1.md#m1-13-folder-name-conflicts-return-500) |
+| [M1-13](finish-m1.md#m1-13-folder-name-conflicts-return-500) Folder name conflicts return 500 | Build | P1 | S | none |
 
 ### [Foundations](foundations.md)
 
@@ -113,19 +114,18 @@ Make the daily loop of finding, looking and acting feel like the design directio
 
 | Item | Kind | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- |
-| [LIB-01](everyday-library.md#lib-01-design-tokens-and-shell-foundation) Design tokens and shell foundation | Build | P1 | M | none |
-| [LIB-02](everyday-library.md#lib-02-folder-tree-sidebar) Folder tree sidebar | Build | P2 | M | [LIB-01](everyday-library.md#lib-01-design-tokens-and-shell-foundation) |
+| [LIB-02](everyday-library.md#lib-02-folder-tree-sidebar) Folder tree sidebar | Build | P2 | M | none |
 | [LIB-03](everyday-library.md#lib-03-server-side-sort-for-folder-listings) Server-side sort for folder listings | Build | P2 | M | none |
-| [LIB-04](everyday-library.md#lib-04-table-and-grid-views) Table and grid views | Build | P2 | M | [LIB-01](everyday-library.md#lib-01-design-tokens-and-shell-foundation), [LIB-03](everyday-library.md#lib-03-server-side-sort-for-folder-listings) |
+| [LIB-04](everyday-library.md#lib-04-table-and-grid-views) Table and grid views | Build | P2 | M | [LIB-03](everyday-library.md#lib-03-server-side-sort-for-folder-listings) |
 | [LIB-05](everyday-library.md#lib-05-selection-model) Selection model | Build | P2 | M | none |
-| [LIB-06](everyday-library.md#lib-06-inspector-panel) Inspector panel | Build | P2 | M | [LIB-01](everyday-library.md#lib-01-design-tokens-and-shell-foundation) |
+| [LIB-06](everyday-library.md#lib-06-inspector-panel) Inspector panel | Build | P2 | M | none |
 | [LIB-07](everyday-library.md#lib-07-name-search) Name search | Build | P2 | M | [M1-02](finish-m1.md#m1-02-breadcrumbs-from-real-ancestors) |
-| [LIB-08](everyday-library.md#lib-08-command-palette-and-keyboard-shortcuts) Command palette and keyboard shortcuts | Build | P2 | M | [LIB-01](everyday-library.md#lib-01-design-tokens-and-shell-foundation) |
+| [LIB-08](everyday-library.md#lib-08-command-palette-and-keyboard-shortcuts) Command palette and keyboard shortcuts | Build | P2 | M | none |
 | [LIB-09](everyday-library.md#lib-09-starred-and-recent) Starred and Recent | Build | P2 | M | none |
-| [LIB-10](everyday-library.md#lib-10-mobile-layout-pass) Mobile layout pass | Build | P2 | M | [LIB-01](everyday-library.md#lib-01-design-tokens-and-shell-foundation) |
 | [LIB-11](everyday-library.md#lib-11-large-folder-performance) Large-folder performance | Proof | P3 | M | [ENG-03](foundations.md#eng-03-synthetic-demo-library-generator) |
 | [LIB-12](everyday-library.md#lib-12-accessibility-audit-and-fixes) Accessibility audit and fixes | Build | P2 | M | [ENG-02](foundations.md#eng-02-playwright-end-to-end-harness) |
-| [LIB-13](everyday-library.md#lib-13-warm-dark-theme) Warm dark theme | Build | P3 | S | [LIB-01](everyday-library.md#lib-01-design-tokens-and-shell-foundation) |
+| [LIB-13](everyday-library.md#lib-13-warm-dark-theme) Warm dark theme | Build | P3 | S | none |
+| [LIB-14](everyday-library.md#lib-14-inspector-integrity-fields) Inspector integrity fields | Build | P2 | S | [LIB-06](everyday-library.md#lib-06-inspector-panel) |
 
 ### [Organize](organize.md)
 
@@ -161,6 +161,7 @@ See a file before downloading it. Derived assets inherit authorization and never
 | [PRV-06](previews-and-media.md#prv-06-video-posters-and-range-downloads) Video posters and range downloads | Build | P3 | L | [PRV-02](previews-and-media.md#prv-02-image-thumbnail-pipeline) |
 | [PRV-07](previews-and-media.md#prv-07-on-this-day) On this day | Build | P3 | S | [PRV-04](previews-and-media.md#prv-04-photo-metadata-extraction), [PRV-03](previews-and-media.md#prv-03-gallery-grid-and-lightbox) |
 | [PRV-08](previews-and-media.md#prv-08-spike-map-of-geotagged-photos) Spike: map of geotagged photos | Spike | P3 | S | [PRV-04](previews-and-media.md#prv-04-photo-metadata-extraction) |
+| [PRV-09](previews-and-media.md#prv-09-preview-originals-in-the-browser) Preview originals in the browser | Build | P2 | M | [LIB-06](everyday-library.md#lib-06-inspector-panel) |
 
 ### [Tidy mode](tidy-mode.md)
 
@@ -230,7 +231,7 @@ Same app, your layout: modules, regions, presets and per-folder views, without a
 | Item | Kind | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- |
 | [CFG-01](configurable-shell.md#cfg-01-decision-configurable-shell-model) Decision: configurable shell model | Decision | P2 | M | none |
-| [CFG-02](configurable-shell.md#cfg-02-module-registry-and-layout-engine) Module registry and layout engine | Build | P2 | L | [CFG-01](configurable-shell.md#cfg-01-decision-configurable-shell-model), [LIB-01](everyday-library.md#lib-01-design-tokens-and-shell-foundation) |
+| [CFG-02](configurable-shell.md#cfg-02-module-registry-and-layout-engine) Module registry and layout engine | Build | P2 | L | [CFG-01](configurable-shell.md#cfg-01-decision-configurable-shell-model) |
 | [CFG-03](configurable-shell.md#cfg-03-customize-layout-panel) Customize Layout panel | Build | P3 | M | [CFG-02](configurable-shell.md#cfg-02-module-registry-and-layout-engine) |
 | [CFG-04](configurable-shell.md#cfg-04-preferences-api) Preferences API | Build | P3 | M | [CFG-01](configurable-shell.md#cfg-01-decision-configurable-shell-model) |
 | [CFG-05](configurable-shell.md#cfg-05-per-folder-view-settings) Per-folder view settings | Build | P3 | M | [CFG-04](configurable-shell.md#cfg-04-preferences-api), [LIB-03](everyday-library.md#lib-03-server-side-sort-for-folder-listings), [LIB-04](everyday-library.md#lib-04-table-and-grid-views) |
@@ -259,7 +260,7 @@ Ways to adopt Filebonsai: import an existing folder tree, upload whole folders, 
 | --- | --- | --- | --- | --- |
 | [IMP-01](bring-files-in.md#imp-01-import-an-existing-folder-from-the-server) Import an existing folder from the server | Build | P2 | L | [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer) |
 | [IMP-02](bring-files-in.md#imp-02-folder-upload-from-the-browser) Folder upload from the browser | Build | P2 | M | [M1-11](finish-m1.md#m1-11-drag-and-drop-upload) |
-| [IMP-03](bring-files-in.md#imp-03-installable-web-app) Installable web app | Build | P3 | S | [LIB-01](everyday-library.md#lib-01-design-tokens-and-shell-foundation) |
+| [IMP-03](bring-files-in.md#imp-03-installable-web-app) Installable web app | Build | P3 | S | none |
 | [IMP-04](bring-files-in.md#imp-04-spike-read-only-webdav) Spike: read-only WebDAV | Spike | P3 | S | none |
 | [IMP-05](bring-files-in.md#imp-05-watched-drop-folder) Watched drop folder | Build | P3 | M | [IMP-01](bring-files-in.md#imp-01-import-an-existing-folder-from-the-server) |
 
