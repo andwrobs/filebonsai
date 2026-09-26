@@ -85,7 +85,8 @@ export function TransferTray() {
   </section>;
 }
 
-export function DownloadControl({ id, name }: { id: string; name: string }) {
+// Callers place the button and the status line; a row and the inspector lay them out differently.
+export function useOriginalDownload(id: string, name: string) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   async function download() {
@@ -102,10 +103,11 @@ export function DownloadControl({ id, name }: { id: string; name: string }) {
     } catch { setMessage("Download failed. Check your session or connection and try again."); }
     finally { setBusy(false); }
   }
-  return <>
-    <button aria-busy={busy} aria-label={`Download ${name}`} className="icon-button entry-action" disabled={busy} onClick={() => void download()} title="Download original" type="button">
-      <Download aria-hidden="true" />
-    </button>
-    <span className="entry-status" role="status">{busy ? "Downloading…" : message}</span>
-  </>;
+  return { busy, download: () => void download(), status: busy ? "Downloading…" : message };
+}
+
+export function DownloadIconButton({ busy, download, name }: { busy: boolean; download: () => void; name: string }) {
+  return <button aria-busy={busy} aria-label={`Download ${name}`} className="icon-button" disabled={busy} onClick={download} title="Download original" type="button">
+    <Download aria-hidden="true" />
+  </button>;
 }

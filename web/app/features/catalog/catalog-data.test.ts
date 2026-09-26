@@ -1,7 +1,16 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { catalogHref, entryKind, entryMeta, formatBytes, formatModified, uniqueEntries } from "./catalog-data.js";
+import {
+  catalogHref,
+  entryKind,
+  entryMeta,
+  formatBytes,
+  formatExactBytes,
+  formatFullDate,
+  formatModified,
+  uniqueEntries,
+} from "./catalog-data.js";
 
 const folder = {
   createdAt: "2026-09-21T00:00:00Z",
@@ -43,6 +52,14 @@ test("compact meta leads with size for files and kind for folders", () => {
   };
   assert.equal(entryMeta(folder, now, "en-US", "UTC"), "Folder · Sep 21");
   assert.equal(entryMeta(file, now, "en-US", "UTC"), "5.2 MB · Aug 28");
+});
+
+test("details show the full date and the exact byte count", () => {
+  assert.equal(formatFullDate("2026-08-28T16:31:00Z", "en-US", "UTC"), "Aug 28, 2026, 4:31 PM");
+  assert.equal(formatExactBytes("0", "en-US"), "0 bytes");
+  assert.equal(formatExactBytes("1", "en-US"), "1 byte");
+  assert.equal(formatExactBytes("5505024", "en-US"), "5,505,024 bytes");
+  assert.equal(formatExactBytes("9007199254740993", "en-US"), "9,007,199,254,740,993 bytes");
 });
 
 test("kinds come from the extension and never from a leading dot or an unknown suffix", () => {

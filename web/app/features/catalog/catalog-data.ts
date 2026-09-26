@@ -49,6 +49,17 @@ export function formatModified(iso: string, now = new Date(), locale?: string, t
   return new Intl.DateTimeFormat(locale, { timeZone, month: "short", day: "numeric", ...(sameYear ? {} : { year: "numeric" }) }).format(date);
 }
 
+/** Full date and time for details, where the short list label would be ambiguous. */
+export function formatFullDate(iso: string, locale?: string, timeZone?: string) {
+  return new Intl.DateTimeFormat(locale, { timeZone, dateStyle: "medium", timeStyle: "short" }).format(new Date(iso));
+}
+
+/** Exact count for details; list rows keep the rounded size. */
+export function formatExactBytes(value: string, locale?: string) {
+  const bytes = BigInt(value);
+  return `${bytes.toLocaleString(locale)} ${bytes === 1n ? "byte" : "bytes"}`;
+}
+
 /** Size or kind plus modified date, for layouts too narrow for separate columns. */
 export function entryMeta(entry: Entry, now = new Date(), locale?: string, timeZone?: string) {
   const lead = entry.kind === "folder" ? "Folder" : formatBytes(entry.currentVersion.sizeBytes);
