@@ -138,7 +138,7 @@ Depends on: [PRV-04](#prv-04-photo-metadata-extraction)
 
 **Why.** Photos on a map are delightful, but tile sources and GPS privacy need thought.
 
-**Outcome.** Evaluate a map view using a self-hostable or operator-configured tile source. Review GPS privacy and recommend yes or no.
+**Outcome.** Evaluate a map view, including a zoomed-out heat layer, using a self-hostable or operator-configured tile source. Review GPS privacy and server-side location binning, and recommend yes or no. [RFL-05](reflect.md#rfl-05-photo-map-with-heat-layer) builds on the recommendation.
 
 **Acceptance**
 
