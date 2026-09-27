@@ -13,22 +13,30 @@ import javax.crypto.spec.SecretKeySpec;
 /** Authenticated, scope-bound keyset token. Contents are not encrypted or an API for clients. */
 public final class CatalogCursor {
     private static final int VERSION = 1;
-    private static final String SORT = "name-id-utf8-asc-v1";
 
     private final ObjectMapper mapper;
     private final byte[] secret;
 
-    public record Position(int version, UUID workspaceId, UUID folderId, String sort, String name, UUID id) {}
+    /** {@code kind} and {@code key} are absent from tokens issued before orders other than the default. */
+    public record Position(
+            int version, UUID workspaceId, UUID folderId, String sort, String name, UUID id, String kind, Long key) {}
 
     public CatalogCursor(ObjectMapper mapper, byte[] secret) {
         this.mapper = mapper;
         this.secret = secret.clone();
     }
 
-    public String encode(UUID workspace, EntryId folder, String name, EntryId id) {
+    public String encode(UUID workspace, EntryId folder, ListOrder order, ListOrder.Position last) {
         try {
-            byte[] payload =
-                    mapper.writeValueAsBytes(new Position(VERSION, workspace, folder.value(), SORT, name, id.value()));
+            byte[] payload = mapper.writeValueAsBytes(new Position(
+                    VERSION,
+                    workspace,
+                    folder.value(),
+                    order.token(),
+                    last.name(),
+                    last.id(),
+                    last.folder() ? "folder" : "file",
+                    last.key()));
             var encoder = Base64.getUrlEncoder().withoutPadding();
             return encoder.encodeToString(payload) + "." + encoder.encodeToString(sign(payload));
         } catch (Exception exception) {
@@ -36,7 +44,7 @@ public final class CatalogCursor {
         }
     }
 
-    public Position decode(String token, UUID workspace, EntryId folder) {
+    public ListOrder.Position decode(String token, UUID workspace, EntryId folder, ListOrder order) {
         try {
             if (token.length() > 2048) {
                 throw new IllegalArgumentException();
@@ -54,12 +62,15 @@ public final class CatalogCursor {
             if (position.version() != VERSION
                     || !workspace.equals(position.workspaceId())
                     || !folder.value().equals(position.folderId())
-                    || !SORT.equals(position.sort())
+                    || !order.token().equals(position.sort())
                     || position.name() == null
-                    || position.id() == null) {
+                    || position.id() == null
+                    || (order.key() != ListOrder.Key.NAME && position.key() == null)
+                    || (order.foldersFirst() && position.kind() == null)) {
                 throw new IllegalArgumentException();
             }
-            return position;
+            return new ListOrder.Position(
+                    "folder".equals(position.kind()), position.key(), position.name(), position.id());
         } catch (Exception exception) {
             throw new CatalogFailure(INVALID_CURSOR, "Cursor is invalid for this folder or server session");
         }

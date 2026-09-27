@@ -99,7 +99,7 @@ Depends on: [CFG-01](#cfg-01-decision-configurable-shell-model)
 
 `P3` · `M` · Build · Web, Backend
 
-Depends on: [CFG-04](#cfg-04-preferences-api), [LIB-03](everyday-library.md#lib-03-server-side-sort-for-folder-listings), [LIB-04](everyday-library.md#lib-04-table-and-grid-views)
+Depends on: [CFG-04](#cfg-04-preferences-api), [LIB-04](everyday-library.md#lib-04-table-and-grid-views)
 
 **Why.** /Photos wants a gallery and /Taxes wants a table.
 

@@ -115,8 +115,7 @@ Make the daily loop of finding, looking and acting feel like the design directio
 | Item | Kind | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- |
 | [LIB-02](everyday-library.md#lib-02-folder-tree-sidebar) Folder tree sidebar | Build | P2 | M | none |
-| [LIB-03](everyday-library.md#lib-03-server-side-sort-for-folder-listings) Server-side sort for folder listings | Build | P2 | M | none |
-| [LIB-04](everyday-library.md#lib-04-table-and-grid-views) Table and grid views | Build | P2 | M | [LIB-03](everyday-library.md#lib-03-server-side-sort-for-folder-listings) |
+| [LIB-04](everyday-library.md#lib-04-table-and-grid-views) Table and grid views | Build | P2 | M | none |
 | [LIB-05](everyday-library.md#lib-05-selection-model) Selection model | Build | P2 | M | none |
 | [LIB-07](everyday-library.md#lib-07-name-search) Name search | Build | P2 | M | [M1-02](finish-m1.md#m1-02-breadcrumbs-from-real-ancestors) |
 | [LIB-08](everyday-library.md#lib-08-command-palette-and-keyboard-shortcuts) Command palette and keyboard shortcuts | Build | P2 | M | none |
@@ -254,7 +253,7 @@ Runtime UI capabilities, synced preferences and owner settings have separate bou
 | [CFG-02](configurable-shell.md#cfg-02-module-registry-and-layout-engine) Module registry and layout engine | Build | P2 | L | [CFG-01](configurable-shell.md#cfg-01-decision-configurable-shell-model) |
 | [CFG-03](configurable-shell.md#cfg-03-customize-layout-panel) Customize Layout panel | Build | P3 | M | [CFG-02](configurable-shell.md#cfg-02-module-registry-and-layout-engine) |
 | [CFG-04](configurable-shell.md#cfg-04-preferences-api) Preferences API | Build | P2 | M | [CFG-01](configurable-shell.md#cfg-01-decision-configurable-shell-model) |
-| [CFG-05](configurable-shell.md#cfg-05-per-folder-view-settings) Per-folder view settings | Build | P3 | M | [CFG-04](configurable-shell.md#cfg-04-preferences-api), [LIB-03](everyday-library.md#lib-03-server-side-sort-for-folder-listings), [LIB-04](everyday-library.md#lib-04-table-and-grid-views) |
+| [CFG-05](configurable-shell.md#cfg-05-per-folder-view-settings) Per-folder view settings | Build | P3 | M | [CFG-04](configurable-shell.md#cfg-04-preferences-api), [LIB-04](everyday-library.md#lib-04-table-and-grid-views) |
 | [CFG-06](configurable-shell.md#cfg-06-layout-import-and-export) Layout import and export | Build | P3 | S | [CFG-02](configurable-shell.md#cfg-02-module-registry-and-layout-engine) |
 | [CFG-07](configurable-shell.md#cfg-07-saved-views-smart-folders) Saved views (smart folders) | Build | P3 | M | [LIB-07](everyday-library.md#lib-07-name-search), [ORG-08](organize.md#org-08-tags) |
 | [CFG-08](configurable-shell.md#cfg-08-operator-configuration-reference) Operator configuration reference | Build | P3 | S | none |

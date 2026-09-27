@@ -19,6 +19,7 @@ import com.filebonsai.catalog.application.GetCommittedBytes;
 import com.filebonsai.catalog.application.GetEntry;
 import com.filebonsai.catalog.application.GetWorkspaceRoot;
 import com.filebonsai.catalog.application.ListChildren;
+import com.filebonsai.catalog.application.ListOrder;
 import com.filebonsai.catalog.domain.ByteCount;
 import com.filebonsai.catalog.domain.Entry;
 import com.filebonsai.catalog.domain.EntryId;
@@ -29,12 +30,17 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
+import org.jooq.Field;
 import org.jooq.Record;
+import org.jooq.ResultQuery;
+import org.jooq.RowN;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 
@@ -43,6 +49,15 @@ public final class PostgresCatalog
     private static final String ENTRY_CLAIM = "entry";
     private static final String RESERVATION_CLAIM = "reservation";
     private static final String FOLDER = "folder";
+    private static final String FILE = "file";
+    // V9 copies of the entry's sort keys onto its name; jOOQ classes are generated from V1 only.
+    private static final Field<String> SORT_KIND = DSL.field(DSL.name("catalog_names", "entry_kind"), String.class);
+    private static final Field<OffsetDateTime> SORT_UPDATED_AT =
+            DSL.field(DSL.name("catalog_names", "entry_updated_at"), OffsetDateTime.class);
+    // Must match the ix_catalog_names_page_size expression, including the inline -1.
+    private static final Field<Long> SORT_SIZE = DSL.field(
+            "coalesce({0}, -1)", Long.class, DSL.field(DSL.name("catalog_names", "entry_size_bytes"), Long.class));
+    private static final Field<String> SORT_NAME = DSL.field("{0} collate \"C\"", String.class, CATALOG_NAMES.NAME);
     private static final String CREATE_FOLDER_OPERATION = "create-folder";
 
     private final DSLContext database;
@@ -88,20 +103,84 @@ public final class PostgresCatalog
     }
 
     @Override
-    public Page list(CatalogScope scope, EntryId folderId, int limit, String cursor) {
+    public Page list(CatalogScope scope, EntryId folderId, ListOrder order, int limit, String cursor) {
         if (limit < 1 || limit > 100) {
             throw new CatalogFailure(VALIDATION_FAILED, "Limit must be between 1 and 100");
         }
         folder(database, scope, folderId);
-        CatalogCursor.Position after = cursor == null ? null : cursors.decode(cursor, scope.workspaceId(), folderId);
+        ListOrder.Position after = cursor == null ? null : cursors.decode(cursor, scope.workspaceId(), folderId, order);
+        var rows = new ArrayList<Record>(limit + 1);
+        if (!order.foldersFirst()) {
+            rows.addAll(pageQuery(database, scope, folderId, order, null, after, limit + 1)
+                    .fetch());
+        } else {
+            // Folders, then files: each group is one index range, so neither needs a sort.
+            if (after == null || after.folder()) {
+                rows.addAll(pageQuery(database, scope, folderId, order, true, after, limit + 1)
+                        .fetch());
+            }
+            if (rows.size() <= limit) {
+                ListOrder.Position fileAfter = after == null || after.folder() ? null : after;
+                rows.addAll(pageQuery(database, scope, folderId, order, false, fileAfter, limit + 1 - rows.size())
+                        .fetch());
+            }
+        }
+        var entries = new ArrayList<Entry>(Math.min(limit, rows.size()));
+        for (int index = 0; index < Math.min(limit, rows.size()); index++) {
+            entries.add(map(rows.get(index)));
+        }
+        String next = null;
+        if (rows.size() > limit) {
+            next = cursors.encode(scope.workspaceId(), folderId, order, position(order, rows.get(limit - 1)));
+        }
+        return new Page(entries, next);
+    }
+
+    /**
+     * One index range of a folder's children in the order's sequence. {@code folders} limits the range to folders or
+     * files when it is not null. Package-private so tests can inspect the plan.
+     */
+    ResultQuery<? extends Record> pageQuery(
+            DSLContext context,
+            CatalogScope scope,
+            EntryId folderId,
+            ListOrder order,
+            Boolean folders,
+            ListOrder.Position after,
+            int limit) {
+        List<Field<?>> keys = new ArrayList<>(3);
+        var values = new ArrayList<Object>(3);
+        Condition group = DSL.noCondition();
+        if (folders != null) {
+            group = SORT_KIND.eq(folders ? FOLDER : FILE);
+        }
+        // Every folder sizes as -1, so name and ID alone order the folder group, by the folders-first index.
+        boolean sized = order.key() == ListOrder.Key.SIZE && !Boolean.TRUE.equals(folders);
+        if (order.key() == ListOrder.Key.UPDATED_AT) {
+            keys.add(SORT_UPDATED_AT);
+            if (after != null) {
+                values.add(OffsetDateTime.ofInstant(ListOrder.fromEpochMicros(after.key()), ZoneOffset.UTC));
+            }
+        } else if (sized) {
+            keys.add(SORT_SIZE);
+            if (after != null) {
+                values.add(after.key());
+            }
+            if (folders != null) {
+                // Files are exactly the sizes from 0, a range of the size index that skips every folder.
+                group = SORT_SIZE.ge(0L);
+            }
+        }
+        keys.add(SORT_NAME);
+        keys.add(CATALOG_NAMES.ENTRY_ID);
         Condition afterPosition = DSL.noCondition();
         if (after != null) {
-            afterPosition = DSL.condition(
-                    "{0} collate \"C\" > {1} collate \"C\""
-                            + " or ({0} collate \"C\" = {1} collate \"C\" and {2} > {3})",
-                    CATALOG_NAMES.NAME, DSL.val(after.name()), CATALOG_ENTRIES.ID, DSL.val(after.id()));
+            values.add(after.name());
+            values.add(after.id());
+            RowN row = DSL.row(keys);
+            afterPosition = order.descending() ? row.lt(values.toArray()) : row.gt(values.toArray());
         }
-        var rows = database.select(
+        return context.select(
                         CATALOG_ENTRIES.ID,
                         CATALOG_NAMES.PARENT_ID,
                         CATALOG_NAMES.NAME,
@@ -109,29 +188,40 @@ public final class PostgresCatalog
                         CATALOG_ENTRIES.CREATED_AT,
                         CATALOG_ENTRIES.UPDATED_AT,
                         FILE_VERSIONS.ID,
-                        FILE_VERSIONS.SIZE_BYTES)
-                .from(CATALOG_ENTRIES)
-                .join(CATALOG_NAMES)
-                .on(CATALOG_NAMES.ENTRY_ID.eq(CATALOG_ENTRIES.ID).and(CATALOG_NAMES.CLAIM_KIND.eq(ENTRY_CLAIM)))
+                        FILE_VERSIONS.SIZE_BYTES,
+                        SORT_KIND,
+                        SORT_UPDATED_AT,
+                        SORT_SIZE)
+                .from(CATALOG_NAMES)
+                .join(CATALOG_ENTRIES)
+                .on(CATALOG_ENTRIES.ID.eq(CATALOG_NAMES.ENTRY_ID))
                 .leftJoin(FILE_VERSIONS)
                 .on(FILE_VERSIONS.ID.eq(CATALOG_ENTRIES.CURRENT_VERSION_ID))
-                .where(CATALOG_ENTRIES.WORKSPACE_ID.eq(scope.workspaceId()))
-                .and(member(scope))
+                .where(CATALOG_NAMES.WORKSPACE_ID.eq(scope.workspaceId()))
                 .and(CATALOG_NAMES.PARENT_ID.eq(folderId.value()))
+                // A literal, so even a generic plan can prove the partial indexes' predicate.
+                .and(CATALOG_NAMES.CLAIM_KIND.eq(DSL.inline(ENTRY_CLAIM)))
+                .and(CATALOG_ENTRIES.WORKSPACE_ID.eq(scope.workspaceId()))
+                .and(member(scope))
+                .and(group)
                 .and(afterPosition)
-                .orderBy(DSL.field("{0} collate \"C\"", String.class, CATALOG_NAMES.NAME), CATALOG_ENTRIES.ID)
-                .limit(limit + 1)
-                .fetch();
-        var entries = new ArrayList<Entry>(Math.min(limit, rows.size()));
-        for (int index = 0; index < Math.min(limit, rows.size()); index++) {
-            entries.add(map(rows.get(index)));
-        }
-        String next = null;
-        if (rows.size() > limit) {
-            Entry last = entries.getLast();
-            next = cursors.encode(scope.workspaceId(), folderId, last.name().value(), last.id());
-        }
-        return new Page(entries, next);
+                .orderBy(keys.stream()
+                        .map(key -> order.descending() ? key.desc() : key.asc())
+                        .toList())
+                .limit(limit);
+    }
+
+    /** Positions come from the copied sort keys the index orders by, not from the entry's own columns. */
+    static ListOrder.Position position(ListOrder order, Record row) {
+        Long key =
+                switch (order.key()) {
+                    case NAME -> null;
+                    case UPDATED_AT ->
+                        ListOrder.epochMicros(row.get(SORT_UPDATED_AT).toInstant());
+                    case SIZE -> row.get(SORT_SIZE);
+                };
+        return new ListOrder.Position(
+                FOLDER.equals(row.get(SORT_KIND)), key, row.get(CATALOG_NAMES.NAME), row.get(CATALOG_ENTRIES.ID));
     }
 
     @Override

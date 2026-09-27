@@ -5,7 +5,7 @@ import com.filebonsai.catalog.domain.EntryId;
 import java.util.List;
 
 public interface ListChildren {
-    Page list(CatalogScope scope, EntryId folderId, int limit, String cursor);
+    Page list(CatalogScope scope, EntryId folderId, ListOrder order, int limit, String cursor);
 
     record Page(List<Entry> entries, String nextCursor) {
         public Page {

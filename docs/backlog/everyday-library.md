@@ -30,36 +30,17 @@ Context: LIB-01/LIB-10 added the responsive shell: tokens in `web/app/styles/tok
 
 **Checks:** `contract`; `web`; `rendered`
 
-## LIB-03 Server-side sort for folder listings
-
-`P2` · `M` · Build · Backend · Public API change
-
-Depends on: none
-
-**Why.** listChildren orders by name only, while the table view needs sorting by modified date, size and kind.
-
-**Outcome.** Sort options (name ascending and descending, modified, size, folders first) with opaque cursors scoped to the sort, as conventions.md already requires. Supporting indexes, with UUID as the tiebreak.
-
-**Acceptance**
-
-- Keyset pagination stays correct under concurrent inserts for every sort
-- A cursor from one sort is rejected by another
-- EXPLAIN shows index use at 10,000 children
-
-**Read:** `docs/api/conventions.md`  
-**Checks:** `postgres`; `contract`
-
 ## LIB-04 Table and grid views
 
 `P2` · `M` · Build · Web
 
-Depends on: [LIB-03](#lib-03-server-side-sort-for-folder-listings)
+Depends on: none
 
-Context: LIB-01/LIB-10 added the responsive shell: tokens in `web/app/styles/tokens.css` (raw colors anywhere else fail `tokens.test.ts`), Lucide icons, and the `routes/app-shell.tsx` layout route with sidebar, icon rail and bottom navigation. The folder list already has icon, name, kind, size and modified columns that drop and stack through container queries; this item adds sortable headers and the grid.
+Context: LIB-03 added `sort` (`name`, `updatedAt`, `size`), `order` (`asc`, `desc`) and `foldersFirst` to `listChildren`. Each cursor is bound to all three, so changing a header must restart paging from the first page. Kind is not a server sort: the column's label comes from the filename extension, so a Kind header can map to `foldersFirst` or stay unsortable. LIB-01/LIB-10 added the responsive shell: tokens in `web/app/styles/tokens.css` (raw colors anywhere else fail `tokens.test.ts`), Lucide icons, and the `routes/app-shell.tsx` layout route with sidebar, icon rail and bottom navigation. The folder list already has icon, name, kind, size and modified columns that drop and stack through container queries; this item adds sortable headers and the grid.
 
 **Why.** The design reference shows a dense table and a calm grid over the same data.
 
-**Outcome.** A table (name, kind, size, modified) with sortable headers backed by LIB-03, a grid with type icons (thumbnails later), and a view toggle remembered per viewer.
+**Outcome.** A table (name, kind, size, modified) with sortable headers backed by the server-side sort, a grid with type icons (thumbnails later), and a view toggle remembered per viewer.
 
 **Acceptance**
 

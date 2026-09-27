@@ -5,6 +5,7 @@ import com.filebonsai.catalog.application.CreateFolder;
 import com.filebonsai.catalog.application.GetEntry;
 import com.filebonsai.catalog.application.GetWorkspaceRoot;
 import com.filebonsai.catalog.application.ListChildren;
+import com.filebonsai.catalog.application.ListOrder;
 import com.filebonsai.catalog.domain.EntryId;
 import com.filebonsai.catalog.domain.FileName;
 import com.filebonsai.platform.web.ApiErrorResponse;
@@ -101,7 +102,7 @@ public class CatalogController {
             operationId = "listChildren",
             summary = "List direct children",
             description =
-                    "NFC name then ID, ascending UTF-8 byte order; no snapshot. Inserts or renames behind the cursor may be missed, and renames ahead may repeat an entry. Deduplicate by ID or refresh when needed. Tokens are opaque, scoped to the workspace/folder/sort, and invalid after cursor-key rotation; fixture restart rotates its key.")
+                    "Ordered by `sort`, then NFC name in UTF-8 byte order, then ID; `desc` reverses all three. `foldersFirst` keeps folders ahead of files in either direction. `updatedAt` is the entry's `updatedAt`. `size` is the current version's `sizeBytes`, and a folder sorts below any file. No snapshot: inserts or changes behind the cursor may be missed, and changes ahead may repeat an entry. Deduplicate by ID or refresh when needed. Tokens are opaque, scoped to the workspace/folder/sort/order/foldersFirst, and invalid after cursor-key rotation; fixture restart rotates its key.")
     @ApiResponse(
             responseCode = "200",
             description = "Page",
@@ -109,8 +110,24 @@ public class CatalogController {
     public EntryPageResponse listChildren(
             @PathVariable UUID id,
             @RequestParam(defaultValue = "50") @Min(1) @Max(100) int limit,
-            @RequestParam(required = false) @Size(max = 2048) String cursor) {
-        var page = listChildren.list(scopes.current(), new EntryId(id), limit, cursor);
+            @RequestParam(required = false) @Size(max = 2048) String cursor,
+            @Parameter(
+                            schema =
+                                    @Schema(
+                                            allowableValues = {"name", "updatedAt", "size"},
+                                            defaultValue = "name"))
+                    @RequestParam(defaultValue = "name")
+                    String sort,
+            @Parameter(
+                            schema =
+                                    @Schema(
+                                            allowableValues = {"asc", "desc"},
+                                            defaultValue = "asc"))
+                    @RequestParam(defaultValue = "asc")
+                    String order,
+            @RequestParam(defaultValue = "false") boolean foldersFirst) {
+        var page = listChildren.list(
+                scopes.current(), new EntryId(id), listOrder(sort, order, foldersFirst), limit, cursor);
         return new EntryPageResponse(
                 page.entries().stream().map(CatalogResponseMapper::response).toList(), page.nextCursor());
     }
@@ -150,5 +167,23 @@ public class CatalogController {
                 createFolder.create(scopes.current(), new EntryId(request.parentId()), name, idempotencyKey));
         return ResponseEntity.created(URI.create("/api/v1/entries/" + result.id()))
                 .body(result);
+    }
+
+    private static ListOrder listOrder(String sort, String order, boolean foldersFirst) {
+        ListOrder.Key key =
+                switch (sort) {
+                    case "name" -> ListOrder.Key.NAME;
+                    case "updatedAt" -> ListOrder.Key.UPDATED_AT;
+                    case "size" -> ListOrder.Key.SIZE;
+                    default ->
+                        throw new InvalidField("sort", "UNSUPPORTED_VALUE", "Sort must be name, updatedAt or size");
+                };
+        boolean descending =
+                switch (order) {
+                    case "asc" -> false;
+                    case "desc" -> true;
+                    default -> throw new InvalidField("order", "UNSUPPORTED_VALUE", "Order must be asc or desc");
+                };
+        return new ListOrder(key, descending, foldersFirst);
     }
 }
