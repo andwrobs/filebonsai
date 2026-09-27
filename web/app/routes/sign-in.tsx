@@ -53,7 +53,7 @@ export default function SignIn() {
 
   return <main className="sign-in-shell">
     <section className="sign-in-card" aria-labelledby="sign-in-heading">
-      <p className="sign-in-brand">Filebonsai</p>
+      <img alt="Filebonsai" className="sign-in-brand" src="/brand/filebonsai-lockup.svg" />
       <h1 id="sign-in-heading">Sign in</h1>
       <p className="sign-in-intro">Enter the password for the local owner account.</p>
       <form onSubmit={event => void submit(event)}>

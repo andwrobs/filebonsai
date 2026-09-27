@@ -46,8 +46,8 @@ function useStorageDetail() {
 export function Wordmark() {
   return (
     <Link aria-label="Filebonsai Library" className="wordmark" to="/">
-      <span className="wordmark-mark" aria-hidden="true">F</span>
-      <span className="wordmark-text" aria-hidden="true">Filebonsai</span>
+      <img alt="" className="wordmark-mark" src="/brand/filebonsai-mark.svg" />
+      <img alt="" className="wordmark-text" src="/brand/filebonsai-wordmark.svg" />
     </Link>
   );
 }

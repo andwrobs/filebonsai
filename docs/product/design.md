@@ -11,15 +11,15 @@ details, and purposeful mobile layouts. It is art direction, not proof of an
 implemented screen or an exact component specification.
 
 The web client carries this direction through one token file,
-`web/app/styles/tokens.css`, which is the only place raw colors live. It uses system
-sans-serif faces, a text wordmark, and Lucide icons (ISC license). The shell adapts at
-every width: a sidebar on wide screens, an icon rail on tablets, and bottom navigation
-with a floating upload button on phones. Content regions size to their container, not
-to a fixed page width.
+`web/app/styles/tokens.css`, which is the only place raw interface colors live. It
+uses system sans-serif faces, the supplied editable Filebonsai SVG identity, and
+Lucide icons (ISC license). The shell adapts at every width: a sidebar on wide
+screens, an icon rail on tablets, and bottom navigation with a floating upload button
+on phones. Content regions size to their container, not to a fixed page width.
 
-Raster logo explorations are not approved branding. Until editable marks, licenses,
-and small-size checks exist, prefer a simple text identity and a coherent licensed
-icon family.
+The web identity uses the supplied mark and wordmark in navigation, the lockup on
+sign-in, the app icon as its favicon, and the iOS icon rendered for its home-screen
+touch icon.
 
 ## Required application surfaces
 

@@ -73,7 +73,8 @@ observed results; use Git history for prior plans and completed migrations.
 - The web shell follows the design reference with one token file
   (`web/app/styles/tokens.css`) for color, type, spacing, radius, density, and region
   sizes. `tokens.test.ts` fails on raw colors elsewhere and on AA contrast regressions.
-  Icons are Lucide (ISC); the identity is a text wordmark in system sans-serif. A
+  Icons are Lucide (ISC); the identity uses supplied SVG artwork for the shell,
+  sign-in, favicon, and touch icon. A
   pathless layout route keeps navigation and the transfer tray mounted across Library
   and Storage. The shell shows a full sidebar from 1100px and an icon rail from 768px.
   Below 768px it has a top bar, bottom navigation, and a floating upload button, with
@@ -99,6 +100,11 @@ observed results; use Git history for prior plans and completed migrations.
 
 ## Latest observed checks
 
+- Web identity: `cd web && npm test && npm run typecheck:run && npm run build`
+  passed with 40 tests, strict TypeScript, and a production SPA build. The supplied
+  SVGs rendered in sign-in and the shell at 1440×900, in the icon rail at 900×900,
+  and in the phone shell at 390×844. A local fixture server supplied synthetic
+  Catalog responses for visual inspection; no authenticated backend flow was tested.
 - Inspector (LIB-06): `cd web && npm test && npm run typecheck:run && npm run build`
   passed with 40 tests, strict TypeScript, and a production SPA build. New tests cover
   the inspector's open/target rules, storage that refuses access, full dates, and exact
