@@ -97,9 +97,24 @@ observed results; use Git history for prior plans and completed migrations.
   and Close return focus to the button that opened it. Folder names are links that
   cover their row, so rows can also hold buttons. The list's column container queries
   now measure the list, not the page.
+- The inspector previews authorized originals for JPEG, PNG, GIF, WebP, AVIF, and
+  `.txt`/`.log` files. It selects a Blob type from the allowed extension, caps images
+  at 5 MiB and text at 256 KiB before requesting content, and checks the returned
+  body size too. Other types, oversized files, and failures leave Download available.
+  Image object URLs are revoked when the preview closes or changes.
 
 ## Latest observed checks
 
+- Browser originals preview (PRV-09): `cd web && npm test && npm run
+  typecheck:run && npm run build` passed with 43 tests, strict TypeScript, and a
+  production SPA build. The new policy tests cover allowed types, excluded markup,
+  and exact size boundaries. In the in-app browser against a disposable PostgreSQL
+  17.11 backend with synthetic originals, the inspector showed a raster image and
+  escaped text at 1440×900 and 390×844. Loading, unsupported Markdown, an over-limit
+  text file, and a corrupt-image failure were observed with Download still present.
+  On the phone the page had no horizontal overflow; after closing the sheet, fetching
+  its captured image Blob URL failed, confirming revocation. No real R2 provider was
+  involved.
 - Web identity: `cd web && npm test && npm run typecheck:run && npm run build`
   passed with 40 tests, strict TypeScript, and a production SPA build. The supplied
   SVGs rendered in sign-in and the shell at 1440×900, in the icon rail at 900×900,
@@ -264,9 +279,8 @@ observed results; use Git history for prior plans and completed migrations.
 1. Cloud transfer: run the decision 0007 compatibility proof against a disposable
    real Cloudflare R2 bucket, repair any provider mismatch, and record bounded
    streaming/recovery evidence before claiming R2 support or adding another provider.
-2. Web library, in this order: in-browser preview of originals (PRV-09), server-side
-   sort (LIB-03) then table/grid views (LIB-04), and the inspector's integrity fields
-   (LIB-14).
+2. Web library, in this order: server-side sort (LIB-03), table/grid views (LIB-04),
+   then the inspector's integrity fields (LIB-14).
 3. iOS Catalog remains deferred by user preference. When resumed, implement the
    SwiftUI/TCA slice through a generated transport and handwritten application adapter.
 

@@ -15,6 +15,7 @@ import type { Entry, FileEntry, FolderEntry } from "../../../src/lib/api/api-typ
 import { useOriginalDownload } from "../transfers/transfer-controls.js";
 import { catalogHref, entryKind, formatBytes, formatExactBytes, formatFullDate } from "./catalog-data.js";
 import { EntryIcon } from "./entry-icon.js";
+import { FilePreview } from "./file-preview.js";
 import {
   closeInspector,
   inspectorView,
@@ -175,6 +176,7 @@ function InspectorDetails({ entry, focusRequest, isFolder, onClose }: {
           <X aria-hidden="true" />
         </button>
       </header>
+      {entry.kind === "file" ? <FilePreview entry={entry} key={entry.currentVersion.id} /> : null}
       <section aria-labelledby={sectionId} className="inspector-section">
         <h3 className="inspector-section-title" id={sectionId}>Details</h3>
         <dl className="inspector-fields">

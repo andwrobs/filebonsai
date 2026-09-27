@@ -130,9 +130,9 @@ export class FilebonsaiService {
     });
   }
 
-  downloadOriginal(id: string) {
+  downloadOriginal(id: string, signal?: AbortSignal) {
     return this.#client.GET("/api/v1/entries/{id}/content", {
-      params: { path: { id } }, parseAs: "blob",
+      params: { path: { id } }, parseAs: "blob", signal,
     });
   }
 
