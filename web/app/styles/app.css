@@ -73,14 +73,13 @@ input:not([type="file"]) {
   padding: var(--space-4) var(--space-3); position: sticky; top: 0;
 }
 .wordmark {
-  align-items: center; border-radius: var(--radius-md); color: var(--color-text); display: inline-flex;
-  font-size: var(--text-lg); font-weight: var(--weight-bold); gap: var(--space-2); letter-spacing: -0.01em;
+  align-items: center; border-radius: var(--radius-md); display: inline-flex; gap: var(--space-2);
   min-height: var(--touch-target); padding: 0 var(--space-2); text-decoration: none;
 }
 .wordmark-mark {
-  background: var(--color-accent); border-radius: var(--radius-md); color: var(--color-on-accent); display: inline-grid;
-  font-size: var(--text-md); height: 1.75rem; place-items: center; width: 1.75rem;
+  display: block; height: 1.875rem; width: auto;
 }
+.wordmark-text { display: block; height: 1.625rem; width: auto; }
 .sidebar-nav { display: flex; flex: 1; flex-direction: column; gap: var(--space-1); }
 .sidebar-footer { border-top: 1px solid var(--color-border); margin-top: auto; padding-top: var(--space-3); }
 .nav-item {
@@ -320,7 +319,7 @@ input:not([type="file"]) {
   background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg);
   box-shadow: var(--shadow-raised); max-width: 26rem; padding: clamp(1.5rem, 5vw, 2.5rem); width: 100%;
 }
-.sign-in-brand { font-size: var(--text-lg); font-weight: var(--weight-bold); letter-spacing: -0.01em; margin-bottom: var(--space-8); }
+.sign-in-brand { display: block; height: auto; margin-bottom: var(--space-8); max-width: 100%; width: 13rem; }
 .sign-in-card h1 { font-size: var(--text-2xl); font-weight: var(--weight-semibold); letter-spacing: -0.015em; margin-bottom: var(--space-2); }
 .sign-in-intro, .sign-in-help { color: var(--color-text-muted); font-size: var(--text-md); }
 .sign-in-card form { display: grid; gap: var(--space-2); margin-top: var(--space-6); }
