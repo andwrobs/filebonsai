@@ -281,7 +281,11 @@ observed results; use Git history for prior plans and completed migrations.
    streaming/recovery evidence before claiming R2 support or adding another provider.
 2. Web library, in this order: server-side sort (LIB-03), table/grid views (LIB-04),
    then the inspector's integrity fields (LIB-14).
-3. iOS Catalog remains deferred by user preference. When resumed, implement the
+3. Photo metadata, requested 2026-09-27: proposed decisions
+   [0009](../decisions/0009-durable-jobs-in-postgresql.md) (durable jobs, ENG-04) and
+   [0010](../decisions/0010-media-processing-isolation.md) (processing isolation and
+   metadata model, PRV-01) await review. After acceptance: ENG-05, then PRV-04.
+4. iOS Catalog remains deferred by user preference. When resumed, implement the
    SwiftUI/TCA slice through a generated transport and handwritten application adapter.
 
 Each item is split into a bounded task at execution time with owned paths, dependencies,

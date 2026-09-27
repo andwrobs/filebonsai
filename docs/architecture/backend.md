@@ -13,10 +13,14 @@ com.filebonsai
 ├── access/          (identity, membership, session, authorization)
 ├── transfers/       (upload intent, state, reconciliation)
 ├── storage/         (object-storage port and provider adapters)
-├── processing/      (durable jobs and derived assets, when introduced)
+├── processing/      (media metadata, derived assets, processor sandbox client)
 ├── operations/      (health, audit, export, backup/admin surfaces)
 └── platform/        (only genuinely cross-capability infrastructure)
 ```
+
+Durable background work follows decision [0009](../decisions/0009-durable-jobs-in-postgresql.md).
+The job runner lives in `platform/jobs`; each handler lives with the capability that owns
+its effect.
 
 Domain types do not depend on Spring, Jackson, OpenAPI, or jOOQ. Application packages expose operation-shaped use cases and ports. Web owns public DTOs, controllers, validation, and springdoc annotations. Persistence maps jOOQ records into domain/application values and never exposes generated records. Support contains explicit fixture/test adapters.
 

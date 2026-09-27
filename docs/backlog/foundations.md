@@ -71,6 +71,8 @@ Depends on: none
 
 Depends on: none
 
+In flight: `claude/media-metadata-decisions` proposes [decision 0009](../decisions/0009-durable-jobs-in-postgresql.md) for review. On acceptance, that branch deletes this item.
+
 **Why.** Thumbnails, purge, re-tiering, scrubbing and export all need durable background work. R2 recovery is currently a one-off periodic task.
 
 **Outcome.** A decision record comparing a PostgreSQL job table with SKIP LOCKED leases, fences and a transactional outbox against a library such as db-scheduler or JobRunr. It covers retry and backoff, idempotent handlers, dead letters, per-kind budgets, restart behaviour, workspace scope and metrics.
@@ -93,7 +95,7 @@ Depends on: [ENG-04](#eng-04-decision-durable-jobs-and-outbox)
 
 **Why.** This is the build half of ENG-04 and a prerequisite for most M3 to M5 work.
 
-**Outcome.** Job and outbox tables, a leased and fenced worker, retry and backoff, dead letters, graceful shutdown and metrics. The first consumer cleans up expired idempotency records and name reservations, or takes over R2's periodic recovery.
+**Outcome.** The job table from decision 0009, which is also the outbox. A leased and fenced worker with retry and backoff, dead letters, per-kind budgets, periodic kinds and graceful shutdown. The first consumer discards the staged body of a cancelled or expired upload, enqueued in the transaction that makes the session terminal.
 
 **Acceptance**
 

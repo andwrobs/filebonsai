@@ -137,13 +137,20 @@ the services over durable PostgreSQL and staging state. A separate process-resta
 drill is still needed for that claim. Local fixture tests and injected gateways do
 not establish R2 compatibility.
 
-## Future processing work
+## Processing
 
-Derived previews begin only from a committed immutable version through durable work.
-Processor selection validates type and configured budgets; execution constrains CPU,
-memory, time, temporary storage, output, and network. Derived assets record processor
-version and inherit source authorization. Preview failure never changes original
-availability. Image thumbnails come before PDF, office, or video adapters.
+Metadata and derived previews begin only from a committed immutable version through a
+durable job (decision [0009](../decisions/0009-durable-jobs-in-postgresql.md)).
+Decision [0010](../decisions/0010-media-processing-isolation.md) sets the isolation.
+Memory-safe metadata parsing runs in a budgeted child process of the backend. Native
+decoders run only in a processor container with no network, secrets, or storage mounts.
+Every job has wall-clock, memory, input, disk, and output budgets, and a breach ends
+only that job. Magic bytes choose the parser from an allow-list; the filename never
+does. The Tier A child is the one exception to network isolation, for the reasons
+0010 records. Results record their extractor or renderer version and inherit source
+authorization. Processing failure never changes original availability. Photo location
+is stored apart from other metadata and never appears in listings, shares, or exports
+without opt-in. Image thumbnails come before PDF, office, or video adapters.
 
 ## Recovery contract
 
