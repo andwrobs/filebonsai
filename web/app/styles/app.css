@@ -264,6 +264,9 @@ input:not([type="file"]) {
 .inspector-summary { color: var(--color-text-muted); font-size: var(--text-sm); }
 .inspector-section { border-top: 1px solid var(--color-border); display: grid; gap: var(--space-3); padding-top: var(--space-4); }
 .inspector-section-title { font-size: var(--text-md); font-weight: var(--weight-semibold); }
+.inspector-preview-message { color: var(--color-text-muted); font-size: var(--text-sm); line-height: var(--leading-normal); }
+.inspector-preview-image { background: var(--color-surface-sunken); border-radius: var(--radius-md); display: block; height: auto; max-height: 18rem; max-width: 100%; object-fit: contain; width: 100%; }
+.inspector-preview-text { background: var(--color-surface-sunken); border-radius: var(--radius-md); font-family: var(--font-mono); font-size: var(--text-xs); line-height: var(--leading-normal); margin: 0; max-height: 18rem; overflow: auto; padding: var(--space-3); white-space: pre-wrap; overflow-wrap: anywhere; }
 .inspector-fields { display: grid; gap: var(--space-3); margin: 0; }
 .inspector-fields > div { align-items: baseline; display: grid; gap: var(--space-3); grid-template-columns: 4.5rem minmax(0, 1fr); }
 .inspector-fields dt { color: var(--color-text-muted); font-size: var(--text-sm); }
