@@ -20,7 +20,9 @@ Depends on: none
 
 - Every gesture has a non-drag equivalent
 - Nothing applies without review
-- Decks defined with their ranking signals
+- Decks defined with their ranking signals; unavailable capabilities do not produce working-looking actions
+- Define archive/keep/trash review separately from reversible album assignment ([PHO-05](photos.md#pho-05-album-curation-deck-for-touch-and-keyboard)), and specify a persistent desktop action rail ([TDY-10](#tdy-10-desktop-review-workspace))
+- Swipe thresholds distinguish deliberate intent from scrolling/zooming; changing gesture mappings keeps labels visible and reset available
 
 **Read:** `docs/product/design.md`, `docs/product/overview.md`  
 **Checks:** `decision-review`
@@ -31,7 +33,7 @@ Depends on: none
 
 Depends on: [TDY-01](#tdy-01-decision-tidy-mode-interaction-spec), [ORG-01](organize.md#org-01-decision-how-entries-change)
 
-**Why.** Archive needs a meaning before any tier exists, and the sidebar already shows it.
+**Why.** Archive needs a meaning before any tier exists; add the navigation entry when this capability ships.
 
 **Outcome.** A logical archived flag, an Archive view, and unarchive. Default browsing hides archived items behind an 'n archived' link. Bytes don't move yet; TIER-06 adds placement later.
 
@@ -74,6 +76,7 @@ Depends on: [TDY-01](#tdy-01-decision-tidy-mode-interaction-spec), [TDY-03](#tdy
 - Excludes pending, trashed and already-decided entries
 - Cursor-paginated and workspace-scoped
 - Ranking is deterministic for a seed
+- Only implemented deck kinds are enabled: duplicate decks require ORG-10, photo rediscovery requires PRV-04, and saved queries require CFG-07; no placeholder candidates or invented copy counts
 
 **Invariants:** INV-01  
 **Checks:** `postgres`; `contract`
@@ -82,7 +85,7 @@ Depends on: [TDY-01](#tdy-01-decision-tidy-mode-interaction-spec), [TDY-03](#tdy
 
 `P2` · `M` · Build · Backend · Public API change
 
-Depends on: [TDY-02](#tdy-02-archived-state-and-archive-view), [ORG-03](organize.md#org-03-move), [ORG-04](organize.md#org-04-trash-and-restore)
+Depends on: [TDY-02](#tdy-02-archived-state-and-archive-view), [ORG-03](organize.md#org-03-move), [ORG-04](organize.md#org-04-trash-and-restore), [ORG-11](organize.md#org-11-activity-and-audit-log)
 
 **Why.** Swipes stage decisions; applying them has to be safe, idempotent and reversible.
 
@@ -92,7 +95,8 @@ Depends on: [TDY-02](#tdy-02-archived-state-and-archive-view), [ORG-03](organize
 
 - Replaying an apply changes nothing
 - A partial failure reports each item
-- Undo respects revisions
+- Undo respects revisions and only inverses effects actually applied by this batch
+- Star is available only once LIB-09 exists; archive/trash/move apply their existing application commands, never a second mutation implementation
 
 **Invariants:** INV-05, INV-10  
 **Checks:** `postgres`; `contract`
@@ -105,7 +109,7 @@ Depends on: [TDY-04](#tdy-04-tidy-deck-candidates-api), [TDY-05](#tdy-05-tidy-de
 
 **Why.** This is the centrepiece: fast on a phone and even faster with a keyboard.
 
-**Outcome.** A card stack with a preview (thumbnail or type art), pointer-event swiping with a velocity threshold and spring-back, key and button equivalents, and a reduced-motion variant (cross-fade, no fling). Progress ('12 of 40'), a running tally ('Archive 8 · 1.2 GB'), then review, apply and an undo toast.
+**Outcome.** A card stack with a preview (thumbnail or type art), pointer-event swiping with a velocity threshold and spring-back, key and button equivalents, and a reduced-motion variant (immediate state changes, no fling). Progress ('12 of 40'), a running tally ('Archive 8 · 1.2 GB'), then review, apply and an undo toast.
 
 **Acceptance**
 
@@ -165,3 +169,52 @@ Depends on: [ORG-11](organize.md#org-11-activity-and-audit-log), [TDY-05](#tdy-0
 - Hidden when empty
 
 **Checks:** `web`; `rendered`
+
+## TDY-10 Desktop review workspace
+
+`P2` · `M` · Build · Web
+
+Depends on: [TDY-06](#tdy-06-swipe-deck-ui), [LIB-05](everyday-library.md#lib-05-selection-model)
+
+**Why.** Desktop curation should use a keyboard and screen space as well as touch uses swipes.
+
+**Outcome.** Add a large preview with a filmstrip/contact sheet, persistent action rail, visible shortcut legend and next/previous keys. Selection can stage one action for a range; use the same candidate/batch controller as the phone deck.
+
+**Acceptance**
+
+- Review 100 synthetic files by keyboard without losing focus or reopening an action dialog.
+- Text inputs and zoom controls suppress destructive shortcuts; hold/repeat cannot accidentally stage multiple cards.
+- Undo restores the card and staged decision; partial apply failure leaves failed items available for correction.
+- Pointer-only and screen-reader paths reach every action; reduced motion keeps orientation clear.
+
+**Settle first.** Shortcut map, selection scope and preview-to-filmstrip proportions in TDY-01.
+
+**Invariants:** INV-05, INV-14
+
+**Read:** `docs/product/domain.md`, `docs/product/design.md`, `docs/product/invariants.md`
+
+**Checks:** `web`; `rendered`
+
+## TDY-11 Resume review sessions and explain pending changes
+
+`P2` · `M` · Build · Backend, Web · Public API change
+
+Depends on: [TDY-05](#tdy-05-tidy-decision-batches), [TDY-06](#tdy-06-swipe-deck-ui)
+
+**Why.** A phone interruption should not erase a long review session or silently apply it.
+
+**Outcome.** Persist deck position and staged decisions with revision-aware resume. Show remaining, skipped, changed and unavailable cards; review states clearly distinguish staged archive, applied archive and physical placement.
+
+**Acceptance**
+
+- Reload/device handoff resumes staged work without applying it; two editors of one batch receive explicit conflicts.
+- Deleted or changed candidates are revalidated at apply; applying twice has one effect.
+- A session can be discarded without changing files and expires under a documented retention policy.
+
+**Settle first.** Personal session ownership and maximum retained batch size; reuse TDY-05 durable batches.
+
+**Invariants:** INV-01, INV-05, INV-09, INV-10, INV-14
+
+**Read:** `docs/product/domain.md`, `docs/product/design.md`, `docs/product/invariants.md`
+
+**Checks:** `postgres`; `contract`; `web`; `rendered`

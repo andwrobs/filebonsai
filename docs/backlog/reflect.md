@@ -44,6 +44,8 @@ Depends on: none
 
 Depends on: [RFL-01](#rfl-01-decision-reflective-views-and-picks), [PRV-04](previews-and-media.md#prv-04-photo-metadata-extraction)
 
+**Boundary.** Reuse [PHO-02](photos.md#pho-02-photos-home-and-chronological-browsing) chronological queries when available; this item adds zoom-level clustering and picks, not a second basic photo timeline.
+
 **Why.** The canvas needs grouped data at each zoom level. Sending every file to the browser doesn't scale.
 
 **Outcome.** Timeline endpoints return buckets for a requested zoom level (years, months or days). Each bucket has counts, cluster boundaries and cover picks, and each pick is marked automatic or chosen. A curation endpoint picks, unpicks or hides an entry. Clusters are computed on read or kept up to date by a job, as RFL-01 decides.
@@ -96,17 +98,20 @@ Depends on: [RFL-03](#rfl-03-timeline-canvas), [TDY-06](tidy-mode.md#tdy-06-swip
 
 ## RFL-05 Photo map with heat layer
 
-`P3` · `L` · Build · Backend, Web · Public API change · Fun
+`P2` · `L` · Build · Backend, Web · Public API change · Fun
 
-Depends on: [PRV-08](previews-and-media.md#prv-08-spike-map-of-geotagged-photos), [RFL-01](#rfl-01-decision-reflective-views-and-picks)
+Depends on: [PRV-08](previews-and-media.md#prv-08-spike-map-of-geotagged-photos), [RFL-01](#rfl-01-decision-reflective-views-and-picks), [PRV-02](previews-and-media.md#prv-02-image-thumbnail-pipeline), [PRV-03](previews-and-media.md#prv-03-gallery-grid-and-lightbox)
 
 **Why.** Where a photo was taken can bring back as much as when.
 
-**Outcome.** A map of geotagged files. Zoomed out, a heat layer shows where photos are concentrated. Zooming in turns the heat into clusters with cover picks, then into individual thumbnails. The server bins locations for the requested viewport and zoom, so the browser receives counts per cell instead of every coordinate. Selecting an area opens it as a group (RFL-04) or jumps to the matching stretch of the timeline. It uses the tile source that PRV-08 recommends.
+**Outcome.** A map of geotagged files. Zoomed out, a heat layer shows where photos are concentrated. Zooming in turns the heat into clusters with cover picks, then into individual thumbnails. The server bins locations for the requested viewport and zoom, so the browser receives counts per cell instead of every coordinate. Selecting an area opens a paginated photo list; RFL-04 group curation and the reflective timeline are progressive enhancements once implemented. The basic map does not wait for the canvas. It uses the tile source that PRV-08 recommends.
 
 **Acceptance**
 
-- Location never leaves the owner's own views, and shares and exports omit it unless the owner explicitly opts in
+- Photo coordinates are scoped to authorized private views; shared API payloads omit them. [MET-09](metadata.md#met-09-privacy-safe-media-downloads) covers embedded metadata in media downloads; configured tile requests follow PRV-08 disclosure
+- Viewport bounds, antimeridian wrapping, zoom limits, filter-scoped counts and bounded cluster responses have PostgreSQL tests; tiles never receive individual photo coordinates or filenames
+- Missing/invalid GPS is visible in an Unlocated group; range checks do not invent a location
+- A selected cluster supports lightbox and album actions when available; repeated pan/zoom cancels stale results
 - With no tile source configured there is no map and no outbound map request
 - A list of places mirrors the map for keyboard and screen-reader use
 - Other workspaces get 404

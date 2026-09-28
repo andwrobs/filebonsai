@@ -47,6 +47,29 @@ picks. Archive and trash go through review and can be undone. Location stays pri
 to the owner, and no AI service is required. Candidate work lives in the
 [Reflect backlog](../backlog/reflect.md); none of it is a milestone commitment yet.
 
+## Product expansion direction
+
+Filebonsai aims to cover the everyday file-management and sharing journeys people
+expect from established drives, with first-class photos, fast curation and owner-controlled
+storage as distinguishing strengths. Photos get chronological browsing, albums, a map
+and a rich viewer over the same library identities. Album assignment should remain
+available while moving through photos, with touch, keyboard and bulk-selection paths.
+Archive and trash remain reviewable and reversible where their lifecycle allows.
+
+A beautiful configurable interface means curated visual choices, useful layouts,
+accessible interactions and thoughtful empty/error states. Owners should also be able
+to choose supported storage connections and understand version, archive and retention
+strategies in the app, within deployment guardrails. Metadata should be searchable,
+correctable and portable while original bytes remain immutable; the concrete authority
+and export model is proposed in the metadata backlog.
+
+Candidate slices and tradeoffs live in the [backlog](../backlog/README.md), including
+[Photos](../backlog/photos.md), [Metadata](../backlog/metadata.md),
+[Lifecycle policies](../backlog/lifecycle-policies.md),
+[Encapsulation](../backlog/encapsulation.md) and
+[Everyday parity](../backlog/adoption-and-parity.md). These expand the vision without
+claiming implementation or changing the committed order in status.md.
+
 ## Delivery milestones
 
 | Milestone | Observable outcome | Boundary |

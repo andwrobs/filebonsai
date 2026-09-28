@@ -169,7 +169,9 @@ Depends on: [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer), [T
 
 `P3` · `M` · Build · Backend, Web · Public API change
 
-Depends on: [TIER-05](#tier-05-move-bytes-between-tiers), [COST-03](cost-and-insight.md#cost-03-decision-cost-estimate-model)
+Depends on: [TIER-05](#tier-05-move-bytes-between-tiers), [COST-03](cost-and-insight.md#cost-03-decision-cost-estimate-model), [POL-01](lifecycle-policies.md#pol-01-decision-policy-precedence-and-lifecycle-semantics)
+
+**Boundary.** This owns placement evaluation and TIER execution. Reuse the [POL-02](lifecycle-policies.md#pol-02-policy-registry-and-effective-policy-explanation) registry and [POL-03](lifecycle-policies.md#pol-03-dry-run-policy-planner) previews when present, or leave a narrow port compatible with POL-01. Do not add a competing general policy model.
 
 **Why.** 'Photos live on cheap storage' should be a sentence you can say once.
 

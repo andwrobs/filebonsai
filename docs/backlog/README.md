@@ -12,8 +12,9 @@ still written when the work starts, as decision 0006 requires.
 ## Picking up an item
 
 1. Choose an item whose **Depends on** keys no longer appear in this backlog (removed means
-   done) and that has no **Blocked on** line. Prefer `P1`, then `P2`. `P3` covers later work
-   and the fun extras. If an **In flight** line names an unmerged branch, start from that
+   done) and that has no **Blocked on** line. Prefer `P1`, then `P2`. `P3` covers later or
+   exploratory work; it does not measure product importance. If an **In flight** line names
+   an unmerged branch, start from that
    branch or confirm its status first. Read the merged work a **Context** line names.
 2. Read `AGENTS.md`, `docs/README.md` and `docs/development/status.md`, then the item's
    **Read** list. Use the `filebonsai-task` skill. For items marked *Public API change*, also
@@ -51,7 +52,7 @@ still written when the work starts, as decision 0006 requires.
 
 | Term | Meaning |
 | --- | --- |
-| `P1` / `P2` / `P3` | Start here / next / later and fun extras. Advisory only. `status.md` holds the committed order. |
+| `P1` / `P2` / `P3` | High leverage / next candidate / later or exploratory. Advisory only. `status.md` holds the committed order. |
 | `S` / `M` / `L` / `XL` | One short session / one focused session / several sessions, split at pickup / an epic slice that must be split. |
 | Build, Decision, Proof, Spike | See step 5 above. |
 | Blocked on | Needs something only the user can provide, such as paid infrastructure or lifting a deferral. |
@@ -62,11 +63,39 @@ still written when the work starts, as decision 0006 requires.
 | --- | --- |
 | `web` | `cd web && npm test && npm run typecheck:run && npm run build` |
 | `rendered` | Rendered inspection at 1440×900 and 390×844 against the real PostgreSQL-profile backend |
-| `contract` | `cd backend && ./mvnw test`, then `./scripts/verify.sh` once and inspect the OpenAPI diff, as `filebonsai-api-contract` prescribes; read-only contract-reviewer pass |
-| `postgres` | Targeted PostgreSQL Testcontainers tests, then `cd backend && ./mvnw spotless:apply test -q` once; read-only persistence-reviewer pass |
+| `contract` | Targeted contract tests while implementing; one final `cd backend && ./scripts/verify.sh` (backend tests, export, generation, client compilation/decoding) and OpenAPI diff review, following `filebonsai-api-contract`; fresh read-only contract review |
+| `postgres` | Targeted PostgreSQL Testcontainers tests; one integrated backend run (reuse `contract` verification when both apply); fresh read-only persistence review |
 | `backend` | Targeted backend tests, then `cd backend && ./mvnw spotless:apply test -q` once |
 | `decision-review` | No code changes; the user reviews the proposed record |
 | `spike-notes` | Findings recorded with dates and sources; throwaway code stays out of main paths |
+
+## Product focus and ownership
+
+The September 2026 expansion makes photos, fast album curation, metadata portability,
+app-managed lifecycle strategies and a beautiful configurable UI explicit product
+priorities. [Everyday parity](adoption-and-parity.md#capability-coverage) maps common
+Drive/Dropbox/Photos workflows to their owning epics and records research sources.
+
+| Desired outcome | Start with | Then build on |
+| --- | --- | --- |
+| First-class photos and effortless albums | PHO-01, PRV-04 and PRV-02 | PHO-02/03/04, PHO-05; RFL-05 map |
+| Searchable, editable, portable metadata | MET-01; build on accepted decisions 0009/0010 | MET-02/03/04/05; MET-09 privacy-safe media |
+| Storage and retention choices in the app | TIER-10, CFG-11, POL-01 | Existing TIER setup; POL-02/03/04/05 |
+| Fast mobile and desktop organization | TDY-01 and ORG-01 | TDY-02 through 06, TDY-10/11 and PHO-05 |
+| Beautiful adaptable layouts | Existing CFG-01 and LIB polish | CFG-02/03/04/10/12/13 |
+| Clear hook/store orchestration | ARC-01 | Small independent ARC-02 through 05 refactors |
+| Credible everyday alternative | Existing M1/LIB/ORG/ACC work | PAR gaps, migration, recovery and OSS readiness |
+
+This is a navigation aid, not a second committed sequence. Dependencies on the actual
+items determine readiness; `status.md` continues to own ordering. Start with the
+smallest demonstrable slice, not an entire epic. Before creating an ADR or changing
+shared files, read the sorting contract merged in PR #17 and the accepted jobs/media
+decisions merged in PR #18.
+
+Recommendations to carry into decisions: PostgreSQL serves searchable metadata and
+revisioned user annotations; unchanged originals preserve embedded facts; sidecars and
+manifests make curation portable. Albums reference files. Logical archive, physical
+cold placement, version retention and retained backup have distinct controls.
 
 ## Index
 
@@ -147,6 +176,7 @@ Rename, move, trash, versions and tags. Every change is metadata, reversible whe
 | [ORG-11](organize.md#org-11-activity-and-audit-log) Activity and audit log | Build | P2 | M | [ORG-01](organize.md#org-01-decision-how-entries-change) |
 | [ORG-12](organize.md#org-12-undo-for-reversible-actions) Undo for reversible actions | Build | P3 | S | [ORG-02](organize.md#org-02-rename), [ORG-03](organize.md#org-03-move), [ORG-04](organize.md#org-04-trash-and-restore) |
 | [ORG-13](organize.md#org-13-file-notes) File notes | Build | P3 | S | none |
+| [ORG-14](organize.md#org-14-copy-files-without-coupling-their-lifecycle) Copy files without coupling their lifecycle | Build | P2 | L | [ORG-01](organize.md#org-01-decision-how-entries-change), [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer) |
 
 ### [Previews & media](previews-and-media.md)
 
@@ -160,7 +190,7 @@ See a file before downloading it. Derived assets inherit authorization and never
 | [PRV-05](previews-and-media.md#prv-05-text-markdown-and-pdf-previews) Text, Markdown and PDF previews | Build | P3 | M | [PRV-10](previews-and-media.md#prv-10-processing-sandbox-container) |
 | [PRV-06](previews-and-media.md#prv-06-video-posters-and-range-downloads) Video posters and range downloads | Build | P3 | L | [PRV-02](previews-and-media.md#prv-02-image-thumbnail-pipeline) |
 | [PRV-07](previews-and-media.md#prv-07-on-this-day) On this day | Build | P3 | S | [PRV-04](previews-and-media.md#prv-04-photo-metadata-extraction), [PRV-03](previews-and-media.md#prv-03-gallery-grid-and-lightbox) |
-| [PRV-08](previews-and-media.md#prv-08-spike-map-of-geotagged-photos) Spike: map of geotagged photos | Spike | P3 | S | [PRV-04](previews-and-media.md#prv-04-photo-metadata-extraction) |
+| [PRV-08](previews-and-media.md#prv-08-spike-map-of-geotagged-photos) Spike: map of geotagged photos | Spike | P2 | M | [PRV-04](previews-and-media.md#prv-04-photo-metadata-extraction) |
 | [PRV-10](previews-and-media.md#prv-10-processing-sandbox-container) Processing sandbox container | Build | P2 | L | none |
 
 ### [Tidy mode](tidy-mode.md)
@@ -173,11 +203,13 @@ Swipe through files one card at a time and decide what stays, what gets archived
 | [TDY-02](tidy-mode.md#tdy-02-archived-state-and-archive-view) Archived state and Archive view | Build | P2 | M | [TDY-01](tidy-mode.md#tdy-01-decision-tidy-mode-interaction-spec), [ORG-01](organize.md#org-01-decision-how-entries-change) |
 | [TDY-03](tidy-mode.md#tdy-03-access-recency-signal) Access recency signal | Build | P2 | S | none |
 | [TDY-04](tidy-mode.md#tdy-04-tidy-deck-candidates-api) Tidy deck candidates API | Build | P2 | M | [TDY-01](tidy-mode.md#tdy-01-decision-tidy-mode-interaction-spec), [TDY-03](tidy-mode.md#tdy-03-access-recency-signal) |
-| [TDY-05](tidy-mode.md#tdy-05-tidy-decision-batches) Tidy decision batches | Build | P2 | M | [TDY-02](tidy-mode.md#tdy-02-archived-state-and-archive-view), [ORG-03](organize.md#org-03-move), [ORG-04](organize.md#org-04-trash-and-restore) |
+| [TDY-05](tidy-mode.md#tdy-05-tidy-decision-batches) Tidy decision batches | Build | P2 | M | [TDY-02](tidy-mode.md#tdy-02-archived-state-and-archive-view), [ORG-03](organize.md#org-03-move), [ORG-04](organize.md#org-04-trash-and-restore), [ORG-11](organize.md#org-11-activity-and-audit-log) |
 | [TDY-06](tidy-mode.md#tdy-06-swipe-deck-ui) Swipe deck UI | Build | P2 | L | [TDY-04](tidy-mode.md#tdy-04-tidy-deck-candidates-api), [TDY-05](tidy-mode.md#tdy-05-tidy-decision-batches) |
 | [TDY-07](tidy-mode.md#tdy-07-sort-into-folders-mode) Sort-into-folders mode | Build | P3 | M | [TDY-06](tidy-mode.md#tdy-06-swipe-deck-ui), [ORG-03](organize.md#org-03-move) |
 | [TDY-08](tidy-mode.md#tdy-08-duplicate-resolution-card) Duplicate resolution card | Build | P3 | S | [TDY-06](tidy-mode.md#tdy-06-swipe-deck-ui), [ORG-10](organize.md#org-10-duplicate-finder) |
 | [TDY-09](tidy-mode.md#tdy-09-tidy-recap) Tidy recap | Build | P3 | S | [ORG-11](organize.md#org-11-activity-and-audit-log), [TDY-05](tidy-mode.md#tdy-05-tidy-decision-batches) |
+| [TDY-10](tidy-mode.md#tdy-10-desktop-review-workspace) Desktop review workspace | Build | P2 | M | [TDY-06](tidy-mode.md#tdy-06-swipe-deck-ui), [LIB-05](everyday-library.md#lib-05-selection-model) |
+| [TDY-11](tidy-mode.md#tdy-11-resume-review-sessions-and-explain-pending-changes) Resume review sessions and explain pending changes | Build | P2 | M | [TDY-05](tidy-mode.md#tdy-05-tidy-decision-batches), [TDY-06](tidy-mode.md#tdy-06-swipe-deck-ui) |
 
 ### [Reflect](reflect.md)
 
@@ -189,7 +221,7 @@ Beautiful views of the files that matter most: a zoomable timeline, a map, and q
 | [RFL-02](reflect.md#rfl-02-timeline-clusters-and-picks-api) Timeline clusters and picks API | Build | P3 | L | [RFL-01](reflect.md#rfl-01-decision-reflective-views-and-picks), [PRV-04](previews-and-media.md#prv-04-photo-metadata-extraction) |
 | [RFL-03](reflect.md#rfl-03-timeline-canvas) Timeline canvas | Build | P3 | L | [RFL-02](reflect.md#rfl-02-timeline-clusters-and-picks-api), [PRV-02](previews-and-media.md#prv-02-image-thumbnail-pipeline), [PRV-03](previews-and-media.md#prv-03-gallery-grid-and-lightbox), [ENG-03](foundations.md#eng-03-synthetic-demo-library-generator) |
 | [RFL-04](reflect.md#rfl-04-pick-and-prune-a-group) Pick and prune a group | Build | P3 | M | [RFL-03](reflect.md#rfl-03-timeline-canvas), [TDY-06](tidy-mode.md#tdy-06-swipe-deck-ui) |
-| [RFL-05](reflect.md#rfl-05-photo-map-with-heat-layer) Photo map with heat layer | Build | P3 | L | [PRV-08](previews-and-media.md#prv-08-spike-map-of-geotagged-photos), [RFL-01](reflect.md#rfl-01-decision-reflective-views-and-picks) |
+| [RFL-05](reflect.md#rfl-05-photo-map-with-heat-layer) Photo map with heat layer | Build | P2 | L | [PRV-08](previews-and-media.md#prv-08-spike-map-of-geotagged-photos), [RFL-01](reflect.md#rfl-01-decision-reflective-views-and-picks), [PRV-02](previews-and-media.md#prv-02-image-thumbnail-pipeline), [PRV-03](previews-and-media.md#prv-03-gallery-grid-and-lightbox) |
 
 ### [Storage tiers & placement](storage-tiers.md)
 
@@ -203,7 +235,7 @@ Connect storage from the app or operator configuration with explicit ownership a
 | [TIER-03](storage-tiers.md#tier-03-storage-connection-registry) Storage connection registry | Build | P2 | L | [TIER-10](storage-tiers.md#tier-10-decision-secure-app-managed-connections) |
 | [TIER-04](storage-tiers.md#tier-04-multiple-verified-copies-per-version) Multiple verified copies per version | Build | P2 | L | [TIER-03](storage-tiers.md#tier-03-storage-connection-registry), [TIER-01](storage-tiers.md#tier-01-decision-connections-tiers-and-placement), [TIER-14](storage-tiers.md#tier-14-activate-rotate-and-retire-connections-safely) |
 | [TIER-05](storage-tiers.md#tier-05-move-bytes-between-tiers) Move bytes between tiers | Build | P2 | XL | [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer), [TIER-04](storage-tiers.md#tier-04-multiple-verified-copies-per-version) |
-| [TIER-06](storage-tiers.md#tier-06-folder-placement-policies) Folder placement policies | Build | P3 | M | [TIER-05](storage-tiers.md#tier-05-move-bytes-between-tiers), [COST-03](cost-and-insight.md#cost-03-decision-cost-estimate-model) |
+| [TIER-06](storage-tiers.md#tier-06-folder-placement-policies) Folder placement policies | Build | P3 | M | [TIER-05](storage-tiers.md#tier-05-move-bytes-between-tiers), [COST-03](cost-and-insight.md#cost-03-decision-cost-estimate-model), [POL-01](lifecycle-policies.md#pol-01-decision-policy-precedence-and-lifecycle-semantics) |
 | [TIER-07](storage-tiers.md#tier-07-design-archive-retrieval-model) Design: archive retrieval model | Decision | P3 | S | [TIER-01](storage-tiers.md#tier-01-decision-connections-tiers-and-placement) |
 | [TIER-08](storage-tiers.md#tier-08-decision-second-provider-for-cold-or-offsite-storage) Decision: second provider for cold or offsite storage | Decision | P3 | S | [TIER-00](storage-tiers.md#tier-00-real-r2-compatibility-proof-m2) |
 | [TIER-09](storage-tiers.md#tier-09-local-hot-cache-for-cloud-files) Local hot cache for cloud files | Build | P3 | M | [TIER-04](storage-tiers.md#tier-04-multiple-verified-copies-per-version) |
@@ -225,7 +257,7 @@ Show where the bytes are and roughly what they cost, with dated sources. These a
 | [COST-03](cost-and-insight.md#cost-03-decision-cost-estimate-model) Decision: cost estimate model | Decision | P2 | S | none |
 | [COST-04](cost-and-insight.md#cost-04-monthly-estimate-on-the-storage-page) Monthly estimate on the Storage page | Build | P2 | M | [COST-01](cost-and-insight.md#cost-01-usage-rollups), [COST-03](cost-and-insight.md#cost-03-decision-cost-estimate-model) |
 | [COST-05](cost-and-insight.md#cost-05-what-if-preview) What-if preview | Build | P3 | S | [COST-04](cost-and-insight.md#cost-04-monthly-estimate-on-the-storage-page), [TIER-01](storage-tiers.md#tier-01-decision-connections-tiers-and-placement) |
-| [COST-06](cost-and-insight.md#cost-06-advisory-archival-rules-m5) Advisory archival rules (M5) | Build | P3 | M | [TDY-04](tidy-mode.md#tdy-04-tidy-deck-candidates-api), [TDY-03](tidy-mode.md#tdy-03-access-recency-signal) |
+| [COST-06](cost-and-insight.md#cost-06-advisory-archival-rules-m5) Advisory archival rules (M5) | Build | P3 | M | [TDY-04](tidy-mode.md#tdy-04-tidy-deck-candidates-api), [TDY-03](tidy-mode.md#tdy-03-access-recency-signal), [POL-02](lifecycle-policies.md#pol-02-policy-registry-and-effective-policy-explanation) |
 | [COST-07](cost-and-insight.md#cost-07-growth-trend) Growth trend | Build | P3 | S | [COST-01](cost-and-insight.md#cost-01-usage-rollups) |
 
 ### [Integrity & recovery](integrity-and-recovery.md)
@@ -259,6 +291,8 @@ Runtime UI capabilities, synced preferences and owner settings have separate bou
 | [CFG-09](configurable-shell.md#cfg-09-runtime-ui-capabilities-api) Runtime UI capabilities API | Build | P2 | M | none |
 | [CFG-10](configurable-shell.md#cfg-10-personal-settings-and-sync-feedback) Personal settings and sync feedback | Build | P2 | M | [CFG-02](configurable-shell.md#cfg-02-module-registry-and-layout-engine), [CFG-04](configurable-shell.md#cfg-04-preferences-api), [CFG-09](configurable-shell.md#cfg-09-runtime-ui-capabilities-api), [LIB-16](everyday-library.md#lib-16-storage-summary-and-explanatory-panels) |
 | [CFG-11](configurable-shell.md#cfg-11-decision-owner-settings-and-deployment-guardrails) Decision: owner settings and deployment guardrails | Decision | P2 | M | none |
+| [CFG-12](configurable-shell.md#cfg-12-visual-system-and-curated-appearance-controls) Visual system and curated appearance controls | Build | P2 | M | [CFG-01](configurable-shell.md#cfg-01-decision-configurable-shell-model), [CFG-04](configurable-shell.md#cfg-04-preferences-api), [LIB-13](everyday-library.md#lib-13-warm-dark-theme) |
+| [CFG-13](configurable-shell.md#cfg-13-saved-workspaces-and-adaptive-layout-polish) Saved workspaces and adaptive layout polish | Build | P3 | M | [CFG-03](configurable-shell.md#cfg-03-customize-layout-panel), [CFG-05](configurable-shell.md#cfg-05-per-folder-view-settings), [CFG-10](configurable-shell.md#cfg-10-personal-settings-and-sync-feedback) |
 
 ### [Access & sharing](access-and-sharing.md)
 
@@ -298,3 +332,83 @@ On hold by your choice. When it resumes: native browsing, background transfers, 
 | [IOS-05](ios.md#ios-05-photos-import-with-duplicate-skip) Photos import with duplicate skip (blocked on you) | Build | P3 | M | [IOS-03](ios.md#ios-03-background-uploads), [ORG-10](organize.md#org-10-duplicate-finder) |
 | [IOS-06](ios.md#ios-06-native-tidy-with-haptics) Native Tidy with haptics (blocked on you) | Build | P3 | M | [IOS-02](ios.md#ios-02-ios-catalog-slice), [TDY-05](tidy-mode.md#tdy-05-tidy-decision-batches) |
 | [IOS-07](ios.md#ios-07-spike-files-app-integration) Spike: Files app integration (blocked on you) | Spike | P3 | M | none |
+
+### [Metadata and discovery](metadata.md)
+
+Find files by what they contain and what people know about them, while preserving the original.
+
+| Item | Kind | Priority | Size | Depends on |
+| --- | --- | --- | --- | --- |
+| [MET-01](metadata.md#met-01-decision-metadata-authority-and-provenance) Decision: metadata authority and provenance | Decision | P1 | M | none |
+| [MET-02](metadata.md#met-02-revisioned-annotations-and-effective-metadata-api) Revisioned annotations and effective metadata API | Build | P2 | L | [MET-01](metadata.md#met-01-decision-metadata-authority-and-provenance), [ORG-01](organize.md#org-01-decision-how-entries-change), [PRV-04](previews-and-media.md#prv-04-photo-metadata-extraction) |
+| [MET-03](metadata.md#met-03-metadata-inspector-and-bulk-corrections) Metadata inspector and bulk corrections | Build | P2 | M | [MET-02](metadata.md#met-02-revisioned-annotations-and-effective-metadata-api), [LIB-05](everyday-library.md#lib-05-selection-model) |
+| [MET-04](metadata.md#met-04-portable-sidecar-import-and-metadata-export) Portable sidecar import and metadata export | Build | P2 | L | [MET-02](metadata.md#met-02-revisioned-annotations-and-effective-metadata-api), [REC-03](integrity-and-recovery.md#rec-03-decision-export-format), [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer) |
+| [MET-05](metadata.md#met-05-faceted-metadata-search) Faceted metadata search | Build | P2 | L | [LIB-07](everyday-library.md#lib-07-name-search), [MET-02](metadata.md#met-02-revisioned-annotations-and-effective-metadata-api) |
+| [MET-06](metadata.md#met-06-document-text-extraction-and-local-ocr) Document text extraction and local OCR | Build | P3 | L | [MET-05](metadata.md#met-05-faceted-metadata-search), [PRV-10](previews-and-media.md#prv-10-processing-sandbox-container), [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer) |
+| [MET-07](metadata.md#met-07-metadata-reprocessing-and-coverage-dashboard) Metadata reprocessing and coverage dashboard | Build | P2 | M | [MET-02](metadata.md#met-02-revisioned-annotations-and-effective-metadata-api), [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer) |
+| [MET-08](metadata.md#met-08-decision-typed-custom-metadata-fields) Decision: typed custom metadata fields | Decision | P3 | M | [MET-01](metadata.md#met-01-decision-metadata-authority-and-provenance), [MET-05](metadata.md#met-05-faceted-metadata-search) |
+| [MET-09](metadata.md#met-09-privacy-safe-media-downloads) Privacy-safe media downloads | Build | P2 | L | [MET-01](metadata.md#met-01-decision-metadata-authority-and-provenance), [PRV-02](previews-and-media.md#prv-02-image-thumbnail-pipeline), [ACC-03](access-and-sharing.md#acc-03-decision-read-only-sharing) |
+
+### [Photos as a first-class library](photos.md)
+
+Photos should have a home of their own: a fast chronological library, albums, a large viewer, a map and satisfying ways to curate. They remain the same FileEntries and immutable versions used by Library, Storage and sharing. An album groups references; it neither moves originals nor duplicates bytes.
+
+| Item | Kind | Priority | Size | Depends on |
+| --- | --- | --- | --- | --- |
+| [PHO-01](photos.md#pho-01-decision-photo-identity-and-album-semantics) Decision: photo identity and album semantics | Decision | P1 | M | none |
+| [PHO-02](photos.md#pho-02-photos-home-and-chronological-browsing) Photos home and chronological browsing | Build | P2 | L | [PHO-01](photos.md#pho-01-decision-photo-identity-and-album-semantics), [PRV-04](previews-and-media.md#prv-04-photo-metadata-extraction), [PRV-03](previews-and-media.md#prv-03-gallery-grid-and-lightbox) |
+| [PHO-03](photos.md#pho-03-albums-api-and-collection-integrity) Albums API and collection integrity | Build | P2 | L | [PHO-01](photos.md#pho-01-decision-photo-identity-and-album-semantics), [ORG-01](organize.md#org-01-decision-how-entries-change) |
+| [PHO-04](photos.md#pho-04-fast-add-to-albums-and-album-browser) Fast add-to-albums and album browser | Build | P2 | M | [PHO-03](photos.md#pho-03-albums-api-and-collection-integrity), [PHO-02](photos.md#pho-02-photos-home-and-chronological-browsing), [LIB-05](everyday-library.md#lib-05-selection-model) |
+| [PHO-05](photos.md#pho-05-album-curation-deck-for-touch-and-keyboard) Album curation deck for touch and keyboard | Build | P2 | M | [PHO-04](photos.md#pho-04-fast-add-to-albums-and-album-browser), [TDY-06](tidy-mode.md#tdy-06-swipe-deck-ui) |
+| [PHO-06](photos.md#pho-06-heic-raw-and-companion-media-support) HEIC RAW and companion-media support | Spike | P2 | M | [PHO-01](photos.md#pho-01-decision-photo-identity-and-album-semantics) |
+| [PHO-07](photos.md#pho-07-photo-library-migration-with-sidecars-and-albums) Photo-library migration with sidecars and albums | Build | P2 | L | [IMP-01](bring-files-in.md#imp-01-import-an-existing-folder-from-the-server), [MET-04](metadata.md#met-04-portable-sidecar-import-and-metadata-export), [PHO-03](photos.md#pho-03-albums-api-and-collection-integrity) |
+| [PHO-08](photos.md#pho-08-similar-photo-review-without-automatic-deletion) Similar-photo review without automatic deletion | Spike | P3 | M | [ORG-10](organize.md#org-10-duplicate-finder), [PRV-02](previews-and-media.md#prv-02-image-thumbnail-pipeline) |
+| [PHO-09](photos.md#pho-09-read-only-shared-albums) Read-only shared albums | Build | P3 | M | [PHO-04](photos.md#pho-04-fast-add-to-albums-and-album-browser), [ACC-04](access-and-sharing.md#acc-04-file-share-links), [MET-09](metadata.md#met-09-privacy-safe-media-downloads) |
+| [PHO-10](photos.md#pho-10-decision-private-local-people-and-semantic-discovery) Decision: private local people and semantic discovery | Decision | P3 | M | [PHO-02](photos.md#pho-02-photos-home-and-chronological-browsing), [MET-01](metadata.md#met-01-decision-metadata-authority-and-provenance) |
+| [PHO-11](photos.md#pho-11-decision-automatic-camera-library-backup) Decision: automatic camera-library backup | Decision | P2 | M | [PHO-01](photos.md#pho-01-decision-photo-identity-and-album-semantics), [IOS-01](ios.md#ios-01-decision-native-auth-and-background-transfers) |
+| [PHO-12](photos.md#pho-12-opt-in-camera-upload-and-coverage-status) Opt-in camera upload and coverage status (blocked on you) | Build | P3 | L | [PHO-11](photos.md#pho-11-decision-automatic-camera-library-backup), [IOS-03](ios.md#ios-03-background-uploads), [IOS-05](ios.md#ios-05-photos-import-with-duplicate-skip) |
+
+### [Configurable file lifecycle policies](lifecycle-policies.md)
+
+Owners should choose storage and retention behavior in the app, understand what will happen, and change their minds before bytes are removed. TIER owns provider connections, verified copies and byte movement. This epic owns versioned policy intent, explanation, previews and safe execution; it does not create a second storage engine.
+
+| Item | Kind | Priority | Size | Depends on |
+| --- | --- | --- | --- | --- |
+| [POL-01](lifecycle-policies.md#pol-01-decision-policy-precedence-and-lifecycle-semantics) Decision: policy precedence and lifecycle semantics | Decision | P1 | M | [ORG-01](organize.md#org-01-decision-how-entries-change), [CFG-11](configurable-shell.md#cfg-11-decision-owner-settings-and-deployment-guardrails) |
+| [POL-02](lifecycle-policies.md#pol-02-policy-registry-and-effective-policy-explanation) Policy registry and effective-policy explanation | Build | P2 | L | [POL-01](lifecycle-policies.md#pol-01-decision-policy-precedence-and-lifecycle-semantics), [ORG-11](organize.md#org-11-activity-and-audit-log) |
+| [POL-03](lifecycle-policies.md#pol-03-dry-run-policy-planner) Dry-run policy planner | Build | P2 | L | [POL-02](lifecycle-policies.md#pol-02-policy-registry-and-effective-policy-explanation), [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer) |
+| [POL-04](lifecycle-policies.md#pol-04-storage-and-retention-strategy-editor) Storage and retention strategy editor | Build | P2 | M | [POL-03](lifecycle-policies.md#pol-03-dry-run-policy-planner), [CFG-09](configurable-shell.md#cfg-09-runtime-ui-capabilities-api), [LIB-16](everyday-library.md#lib-16-storage-summary-and-explanatory-panels) |
+| [POL-05](lifecycle-policies.md#pol-05-version-retention-with-pins-and-safe-collection) Version retention with pins and safe collection | Build | P2 | L | [POL-03](lifecycle-policies.md#pol-03-dry-run-policy-planner), [ORG-07](organize.md#org-07-version-history), [ORG-05](organize.md#org-05-permanent-deletion-and-object-garbage-collection) |
+| [POL-06](lifecycle-policies.md#pol-06-scheduled-archive-and-placement-policies) Scheduled archive and placement policies | Build | P3 | L | [POL-03](lifecycle-policies.md#pol-03-dry-run-policy-planner), [POL-04](lifecycle-policies.md#pol-04-storage-and-retention-strategy-editor), [COST-06](cost-and-insight.md#cost-06-advisory-archival-rules-m5), [TIER-06](storage-tiers.md#tier-06-folder-placement-policies), [TDY-02](tidy-mode.md#tdy-02-archived-state-and-archive-view) |
+| [POL-07](lifecycle-policies.md#pol-07-archive-retrieval-and-restore-queue) Archive retrieval and restore queue | Build | P3 | L | [TIER-07](storage-tiers.md#tier-07-design-archive-retrieval-model), [TIER-08](storage-tiers.md#tier-08-decision-second-provider-for-cold-or-offsite-storage), [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer) |
+
+### [Encapsulation and application orchestration](encapsulation.md)
+
+Keep React views readable as the product grows. Components render state and dispatch user intent. Capability hooks/controllers own request sequencing, cancellation, mutation state and errors; stores own shared state whose lifetime exceeds a view. Pure functions own policies and state transitions. DOM focus, measurement and local presentation state may remain in components or focused UI hooks.
+
+| Item | Kind | Priority | Size | Depends on |
+| --- | --- | --- | --- | --- |
+| [ARC-01](encapsulation.md#arc-01-decision-web-state-and-effect-ownership) Decision: web state and effect ownership | Decision | P1 | S | none |
+| [ARC-02](encapsulation.md#arc-02-extract-library-commands-and-mutation-lifecycle) Extract Library commands and mutation lifecycle | Build | P2 | M | [ARC-01](encapsulation.md#arc-01-decision-web-state-and-effect-ownership) |
+| [ARC-03](encapsulation.md#arc-03-extract-preview-and-download-resource-owners) Extract preview and download resource owners | Build | P2 | M | [ARC-01](encapsulation.md#arc-01-decision-web-state-and-effect-ownership) |
+| [ARC-04](encapsulation.md#arc-04-separate-inspector-state-from-panel-presentation) Separate inspector state from panel presentation | Build | P2 | M | [ARC-01](encapsulation.md#arc-01-decision-web-state-and-effect-ownership) |
+| [ARC-05](encapsulation.md#arc-05-shared-storage-summary-and-transfer-completion-events) Shared storage summary and transfer completion events | Build | P2 | M | [ARC-01](encapsulation.md#arc-01-decision-web-state-and-effect-ownership) |
+| [ARC-06](encapsulation.md#arc-06-enforce-capability-boundaries-and-feature-patterns) Enforce capability boundaries and feature patterns | Build | P2 | S | [ARC-02](encapsulation.md#arc-02-extract-library-commands-and-mutation-lifecycle), [ARC-03](encapsulation.md#arc-03-extract-preview-and-download-resource-owners), [ARC-04](encapsulation.md#arc-04-separate-inspector-state-from-panel-presentation), [ARC-05](encapsulation.md#arc-05-shared-storage-summary-and-transfer-completion-events) |
+| [ARC-07](encapsulation.md#arc-07-backend-orchestration-boundary-audit) Backend orchestration boundary audit | Spike | P2 | M | none |
+
+### [Everyday parity and open-source adoption](adoption-and-parity.md)
+
+The target is a credible everyday alternative with distinctive photo curation and storage control. Parity means completing real user journeys, including failure and recovery; it does not require cloning an office suite. Candidate priorities below do not override status.md's ordered work.
+
+| Item | Kind | Priority | Size | Depends on |
+| --- | --- | --- | --- | --- |
+| [PAR-01](adoption-and-parity.md#par-01-workspace-invitations-and-role-enforcement) Workspace invitations and role enforcement | Build | P3 | L | [ACC-06](access-and-sharing.md#acc-06-decision-second-user-and-roles), [ACC-01](access-and-sharing.md#acc-01-session-management) |
+| [PAR-02](adoption-and-parity.md#par-02-shared-link-management-and-recipient-experience) Shared-link management and recipient experience | Build | P2 | M | [ACC-04](access-and-sharing.md#acc-04-file-share-links) |
+| [PAR-03](adoption-and-parity.md#par-03-decision-upload-only-file-requests) Decision: upload-only file requests | Decision | P2 | M | [ACC-03](access-and-sharing.md#acc-03-decision-read-only-sharing) |
+| [PAR-04](adoption-and-parity.md#par-04-decision-offline-access-and-desktop-synchronization) Decision: offline access and desktop synchronization | Decision | P3 | M | [ORG-06](organize.md#org-06-upload-a-new-version-of-a-file) |
+| [PAR-05](adoption-and-parity.md#par-05-explicit-offline-file-pins) Explicit offline file pins | Build | P3 | L | [PAR-04](adoption-and-parity.md#par-04-decision-offline-access-and-desktop-synchronization) |
+| [PAR-06](adoption-and-parity.md#par-06-import-center-and-durable-operation-feedback) Import center and durable operation feedback | Build | P2 | M | [IMP-01](bring-files-in.md#imp-01-import-an-existing-folder-from-the-server), [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer) |
+| [PAR-07](adoption-and-parity.md#par-07-decision-resumable-large-file-transfers) Decision: resumable large-file transfers | Decision | P3 | M | [M1-05](finish-m1.md#m1-05-prove-interruption-and-restart-recovery-in-the-browser), [ENG-10](foundations.md#eng-10-measured-resource-baselines-for-transfers), [TIER-00](storage-tiers.md#tier-00-real-r2-compatibility-proof-m2) |
+| [OSS-01](adoption-and-parity.md#oss-01-decision-license-and-contributor-contract) Decision: license and contributor contract | Decision | P1 | S | none |
+| [OSS-02](adoption-and-parity.md#oss-02-first-run-setup-and-operator-readiness) First-run setup and operator readiness | Build | P2 | M | [M1-07](finish-m1.md#m1-07-container-image-and-compose-from-a-clean-checkout), [CFG-09](configurable-shell.md#cfg-09-runtime-ui-capabilities-api) |
+| [OSS-03](adoption-and-parity.md#oss-03-release-readiness-and-recovery-acceptance) Release readiness and recovery acceptance | Proof | P2 | M | [OSS-01](adoption-and-parity.md#oss-01-decision-license-and-contributor-contract), [REC-05](integrity-and-recovery.md#rec-05-restore-into-a-clean-installation), [REC-06](integrity-and-recovery.md#rec-06-backup-and-restore-drill), [REC-07](integrity-and-recovery.md#rec-07-upgrade-drill), [ENG-01](foundations.md#eng-01-web-ci-and-contract-drift-checks) |

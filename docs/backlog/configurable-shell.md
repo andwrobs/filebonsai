@@ -230,3 +230,51 @@ Depends on: none
 **Read:** `docs/architecture/storage-and-transfers.md`, `docs/api/conventions.md`
 
 **Checks:** `decision-review`
+
+## CFG-12 Visual system and curated appearance controls
+
+`P2` · `M` · Build · Web
+
+Depends on: [CFG-01](#cfg-01-decision-configurable-shell-model), [CFG-04](#cfg-04-preferences-api), [LIB-13](everyday-library.md#lib-13-warm-dark-theme)
+
+**Why.** Configurability should preserve a deliberate, beautiful visual identity.
+
+**Outcome.** Offer a small curated set of accent palettes, density/type-scale choices and light/dark/system modes using the existing global tokens. Preview presets on real list, grid, inspector, settings and photo surfaces; share persistence with CFG-04.
+
+**Acceptance**
+
+- Every shipped combination has verified text/control contrast, visible focus and legible thumbnails/selection.
+- 200% zoom, long names, narrow screens and reduced motion remain usable; reset recovers a working preset.
+- No arbitrary CSS or script import; one token owner and a bounded visual regression matrix.
+
+**Settle first.** Curated palette count and type-scale bounds; coordinate with CFG-02 layout presets instead of creating another preference store.
+
+**Invariants:** INV-14
+
+**Read:** `docs/product/domain.md`, `docs/product/design.md`, `docs/product/invariants.md`
+
+**Checks:** `web`; `rendered`; contrast and visual-state matrix
+
+## CFG-13 Saved workspaces and adaptive layout polish
+
+`P3` · `M` · Build · Web
+
+Depends on: [CFG-03](#cfg-03-customize-layout-panel), [CFG-05](#cfg-05-per-folder-view-settings), [CFG-10](#cfg-10-personal-settings-and-sync-feedback)
+
+**Why.** People switch between focused photo review and dense file management.
+
+**Outcome.** Let a user save named combinations of supported layout/view preferences and switch between them. Persist only layout intent; adapt regions to device constraints and preserve a reachable recovery/reset control.
+
+**Acceptance**
+
+- A desktop three-column preset remains usable on a phone and restores sensibly on desktop.
+- Preset changes never discard unsaved edits, selections or active transfers; unsupported modules fall back visibly.
+- Keyboard and menu alternatives cover resizing/reordering; no mandatory drag interaction.
+
+**Settle first.** Personal versus workspace-shared presets and device-local region sizes per CFG-01.
+
+**Invariants:** INV-01, INV-14
+
+**Read:** `docs/product/domain.md`, `docs/product/design.md`, `docs/product/invariants.md`
+
+**Checks:** `web`; `rendered`

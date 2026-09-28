@@ -53,6 +53,8 @@ Depends on: none
 
 **Outcome.** A JSON Lines manifest (workspace, hierarchy, names, versions, sizes, digests, tags, timestamps) with objects stored by digest, a schema version, case-collision safety, and no credentials or sessions.
 
+**Boundary.** The format must accommodate versioned annotations/provenance, album membership/order, tags, pins and policy intent as those features ship. [MET-04](metadata.md#met-04-portable-sidecar-import-and-metadata-export) supplies metadata interchange rather than a competing archive. Separate public/sanitized export from explicit private recovery export; include a missing-secret report without embedding storage credentials.
+
 **Acceptance**
 
 - Hand-readable example included
