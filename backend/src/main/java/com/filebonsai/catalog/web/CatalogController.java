@@ -6,6 +6,7 @@ import com.filebonsai.catalog.application.GetEntry;
 import com.filebonsai.catalog.application.GetWorkspaceRoot;
 import com.filebonsai.catalog.application.ListChildren;
 import com.filebonsai.catalog.application.ListOrder;
+import com.filebonsai.catalog.application.StorageConnectionName;
 import com.filebonsai.catalog.domain.EntryId;
 import com.filebonsai.catalog.domain.FileName;
 import com.filebonsai.platform.web.ApiErrorResponse;
@@ -63,18 +64,21 @@ public class CatalogController {
     private final ListChildren listChildren;
     private final CreateFolder createFolder;
     private final CatalogScopeProvider scopes;
+    private final StorageConnectionName storage;
 
     public CatalogController(
             GetEntry getEntry,
             GetWorkspaceRoot getWorkspaceRoot,
             ListChildren listChildren,
             CreateFolder createFolder,
-            CatalogScopeProvider scopes) {
+            CatalogScopeProvider scopes,
+            StorageConnectionName storage) {
         this.getEntry = getEntry;
         this.getWorkspaceRoot = getWorkspaceRoot;
         this.listChildren = listChildren;
         this.createFolder = createFolder;
         this.scopes = scopes;
+        this.storage = storage;
     }
 
     @GetMapping(value = "/catalog/root", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -94,7 +98,7 @@ public class CatalogController {
             description = "Entry",
             content = @Content(schema = @Schema(implementation = EntryResponse.class)))
     public EntryResponse getEntry(@PathVariable UUID id) {
-        return CatalogResponseMapper.response(getEntry.get(scopes.current(), new EntryId(id)));
+        return CatalogResponseMapper.response(getEntry.get(scopes.current(), new EntryId(id)), storage);
     }
 
     @GetMapping(value = "/entries/{id}/children", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -129,7 +133,10 @@ public class CatalogController {
         var page = listChildren.list(
                 scopes.current(), new EntryId(id), listOrder(sort, order, foldersFirst), limit, cursor);
         return new EntryPageResponse(
-                page.entries().stream().map(CatalogResponseMapper::response).toList(), page.nextCursor());
+                page.entries().stream()
+                        .map(entry -> CatalogResponseMapper.response(entry, storage))
+                        .toList(),
+                page.nextCursor());
     }
 
     @PostMapping(

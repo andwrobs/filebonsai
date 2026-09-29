@@ -18,7 +18,13 @@ public record FileEntryResponse(
 
         @Schema(requiredMode = REQUIRED) Instant createdAt,
         @Schema(requiredMode = REQUIRED) Instant updatedAt,
-        @Schema(requiredMode = REQUIRED) CurrentVersionResponse currentVersion)
+        @Schema(requiredMode = REQUIRED) CurrentVersionResponse currentVersion,
+
+        @Schema(
+                requiredMode = REQUIRED,
+                minimum = "1",
+                description = "Committed versions of this file, the current one included")
+        int versionCount)
         implements EntryResponse {
     public enum Kind {
         file

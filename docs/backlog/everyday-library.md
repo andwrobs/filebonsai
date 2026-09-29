@@ -187,35 +187,13 @@ Context: LIB-01/LIB-10 added the responsive shell: tokens in `web/src/styles/tok
 
 **Checks:** `web`; `rendered`
 
-## LIB-14 Inspector integrity fields
-
-`P2` · `S` · Build · Backend, Web · Public API change
-
-Depends on: none
-
-Context: LIB-06 added the inspector, now in `web/src/routes/library/components/Inspector/`. It is a docked column from 1100px, a modal drawer below that and a bottom sheet on phones. Each row's Details button or the toolbar toggle opens it, and it shows the current folder when nothing is chosen. The Details list has size, dates and the ID; there are no tabs yet. Add the new fields to that list.
-
-**Why.** File responses don't expose the SHA-256, version count or storage connection, which are what make a file's details trustworthy.
-
-**Outcome.** The file DTO adds the current version's SHA-256, the version count and the storage connection display name. The inspector shows them, with a copy button for the digest.
-
-**Acceptance**
-
-- The DTO adds only non-sensitive fields: no object keys, paths, bucket names or provider IDs
-- Generated TypeScript and Swift clients decode the new fields
-
-**Invariants:** INV-11  
-**Checks:** `contract`; `web`; `rendered`
-
 ## LIB-15 Inspector hierarchy and description polish
 
 `P2` · `M` · Build · Web
 
 Depends on: none
 
-Context: LIB-06 added the inspector, now in `web/src/routes/library/components/Inspector/`. It is a docked column from 1100px, a modal drawer below that and a bottom sheet on phones. Each row's Details button or the toolbar toggle opens it, and it shows the current folder when nothing is chosen. The Details list has size, dates and the ID; there are no tabs yet.
-
-Integrity fields (SHA-256, version count, storage connection) come from [LIB-14](#lib-14-inspector-integrity-fields); place them in the technical disclosure once it ships.
+Context: LIB-06 added the inspector, now in `web/src/routes/library/components/Inspector/`. It is a docked column from 1100px, a modal drawer below that and a bottom sheet on phones. Each row's Details button or the toolbar toggle opens it, and it shows the current folder when nothing is chosen. The Details list has size, dates, version count, storage connection, SHA-256 (with a copy button, or "Not recorded") and the ID; there are no tabs yet. Place the integrity fields (versions, storage connection, SHA-256) in the technical disclosure.
 
 **Why.** A list of metadata is useful, but details should be easy to scan while browsing and comfortable to read on a phone.
 

@@ -33,8 +33,11 @@ const file = {
 	createdAt: "2026-09-20T12:34:56Z",
 	currentVersion: {
 		id: "30000000-0000-4000-8000-000000000001",
+		sha256: "4f8b42c22dd3729b519ba6f68d2da7cc5b2d606d05daed5ad5128cc03e6c6358",
 		sizeBytes: "9007199254740993",
+		storageConnectionName: "Local disk",
 	},
+	versionCount: 1,
 	id: "00000000-0000-4000-8000-000000000003",
 	kind: "file",
 	name: "large.bin",

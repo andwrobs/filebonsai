@@ -23,7 +23,13 @@ const travel = folder("travel");
 const recipes = folder("recipes");
 const photo = {
 	...travel,
-	currentVersion: { id: "version", sizeBytes: "5505024" },
+	currentVersion: {
+		id: "version",
+		sha256: null,
+		sizeBytes: "5505024",
+		storageConnectionName: "Local disk",
+	},
+	versionCount: 1,
 	id: "photo",
 	kind: "file" as const,
 	name: "IMG_8421.JPG",

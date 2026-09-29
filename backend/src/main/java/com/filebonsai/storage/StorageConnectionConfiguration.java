@@ -1,5 +1,6 @@
 package com.filebonsai.storage;
 
+import com.filebonsai.catalog.application.StorageConnectionName;
 import com.filebonsai.storage.application.StorageCapabilities;
 import com.filebonsai.storage.application.StorageConnection;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,6 +16,11 @@ public class StorageConnectionConfiguration {
             @Value("${filebonsai.storage.provider:local}") String provider,
             @Value("${filebonsai.storage.display-name:}") String displayName) {
         return StorageConnection.configured(provider, displayName);
+    }
+
+    @Bean
+    StorageConnectionName storageConnectionName(StorageConnection connection) {
+        return connection::displayName;
     }
 
     // Built at startup so an unmapped provider fails the boot, not every Storage request.

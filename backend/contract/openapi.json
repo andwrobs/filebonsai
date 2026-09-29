@@ -1442,12 +1442,18 @@
         }
       },
       "CurrentVersionResponse" : {
-        "required" : [ "id", "sizeBytes" ],
+        "required" : [ "id", "sha256", "sizeBytes", "storageConnectionName" ],
         "type" : "object",
         "properties" : {
           "id" : {
             "type" : "string",
             "format" : "uuid"
+          },
+          "sha256" : {
+            "pattern" : "^[0-9a-f]{64}$",
+            "type" : "string",
+            "description" : "Lowercase hex SHA-256 of the stored bytes, verified when the version was committed. Null only for a version recorded without a digest.",
+            "nullable" : true
           },
           "sizeBytes" : {
             "maxLength" : 19,
@@ -1455,6 +1461,10 @@
             "type" : "string",
             "description" : "Base-10 byte count, 0 through 9223372036854775807 inclusive. Never a JSON number.",
             "example" : "9007199254740993"
+          },
+          "storageConnectionName" : {
+            "type" : "string",
+            "description" : "Operator-chosen name of the storage connection that serves this version's bytes. Never a bucket, endpoint, path or credential."
           }
         }
       },
@@ -1508,7 +1518,7 @@
         "description" : "Empty when no individual field is responsible"
       },
       "FileEntryResponse" : {
-        "required" : [ "createdAt", "currentVersion", "id", "kind", "name", "parentId", "updatedAt" ],
+        "required" : [ "createdAt", "currentVersion", "id", "kind", "name", "parentId", "updatedAt", "versionCount" ],
         "type" : "object",
         "properties" : {
           "createdAt" : {
@@ -1538,6 +1548,12 @@
           "updatedAt" : {
             "type" : "string",
             "format" : "date-time"
+          },
+          "versionCount" : {
+            "minimum" : 1,
+            "type" : "integer",
+            "description" : "Committed versions of this file, the current one included",
+            "format" : "int32"
           }
         }
       },
