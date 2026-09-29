@@ -20,6 +20,7 @@
 		"fix": "biome check . --write",
 		"fix:check": "biome check .",
 		"test:run": "vitest run",
+		"e2e": "playwright test --config e2e/playwright.config.ts",
 		"test:watch": "vitest --silent=true",
 		"test:watch:verbose": "vitest",
 		"test:debug": "vitest run --inspect --no-file-parallelism",
@@ -62,6 +63,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.4.16",
+		"@playwright/test": "1.59.1",
 		"@react-router/dev": "8.4.0",
 		"@testing-library/dom": "10.4.1",
 		"@testing-library/jest-dom": "6.9.1",

@@ -126,6 +126,9 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
+# Playwright e2e logs, traces, and screenshots
+e2e/.output/
+
 # React Router
 .react-router/
 build/
