@@ -10,7 +10,15 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -58,7 +66,9 @@ class LocalObjectStorageTest {
         assertThatThrownBy(() -> storage.writeAttempt(
                         workspace, UUID.randomUUID(), UUID.randomUUID(), new ByteArrayInputStream(new byte[0]), 0))
                 .isInstanceOf(java.io.IOException.class);
-        assertThat(Files.list(outside)).isEmpty();
+        try (var listing = Files.list(outside)) {
+            assertThat(listing).isEmpty();
+        }
     }
 
     @Test
@@ -104,6 +114,109 @@ class LocalObjectStorageTest {
 
         assertThatThrownBy(() -> storage.deleteIfExists(staged.key())).isInstanceOf(IOException.class);
         assertThat(Files.readAllBytes(outsideFile)).containsExactly(7);
+    }
+
+    @Test
+    void concurrentFirstWritersAndPromotersShareNewlyCreatedWorkspaceDirectories() throws Exception {
+        int writers = 16;
+        LocalObjectStorage storage =
+                new LocalObjectStorage(temporaryDirectory.resolve("data"), 16, Duration.ofMinutes(1), writers);
+        ExecutorService executor = Executors.newFixedThreadPool(writers);
+        try {
+            for (int round = 0; round < 25; round++) {
+                // Each round starts with absent attempts/<workspace> and objects/<workspace> directories; a start
+                // gate releases every writer, then every promoter, into that first creation together.
+                UUID workspace = UUID.randomUUID();
+                List<UUID> objects = new ArrayList<>();
+                for (int writer = 0; writer < writers; writer++) {
+                    objects.add(UUID.randomUUID());
+                }
+                byte roundTag = (byte) round;
+                List<LocalObjectStorage.StoredBody> staged = together(
+                        executor,
+                        writers,
+                        writer -> storage.writeAttempt(
+                                workspace,
+                                objects.get(writer),
+                                UUID.randomUUID(),
+                                new ByteArrayInputStream(new byte[] {roundTag, (byte) writer}),
+                                2));
+                together(executor, writers, writer -> {
+                    storage.promote(staged.get(writer).key(), storage.finalKey(workspace, objects.get(writer)));
+                    return null;
+                });
+                for (int writer = 0; writer < writers; writer++) {
+                    try (var input = storage.open(storage.finalKey(workspace, objects.get(writer)))) {
+                        assertThat(input.readAllBytes()).containsExactly(roundTag, (byte) writer);
+                    }
+                }
+            }
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    private static <T> List<T> together(ExecutorService executor, int parties, IndexedTask<T> task) throws Exception {
+        CountDownLatch ready = new CountDownLatch(parties);
+        CountDownLatch start = new CountDownLatch(1);
+        List<Future<T>> futures = new ArrayList<>();
+        for (int party = 0; party < parties; party++) {
+            int index = party;
+            futures.add(executor.submit(() -> {
+                ready.countDown();
+                start.await();
+                return task.run(index);
+            }));
+        }
+        assertThat(ready.await(10, TimeUnit.SECONDS)).isTrue();
+        start.countDown();
+        List<T> results = new ArrayList<>();
+        for (Future<T> future : futures) {
+            results.add(future.get(30, TimeUnit.SECONDS));
+        }
+        return results;
+    }
+
+    @FunctionalInterface
+    private interface IndexedTask<T> {
+        T run(int index) throws Exception;
+    }
+
+    @Test
+    void existingNonDirectoryOrSymlinkedComponentsAreStillRejected() throws Exception {
+        Path root = temporaryDirectory.resolve("data");
+        LocalObjectStorage storage = new LocalObjectStorage(root, 16);
+        Path outside = temporaryDirectory.resolve("outside");
+        Files.createDirectories(outside);
+
+        UUID fileWorkspace = UUID.randomUUID();
+        Files.write(root.resolve("attempts").resolve(fileWorkspace.toString()), new byte[] {9});
+        assertThatThrownBy(() -> storage.writeAttempt(
+                        fileWorkspace, UUID.randomUUID(), UUID.randomUUID(), new ByteArrayInputStream(new byte[0]), 0))
+                .isInstanceOf(IOException.class);
+
+        UUID danglingWorkspace = UUID.randomUUID();
+        Files.createSymbolicLink(
+                root.resolve("attempts").resolve(danglingWorkspace.toString()), outside.resolve("missing"));
+        assertThatThrownBy(() -> storage.writeAttempt(
+                        danglingWorkspace,
+                        UUID.randomUUID(),
+                        UUID.randomUUID(),
+                        new ByteArrayInputStream(new byte[0]),
+                        0))
+                .isInstanceOf(IOException.class);
+        assertThat(Files.exists(outside.resolve("missing"))).isFalse();
+
+        UUID workspace = UUID.randomUUID();
+        UUID object = UUID.randomUUID();
+        var staged =
+                storage.writeAttempt(workspace, object, UUID.randomUUID(), new ByteArrayInputStream(new byte[] {1}), 1);
+        Files.createSymbolicLink(root.resolve("objects").resolve(workspace.toString()), outside);
+        assertThatThrownBy(() -> storage.promote(staged.key(), storage.finalKey(workspace, object)))
+                .isInstanceOf(IOException.class);
+        try (var listing = Files.list(outside)) {
+            assertThat(listing).isEmpty();
+        }
     }
 
     private static final class BoundedReadInputStream extends InputStream {

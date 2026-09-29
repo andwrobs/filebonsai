@@ -21,7 +21,14 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.flywaydb.core.Flyway;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
@@ -440,6 +447,54 @@ class PostgresLocalTransfersTest {
         assertThat(replacement.id()).isNotEqualTo(upload.id());
         assertThat(database.fetchValue("select state from upload_sessions where id = ?", upload.id()))
                 .isEqualTo("EXPIRED");
+    }
+
+    @Test
+    void concurrentFirstCompletionsInAWorkspaceAllPublish() throws Exception {
+        int uploads = 8;
+        List<UUID> ids = new ArrayList<>();
+        for (int upload = 0; upload < uploads; upload++) {
+            byte[] content = ("concurrent " + upload).getBytes(StandardCharsets.UTF_8);
+            var begun = transfers.begin(
+                    scope,
+                    ROOT,
+                    new FileName("concurrent-" + upload + ".txt"),
+                    new ByteCount(content.length),
+                    sha256(content),
+                    UUID.randomUUID());
+            transfers.receive(scope, begun.id(), new ByteArrayInputStream(content));
+            ids.add(begun.id());
+        }
+
+        // No completion has published into this workspace yet, so completions that reach promotion together
+        // race to create the workspace's published-object directory; LocalObjectStorageTest forces that race.
+        ExecutorService executor = Executors.newFixedThreadPool(uploads);
+        try {
+            CountDownLatch ready = new CountDownLatch(uploads);
+            CountDownLatch start = new CountDownLatch(1);
+            List<Future<UploadState>> completions = new ArrayList<>();
+            for (UUID id : ids) {
+                completions.add(executor.submit(() -> {
+                    ready.countDown();
+                    start.await();
+                    return transfers.complete(scope, id).state();
+                }));
+            }
+            assertThat(ready.await(10, TimeUnit.SECONDS)).isTrue();
+            start.countDown();
+            for (Future<UploadState> completion : completions) {
+                assertThat(completion.get(30, TimeUnit.SECONDS)).isEqualTo(UploadState.AVAILABLE);
+            }
+        } finally {
+            executor.shutdownNow();
+        }
+        for (int upload = 0; upload < uploads; upload++) {
+            try (var download =
+                    transfers.open(scope, transfers.get(scope, ids.get(upload)).entryId())) {
+                assertThat(new String(download.content().readAllBytes(), StandardCharsets.UTF_8))
+                        .isEqualTo("concurrent " + upload);
+            }
+        }
     }
 
     private byte[] sha256(byte[] content) throws Exception {

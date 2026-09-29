@@ -3,6 +3,7 @@ package com.filebonsai.storage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
@@ -196,12 +197,16 @@ public final class LocalObjectStorage implements PublishedObjectStorage {
         Path current = root;
         for (Path component : root.relativize(directory)) {
             current = current.resolve(component);
-            if (Files.exists(current, LinkOption.NOFOLLOW_LINKS)) {
-                if (Files.isSymbolicLink(current) || !Files.isDirectory(current, LinkOption.NOFOLLOW_LINKS)) {
-                    throw new IOException("Storage path contains a non-directory or symbolic link");
+            if (!Files.exists(current, LinkOption.NOFOLLOW_LINKS)) {
+                try {
+                    Files.createDirectory(current);
+                } catch (FileAlreadyExistsException concurrentlyCreated) {
+                    // Another writer created this component first; it is accepted only if the check below
+                    // finds a real directory rather than a symbolic link or other file.
                 }
-            } else {
-                Files.createDirectory(current);
+            }
+            if (Files.isSymbolicLink(current) || !Files.isDirectory(current, LinkOption.NOFOLLOW_LINKS)) {
+                throw new IOException("Storage path contains a non-directory or symbolic link");
             }
         }
     }
