@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 
+import { CatalogApi, ListChildrenOrderEnum, ListChildrenSortEnum } from "../../clients/typescript/apis/CatalogApi";
+import { Configuration } from "../../clients/typescript/runtime";
 import { ApiErrorResponseFromJSON } from "../../clients/typescript/models/ApiErrorResponse";
 import { AccessSessionResponseFromJSON } from "../../clients/typescript/models/AccessSessionResponse";
 import { EntryPageResponseFromJSON } from "../../clients/typescript/models/EntryPageResponse";
@@ -108,4 +110,32 @@ test("decodes a storage summary with an unknown provider kind and exact usage", 
   assert.equal(summary.capabilities.resumableUploads, false);
   assert.equal("futureCapability" in summary.capabilities, false);
   assert.equal(summary.usedBytes, "9007199254740993");
+});
+
+test("sends the list order as query parameters and decodes the page", async () => {
+  let requested = "";
+  const api = new CatalogApi(
+    new Configuration({
+      basePath: "http://filebonsai.test",
+      fetchApi: async (input) => {
+        requested = String(input);
+        return new Response(JSON.stringify(fixture("page")), { headers: { "Content-Type": "application/json" } });
+      },
+    }),
+  );
+
+  const page = await api.listChildren({
+    id: "00000000-0000-4000-8000-000000000001",
+    limit: 1,
+    sort: ListChildrenSortEnum.UpdatedAt,
+    order: ListChildrenOrderEnum.Desc,
+    foldersFirst: true,
+  });
+
+  const query = new URL(requested).searchParams;
+  assert.equal(query.get("sort"), "updatedAt");
+  assert.equal(query.get("order"), "desc");
+  assert.equal(query.get("foldersFirst"), "true");
+  assert.equal(page.entries.length, 1);
+  assert.equal(typeof page.nextCursor, "string");
 });

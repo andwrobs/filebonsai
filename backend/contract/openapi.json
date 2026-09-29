@@ -319,7 +319,7 @@
     },
     "/api/v1/entries/{id}/children" : {
       "get" : {
-        "description" : "NFC name then ID, ascending UTF-8 byte order; no snapshot. Inserts or renames behind the cursor may be missed, and renames ahead may repeat an entry. Deduplicate by ID or refresh when needed. Tokens are opaque, scoped to the workspace/folder/sort, and invalid after cursor-key rotation; fixture restart rotates its key.",
+        "description" : "Ordered by `sort`, then NFC name in UTF-8 byte order, then ID; `desc` reverses all three. `foldersFirst` keeps folders ahead of files in either direction. `updatedAt` is the entry's `updatedAt`. `size` is the current version's `sizeBytes`, and a folder sorts below any file. No snapshot: inserts or changes behind the cursor may be missed, and changes ahead may repeat an entry. Deduplicate by ID or refresh when needed. Tokens are opaque, scoped to the workspace/folder/sort/order/foldersFirst, and invalid after cursor-key rotation; fixture restart rotates its key.",
         "operationId" : "listChildren",
         "parameters" : [ {
           "in" : "path",
@@ -348,6 +348,32 @@
             "maxLength" : 2048,
             "minLength" : 0,
             "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "sort",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "name", "updatedAt", "size" ],
+            "default" : "name"
+          }
+        }, {
+          "in" : "query",
+          "name" : "order",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "asc", "desc" ],
+            "default" : "asc"
+          }
+        }, {
+          "in" : "query",
+          "name" : "foldersFirst",
+          "required" : false,
+          "schema" : {
+            "type" : "boolean",
+            "default" : false
           }
         } ],
         "responses" : {

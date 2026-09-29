@@ -30,6 +30,15 @@ public class ApiConfiguration implements WebMvcConfigurer {
         return UUID.fromString(input);
     }
 
+    /** Spring would also accept yes, on, 1 and their opposites; query booleans take only the JSON literals. */
+    static Boolean strictBoolean(String input) {
+        return switch (input) {
+            case "true" -> Boolean.TRUE;
+            case "false" -> Boolean.FALSE;
+            default -> throw new IllegalArgumentException("Expected true or false");
+        };
+    }
+
     @Override
     public void addFormatters(FormatterRegistry registry) {
         registry.addConverter(String.class, UUID.class, ApiConfiguration::strictUuid);

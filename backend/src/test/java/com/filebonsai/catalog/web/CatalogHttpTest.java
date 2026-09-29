@@ -1,6 +1,7 @@
 package com.filebonsai.catalog.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -38,6 +39,8 @@ class CatalogHttpTest {
     private static final String ROOT = FixtureCatalog.ROOT.value().toString();
     private static final String FILE = FixtureCatalog.FILE.value().toString();
     private static final String EMPTY = FixtureCatalog.EMPTY.value().toString();
+    private static final String PRE_SORT_CURSOR =
+            "eyJ2ZXJzaW9uIjoxLCJ3b3Jrc3BhY2VJZCI6IjEwMDAwMDAwLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwMSIsImZvbGRlcklkIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwic29ydCI6Im5hbWUtaWQtdXRmOC1hc2MtdjEiLCJuYW1lIjoiSXRhbHkucGRmIiwiaWQiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDIifQ.k9bZ6t5TQXDkU8F3K5E75U7MIl_kiIsIkKXVVpbbh7g";
 
     @Autowired
     MockMvc mvc;
@@ -148,6 +151,48 @@ class CatalogHttpTest {
         for (String limit : List.of("0", "101", "nope")) {
             mvc.perform(get("/api/v1/entries/" + ROOT + "/children").param("limit", limit))
                     .andExpect(status().isBadRequest());
+        }
+    }
+
+    @Test
+    void childrenFollowTheRequestedOrderAndRejectUnknownOrCoercedValues() throws Exception {
+        String children = "/api/v1/entries/" + ROOT + "/children";
+        mvc.perform(get(children).param("sort", "size").param("order", "desc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.entries[*].name").value(contains("Italy.pdf", "Recipes")));
+        mvc.perform(get(children).param("sort", "size").param("order", "desc").param("foldersFirst", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.entries[*].name").value(contains("Recipes", "Italy.pdf")));
+        for (var invalid : List.of(Map.of("sort", "Name"), Map.of("sort", "kind"), Map.of("order", "DESC"))) {
+            var field = invalid.keySet().iterator().next();
+            mvc.perform(get(children).param(field, invalid.get(field)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+                    .andExpect(jsonPath("$.fieldErrors[0].field").value(field))
+                    .andExpect(jsonPath("$.fieldErrors[0].code").value("UNSUPPORTED_VALUE"));
+        }
+        for (String coerced : List.of("yes", "1", "TRUE")) {
+            mvc.perform(get(children).param("foldersFirst", coerced))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+        }
+        var first = mapper.readTree(mvc.perform(get(children).param("limit", "1"))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString());
+        String cursor = first.get("nextCursor").asText();
+        mvc.perform(get(children).param("cursor", cursor).param("sort", "name")).andExpect(status().isOk());
+        // The default-order cursor exported before other orders existed, signed with the same fixture key.
+        mvc.perform(get(children).param("cursor", PRE_SORT_CURSOR))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.entries[*].name").value(contains("Recipes")));
+        for (var other :
+                List.of(Map.of("order", "desc"), Map.of("foldersFirst", "true"), Map.of("sort", "updatedAt"))) {
+            var field = other.keySet().iterator().next();
+            mvc.perform(get(children).param("cursor", cursor).param(field, other.get(field)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("INVALID_CURSOR"));
         }
     }
 

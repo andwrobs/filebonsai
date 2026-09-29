@@ -3,7 +3,7 @@
 Catalog is the first cross-platform vertical slice. This document describes observable behavior independently of Java, React, or Swift.
 
 - The workspace root is a real folder with a stable ID and a null parent.
-- Browsing lists direct children only, with NFC-name/UUID keyset ordering and opaque cursors.
+- Browsing lists direct children only, with keyset paging and opaque cursors. The order is by name, modified time, or size, ascending or descending, with ties broken by NFC name and then UUID; folders can be kept first. Name ascending is the default.
 - Empty folders return an empty page and no cursor.
 - Folder creation requires a parent ID, a valid name, and a UUID `Idempotency-Key`.
 - Repeating the same key and normalized intent returns the original folder identity. Reusing the key for changed intent conflicts.

@@ -7,7 +7,7 @@ Java public controllers and DTOs are authoritative. Springdoc exports OpenAPI 3.
 - Byte counts are decimal JSON strings so clients remain exact above JavaScript's safe integer range.
 - Names are NFC-normalized, 1–255 UTF-8 bytes, preserve spaces, reject path separators, dot names, controls, and malformed UTF-16.
 - Sibling names are case-sensitive and ordered by normalized UTF-8 bytes, then canonical UUID text.
-- Cursors are opaque, signed, versioned, and scoped to the workspace/folder/sort. They are invalid after cursor-key rotation.
+- Cursors are opaque, signed, versioned, and scoped to the workspace/folder/sort/order/folders-first choice. They are invalid after cursor-key rotation.
 - Responses use explicit nullable fields; errors use `code`, `message`, `status`, `requestId`, and optional `fieldErrors`.
 - Unknown request properties, duplicate JSON keys, scalar coercion, and non-canonical UUIDs are rejected.
 - Name conflicts across entries and pending reservations return `409 NAME_CONFLICT`; changed idempotent intent returns `409 IDEMPOTENCY_CONFLICT`.
@@ -29,6 +29,21 @@ Java public controllers and DTOs are authoritative. Springdoc exports OpenAPI 3.
   workspace, and operation. Nonterminal intent does not expire merely because terminal
   result retention elapsed. Content, complete, and cancel replay against the upload
   session rather than creating new logical work.
+
+## Folder listings
+
+`GET /api/v1/entries/{id}/children` pages direct children. Optional `sort` is `name`
+(default), `updatedAt`, or `size`, and `order` is `asc` (default) or `desc`. Every
+order compares its key, then normalized-name UTF-8 bytes, then canonical UUID text,
+and `desc` reverses all three. `updatedAt` is the entry's `updatedAt`. `size` is the
+current version's size, and a folder sorts below any file. `foldersFirst=true` keeps
+folders ahead of files in either direction. A cursor works only with the sort, order,
+and `foldersFirst` value that issued it; any other returns `400 INVALID_CURSOR`. Unknown
+`sort` or `order` values return `400 VALIDATION_FAILED` with an `UNSUPPORTED_VALUE`
+field error. Query booleans accept only `true` and `false`. An empty value, such as
+`sort=`, means the default, as it does for `limit`. Paging is keyset-based
+without a snapshot, so changes behind the cursor may be missed and changes ahead may
+repeat an entry.
 
 ## Local transfer API
 

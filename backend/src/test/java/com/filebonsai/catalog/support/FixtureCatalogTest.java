@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.filebonsai.catalog.application.CatalogCursor;
 import com.filebonsai.catalog.application.CatalogFailure;
 import com.filebonsai.catalog.application.CatalogScope;
+import com.filebonsai.catalog.application.ListOrder;
 import com.filebonsai.catalog.domain.ByteCount;
 import com.filebonsai.catalog.domain.Entry;
 import com.filebonsai.catalog.domain.EntryId;
@@ -20,11 +21,16 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -138,28 +144,106 @@ class FixtureCatalogTest {
         create(parent.id(), "\uE000");
         create(parent.id(), "😀");
 
-        var first = catalog.list(scope, parent.id(), 1, null);
+        var first = catalog.list(scope, parent.id(), ListOrder.DEFAULT, 1, null);
         assertThat(first.entries()).extracting(entry -> entry.name().value()).containsExactly("A");
 
         create(parent.id(), "0");
         create(parent.id(), "B");
-        var rest = catalog.list(scope, parent.id(), 100, first.nextCursor());
+        var rest = catalog.list(scope, parent.id(), ListOrder.DEFAULT, 100, first.nextCursor());
         assertThat(rest.entries()).extracting(entry -> entry.name().value()).containsExactly("B", "C", "\uE000", "😀");
         assertThat(rest.nextCursor()).isNull();
-        assertThat(catalog.list(scope, EMPTY, 5, null).entries()).isEmpty();
+        assertThat(catalog.list(scope, EMPTY, ListOrder.DEFAULT, 5, null).entries())
+                .isEmpty();
+    }
+
+    @Test
+    void ordersEveryPageBySortKeyNameAndIdWithFoldersFirstInEitherDirection() {
+        // Root holds the Italy.pdf file and the Recipes folder; the new folders are newer than both.
+        create(ROOT, "Alpha");
+        create(ROOT, "Zulu");
+        assertThat(names(new ListOrder(ListOrder.Key.NAME, false, false)))
+                .containsExactly("Alpha", "Italy.pdf", "Recipes", "Zulu");
+        assertThat(names(new ListOrder(ListOrder.Key.NAME, true, false)))
+                .containsExactly("Zulu", "Recipes", "Italy.pdf", "Alpha");
+        assertThat(names(new ListOrder(ListOrder.Key.NAME, true, true)))
+                .containsExactly("Zulu", "Recipes", "Alpha", "Italy.pdf");
+        assertThat(names(new ListOrder(ListOrder.Key.UPDATED_AT, false, false)))
+                .containsExactly("Italy.pdf", "Recipes", "Alpha", "Zulu");
+        assertThat(names(new ListOrder(ListOrder.Key.UPDATED_AT, true, true)))
+                .containsExactly("Zulu", "Alpha", "Recipes", "Italy.pdf");
+        assertThat(names(new ListOrder(ListOrder.Key.SIZE, false, false)))
+                .containsExactly("Alpha", "Recipes", "Zulu", "Italy.pdf");
+        assertThat(names(new ListOrder(ListOrder.Key.SIZE, true, false)))
+                .containsExactly("Italy.pdf", "Zulu", "Recipes", "Alpha");
+        assertThat(names(new ListOrder(ListOrder.Key.SIZE, true, true)))
+                .containsExactly("Zulu", "Recipes", "Alpha", "Italy.pdf");
+    }
+
+    @Test
+    void acceptsDefaultOrderCursorsIssuedBeforeOtherOrdersExisted() throws Exception {
+        // The pre-sort payload: no kind or key, signed with the fixture's all-zero key.
+        byte[] payload = new ObjectMapper()
+                .writeValueAsBytes(Map.of(
+                        "version",
+                        1,
+                        "workspaceId",
+                        WORKSPACE,
+                        "folderId",
+                        ROOT.value(),
+                        "sort",
+                        "name-id-utf8-asc-v1",
+                        "name",
+                        "Italy.pdf",
+                        "id",
+                        FILE.value()));
+        var mac = Mac.getInstance("HmacSHA256");
+        mac.init(new SecretKeySpec(new byte[32], "HmacSHA256"));
+        var encoder = Base64.getUrlEncoder().withoutPadding();
+        String legacy = encoder.encodeToString(payload) + "." + encoder.encodeToString(mac.doFinal(payload));
+
+        assertThat(catalog.list(scope, ROOT, ListOrder.DEFAULT, 10, legacy).entries())
+                .extracting(entry -> entry.name().value())
+                .containsExactly("Recipes");
+        assertReason(
+                () -> catalog.list(scope, ROOT, new ListOrder(ListOrder.Key.NAME, false, true), 10, legacy),
+                CatalogFailure.Reason.INVALID_CURSOR);
+    }
+
+    /** Pages one entry at a time so every step crosses a cursor. */
+    private List<String> names(ListOrder order) {
+        var names = new ArrayList<String>();
+        String cursor = null;
+        do {
+            var page = catalog.list(scope, ROOT, order, 1, cursor);
+            page.entries().forEach(entry -> names.add(entry.name().value()));
+            cursor = page.nextCursor();
+        } while (cursor != null);
+        return names;
     }
 
     @Test
     void preventsCursorTamperingAndScopeReuse() {
-        String cursor = catalog.list(scope, ROOT, 1, null).nextCursor();
+        String cursor = catalog.list(scope, ROOT, ListOrder.DEFAULT, 1, null).nextCursor();
         assertThat(cursor).isNotNull();
-        assertReason(() -> catalog.list(scope, EMPTY, 1, cursor), CatalogFailure.Reason.INVALID_CURSOR);
+        assertReason(
+                () -> catalog.list(scope, EMPTY, ListOrder.DEFAULT, 1, cursor), CatalogFailure.Reason.INVALID_CURSOR);
         String tampered = (cursor.charAt(0) == 'A' ? "B" : "A") + cursor.substring(1);
-        assertReason(() -> catalog.list(scope, ROOT, 1, tampered), CatalogFailure.Reason.INVALID_CURSOR);
+        assertReason(
+                () -> catalog.list(scope, ROOT, ListOrder.DEFAULT, 1, tampered), CatalogFailure.Reason.INVALID_CURSOR);
         var codec = new CatalogCursor(new ObjectMapper(), new byte[32]);
-        assertReason(() -> codec.decode(cursor, UUID.randomUUID(), ROOT), CatalogFailure.Reason.INVALID_CURSOR);
-        assertReason(() -> catalog.list(scope, ROOT, 1, ""), CatalogFailure.Reason.INVALID_CURSOR);
-        assertReason(() -> catalog.list(scope, ROOT, 101, null), CatalogFailure.Reason.VALIDATION_FAILED);
+        assertReason(
+                () -> codec.decode(cursor, UUID.randomUUID(), ROOT, ListOrder.DEFAULT),
+                CatalogFailure.Reason.INVALID_CURSOR);
+        for (var other : List.of(
+                new ListOrder(ListOrder.Key.NAME, true, false),
+                new ListOrder(ListOrder.Key.NAME, false, true),
+                new ListOrder(ListOrder.Key.UPDATED_AT, false, false),
+                new ListOrder(ListOrder.Key.SIZE, false, false))) {
+            assertReason(() -> catalog.list(scope, ROOT, other, 1, cursor), CatalogFailure.Reason.INVALID_CURSOR);
+        }
+        assertReason(() -> catalog.list(scope, ROOT, ListOrder.DEFAULT, 1, ""), CatalogFailure.Reason.INVALID_CURSOR);
+        assertReason(
+                () -> catalog.list(scope, ROOT, ListOrder.DEFAULT, 101, null), CatalogFailure.Reason.VALIDATION_FAILED);
     }
 
     @Test
@@ -167,11 +251,13 @@ class FixtureCatalogTest {
         var stranger = new CatalogScope(UUID.randomUUID(), WORKSPACE);
         var otherWorkspace = new CatalogScope(PRINCIPAL, UUID.randomUUID());
         assertReason(() -> catalog.get(stranger, ROOT), CatalogFailure.Reason.ENTRY_NOT_FOUND);
-        assertReason(() -> catalog.list(otherWorkspace, ROOT, 10, null), CatalogFailure.Reason.ENTRY_NOT_FOUND);
+        assertReason(
+                () -> catalog.list(otherWorkspace, ROOT, ListOrder.DEFAULT, 10, null),
+                CatalogFailure.Reason.ENTRY_NOT_FOUND);
         assertReason(
                 () -> catalog.create(stranger, ROOT, new FileName("x"), UUID.randomUUID()),
                 CatalogFailure.Reason.ENTRY_NOT_FOUND);
-        assertReason(() -> catalog.list(scope, FILE, 10, null), CatalogFailure.Reason.NOT_A_FOLDER);
+        assertReason(() -> catalog.list(scope, FILE, ListOrder.DEFAULT, 10, null), CatalogFailure.Reason.NOT_A_FOLDER);
         assertReason(() -> create(FILE, "x"), CatalogFailure.Reason.NOT_A_FOLDER);
         assertReason(() -> catalog.get(scope, new EntryId(UUID.randomUUID())), CatalogFailure.Reason.ENTRY_NOT_FOUND);
     }

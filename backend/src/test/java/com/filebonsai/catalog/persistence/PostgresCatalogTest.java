@@ -10,10 +10,12 @@ import static com.filebonsai.catalog.persistence.jooq.Tables.WORKSPACE_MEMBERS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.filebonsai.catalog.application.CatalogCursor;
 import com.filebonsai.catalog.application.CatalogFailure;
 import com.filebonsai.catalog.application.CatalogScope;
+import com.filebonsai.catalog.application.ListOrder;
 import com.filebonsai.catalog.domain.Entry;
 import com.filebonsai.catalog.domain.EntryId;
 import com.filebonsai.catalog.domain.FileName;
@@ -28,6 +30,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -36,6 +39,7 @@ import org.flywaydb.core.Flyway;
 import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.SQLDialect;
+import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterAll;
@@ -113,13 +117,186 @@ class PostgresCatalogTest {
         create(parent.id(), "\uE000");
         create(parent.id(), "😀");
 
-        var first = catalog.list(scope, parent.id(), 1, null);
+        var first = catalog.list(scope, parent.id(), ListOrder.DEFAULT, 1, null);
         assertThat(first.entries()).extracting(entry -> entry.name().value()).containsExactly("A");
         create(parent.id(), "0");
         create(parent.id(), "B");
-        assertThat(catalog.list(scope, parent.id(), 100, first.nextCursor()).entries())
+        assertThat(catalog.list(scope, parent.id(), ListOrder.DEFAULT, 100, first.nextCursor())
+                        .entries())
                 .extracting(entry -> entry.name().value())
                 .containsExactly("B", "C", "\uE000", "😀");
+    }
+
+    @Test
+    void sortKeyCopiesFollowTheirEntryAndVersionInEveryWriteOrder() {
+        Entry.Folder parent = create(ROOT, "Copies");
+        OffsetDateTime now = OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC);
+        // Publication: the reservation becomes an entry claim after the version exists.
+        UUID published = UUID.randomUUID();
+        UUID reservation = UUID.randomUUID();
+        database.execute(
+                "insert into catalog_names (id, workspace_id, parent_id, name, claim_kind, entry_id, expires_at,"
+                        + " created_at) values (?, ?, ?, 'published.bin', 'reservation', null, ?::timestamptz, ?::timestamptz)",
+                reservation,
+                WORKSPACE,
+                parent.id().value(),
+                now.plusHours(1),
+                now);
+        assertThat(sortKeyDrift()).isZero();
+        database.transaction(configuration -> {
+            DSLContext transaction = DSL.using(configuration);
+            UUID version = UUID.randomUUID();
+            insertEntry(transaction, published, "file", version, now);
+            insertVersion(transaction, published, version, 42, now);
+            transaction.execute(
+                    "update catalog_names set claim_kind = 'entry', entry_id = ?, expires_at = null where id = ?",
+                    published,
+                    reservation);
+        });
+        // A name may also claim the entry before the current version row exists; the FK is deferred.
+        UUID early = UUID.randomUUID();
+        database.transaction(configuration -> {
+            DSLContext transaction = DSL.using(configuration);
+            UUID version = UUID.randomUUID();
+            insertEntry(transaction, early, "file", version, now);
+            insertEntryName(transaction, early, parent.id().value(), "early.bin", now);
+            insertVersion(transaction, early, version, 7, now);
+        });
+        assertThat(sortKeyDrift()).isZero();
+        assertThat(database.fetchValue("select entry_size_bytes from catalog_names where entry_id = ?", published))
+                .isEqualTo(42L);
+
+        database.update(CATALOG_ENTRIES)
+                .set(CATALOG_ENTRIES.UPDATED_AT, now.plusDays(1))
+                .where(CATALOG_ENTRIES.ID.eq(early))
+                .execute();
+        database.execute(
+                "update catalog_names set entry_kind = 'folder', entry_updated_at = ?::timestamptz, entry_size_bytes = 1"
+                        + " where entry_id = ?",
+                now.minusDays(1).toString(),
+                published);
+        assertThat(sortKeyDrift()).isZero();
+        assertThat(database.fetchOne("select entry_updated_at from catalog_names where entry_id = ?", early)
+                        .get(0, OffsetDateTime.class))
+                .isAtSameInstantAs(now.plusDays(1));
+    }
+
+    @Test
+    void everyOrderPagesInKeyNameAndIdSequenceWhileEntriesAreInserted() {
+        var random = new Random(20260927);
+        int folderNumber = 0;
+        for (ListOrder order : allOrders()) {
+            Entry.Folder parent = create(ROOT, "Order " + folderNumber++);
+            Set<UUID> expected = new HashSet<>();
+            for (int index = 0; index < 14; index++) {
+                expected.add(insertChild(parent.id(), random).id().value());
+            }
+            var comparator = order.comparator();
+            var seen = new ArrayList<ListOrder.Position>();
+            String cursor = null;
+            do {
+                var page = catalog.list(scope, parent.id(), order, 3, cursor);
+                page.entries().forEach(entry -> seen.add(order.position(entry)));
+                cursor = page.nextCursor();
+                if (cursor != null) {
+                    // Inserts ahead of the cursor must appear once; inserts behind it are skipped.
+                    for (int index = 0; index < 2; index++) {
+                        Entry child = insertChild(parent.id(), random);
+                        if (comparator.compare(order.position(child), seen.getLast()) > 0) {
+                            expected.add(child.id().value());
+                        }
+                    }
+                }
+            } while (cursor != null);
+            for (int index = 1; index < seen.size(); index++) {
+                assertThat(comparator.compare(seen.get(index - 1), seen.get(index)))
+                        .as("%s at %d", order, index)
+                        .isNegative();
+            }
+            assertThat(seen).extracting(ListOrder.Position::id).doesNotHaveDuplicates();
+            assertThat(seen)
+                    .as("%s", order)
+                    .extracting(ListOrder.Position::id)
+                    .containsExactlyInAnyOrderElementsOf(expected);
+        }
+    }
+
+    @Test
+    void everyOrderReadsOnlyItsPageFromItsIndexAtTenThousandChildren() throws Exception {
+        Entry.Folder parent = create(ROOT, "Large");
+        OffsetDateTime now = OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC);
+        database.transaction(configuration -> {
+            DSLContext transaction = DSL.using(configuration);
+            transaction.execute(
+                    "insert into physical_objects (id, workspace_id, storage_key, size_bytes, created_at)"
+                            + " select md5('o' || i)::uuid, ?, 'objects/bulk/' || i, (i * 7919) % 100000, ?::timestamptz"
+                            + " from generate_series(1, 10000) i where i % 10 <> 0",
+                    WORKSPACE, now);
+            transaction.execute(
+                    "insert into catalog_entries (id, workspace_id, kind, created_at, updated_at, current_version_id)"
+                            + " select md5('e' || i)::uuid, ?, case when i % 10 = 0 then 'folder' else 'file' end,"
+                            + " ?::timestamptz, ?::timestamptz + ((i * 104729) % 10007) * interval '1 millisecond',"
+                            + " case when i % 10 = 0 then null else md5('v' || i)::uuid end"
+                            + " from generate_series(1, 10000) i",
+                    WORKSPACE, now, now);
+            transaction.execute(
+                    "insert into file_versions (id, workspace_id, entry_id, object_id, ordinal, size_bytes, created_at)"
+                            + " select md5('v' || i)::uuid, ?, md5('e' || i)::uuid, md5('o' || i)::uuid, 1,"
+                            + " (i * 7919) % 100000, ?::timestamptz from generate_series(1, 10000) i where i % 10 <> 0",
+                    WORKSPACE, now);
+            transaction.execute(
+                    "insert into catalog_names (id, workspace_id, parent_id, name, claim_kind, entry_id, expires_at,"
+                            + " created_at) select md5('n' || i)::uuid, ?, ?, 'child ' || ((i * 31) % 97) || ' ' || i,"
+                            + " 'entry', md5('e' || i)::uuid, null, ?::timestamptz from generate_series(1, 10000) i",
+                    WORKSPACE, parent.id().value(), now);
+        });
+        database.execute("analyze catalog_names, catalog_entries, file_versions");
+        assertThat(sortKeyDrift()).isZero();
+
+        var mapper = new ObjectMapper();
+        for (ListOrder order : allOrders()) {
+            List<Boolean> groups =
+                    order.foldersFirst() ? List.of(true, false) : java.util.Collections.singletonList(null);
+            for (Boolean folders : groups) {
+                var first = catalog.pageQuery(database, scope, parent.id(), order, folders, null, 51)
+                        .fetch();
+                assertThat(first).hasSize(51);
+                ListOrder.Position middle = PostgresCatalog.position(order, first.get(49));
+                for (ListOrder.Position after : java.util.Arrays.asList(null, middle)) {
+                    String sql = catalog.pageQuery(database, scope, parent.id(), order, folders, after, 51)
+                            .getSQL(ParamType.INLINED);
+                    JsonNode plan = mapper.readTree(database.fetchOne("explain (analyze, format json) " + sql)
+                                    .get(0, String.class))
+                            .get(0)
+                            .get("Plan");
+                    var nodes = new ArrayList<JsonNode>();
+                    collect(plan, nodes);
+                    String description = order + " folders=" + folders + " after=" + (after != null) + " plan "
+                            + nodes.stream()
+                                    .map(node -> node.path("Node Type").asText() + ":"
+                                            + node.path("Index Name").asText())
+                                    .toList();
+                    assertThat(nodes)
+                            .as(description)
+                            .extracting(node -> node.path("Node Type").asText())
+                            .doesNotContain("Sort", "Incremental Sort", "Seq Scan");
+                    // The planner may filter a mostly-matching group from the ungrouped index. Either way the scan
+                    // reads, including the rows it filters out, stay within two pages of the 10,000 children.
+                    assertThat(nodes)
+                            .as(description)
+                            .filteredOn(node -> "catalog_names"
+                                    .equals(node.path("Relation Name").asText()))
+                            .singleElement()
+                            .satisfies(node -> {
+                                assertThat(node.path("Index Name").asText()).startsWith("ix_catalog_names_page");
+                                assertThat(node.path("Actual Rows").asLong()
+                                                + node.path("Rows Removed by Filter")
+                                                        .asLong())
+                                        .isLessThanOrEqualTo(102);
+                            });
+                }
+            }
+        }
     }
 
     @Test
@@ -494,6 +671,8 @@ class PostgresCatalogTest {
                                 + "and table_name <> 'flyway_schema_history' and table_name not like 'access_%' "
                                 + "and table_name <> 'upload_sessions' and table_name not like 'r2_%' "
                                 + "and not (table_name = 'physical_objects' and column_name = 'sha256') "
+                                + "and not (table_name = 'catalog_names' "
+                                + "and column_name in ('entry_kind', 'entry_updated_at', 'entry_size_bytes')) "
                                 + "order by table_name, column_name")
                 .forEach(row -> migrated.computeIfAbsent(
                                 row.get("table_name", String.class), ignored -> new ArrayList<>())
@@ -590,6 +769,99 @@ class PostgresCatalogTest {
                     .execute();
             insertEntryName(transaction, FILE.value(), ROOT.value(), "Italy.pdf", now);
         });
+    }
+
+    private static List<ListOrder> allOrders() {
+        var orders = new ArrayList<ListOrder>();
+        for (ListOrder.Key key : ListOrder.Key.values()) {
+            for (boolean descending : new boolean[] {false, true}) {
+                for (boolean foldersFirst : new boolean[] {false, true}) {
+                    orders.add(new ListOrder(key, descending, foldersFirst));
+                }
+            }
+        }
+        return orders;
+    }
+
+    private static void collect(JsonNode plan, List<JsonNode> nodes) {
+        nodes.add(plan);
+        plan.path("Plans").forEach(child -> collect(child, nodes));
+    }
+
+    /** Rows whose copied sort keys differ from their entry and current version; reservations carry none. */
+    private int sortKeyDrift() {
+        return database.fetchOne("select count(*) from catalog_names listed"
+                        + " left join catalog_entries entry"
+                        + " on entry.workspace_id = listed.workspace_id and entry.id = listed.entry_id"
+                        + " left join file_versions current_version"
+                        + " on current_version.entry_id = entry.id and current_version.id = entry.current_version_id"
+                        + " where (listed.claim_kind = 'entry' and (listed.entry_kind is distinct from entry.kind"
+                        + " or listed.entry_updated_at is distinct from entry.updated_at"
+                        + " or listed.entry_size_bytes is distinct from current_version.size_bytes))"
+                        + " or (listed.claim_kind <> 'entry' and (listed.entry_kind is not null"
+                        + " or listed.entry_updated_at is not null or listed.entry_size_bytes is not null))")
+                .get(0, Integer.class);
+    }
+
+    private static final String[] NAME_STARTS = {"a", "B", "Z", "é", "😀", "\uE000"};
+    private static final long[] SIZES = {0, 1, 1, 1024, 9007199254740993L};
+    private static final long[] MICROS_AFTER = {0, 1, 1, 1_000_000};
+    private int childNumber;
+
+    /** A child whose kind, size, time and name start repeat, so ties fall through to name and ID. */
+    private Entry insertChild(EntryId parent, Random random) {
+        UUID id = UUID.randomUUID();
+        String name = NAME_STARTS[random.nextInt(NAME_STARTS.length)] + " " + childNumber++;
+        OffsetDateTime at = OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC)
+                .plusNanos(MICROS_AFTER[random.nextInt(MICROS_AFTER.length)] * 1_000);
+        boolean folder = random.nextInt(3) == 0;
+        database.transaction(configuration -> {
+            DSLContext transaction = DSL.using(configuration);
+            UUID version = folder ? null : UUID.randomUUID();
+            insertEntry(transaction, id, folder ? "folder" : "file", version, at);
+            if (!folder) {
+                insertVersion(transaction, id, version, SIZES[random.nextInt(SIZES.length)], at);
+            }
+            insertEntryName(transaction, id, parent.value(), name, at);
+        });
+        return catalog.get(scope, new EntryId(id));
+    }
+
+    private void insertEntry(DSLContext context, UUID id, String kind, UUID version, OffsetDateTime at) {
+        context.insertInto(CATALOG_ENTRIES)
+                .columns(
+                        CATALOG_ENTRIES.ID,
+                        CATALOG_ENTRIES.WORKSPACE_ID,
+                        CATALOG_ENTRIES.KIND,
+                        CATALOG_ENTRIES.CREATED_AT,
+                        CATALOG_ENTRIES.UPDATED_AT,
+                        CATALOG_ENTRIES.CURRENT_VERSION_ID)
+                .values(id, WORKSPACE, kind, at, at, version)
+                .execute();
+    }
+
+    private void insertVersion(DSLContext context, UUID entry, UUID version, long size, OffsetDateTime at) {
+        UUID object = UUID.randomUUID();
+        context.insertInto(PHYSICAL_OBJECTS)
+                .columns(
+                        PHYSICAL_OBJECTS.ID,
+                        PHYSICAL_OBJECTS.WORKSPACE_ID,
+                        PHYSICAL_OBJECTS.STORAGE_KEY,
+                        PHYSICAL_OBJECTS.SIZE_BYTES,
+                        PHYSICAL_OBJECTS.CREATED_AT)
+                .values(object, WORKSPACE, "objects/" + object, size, at)
+                .execute();
+        context.insertInto(FILE_VERSIONS)
+                .columns(
+                        FILE_VERSIONS.ID,
+                        FILE_VERSIONS.WORKSPACE_ID,
+                        FILE_VERSIONS.ENTRY_ID,
+                        FILE_VERSIONS.OBJECT_ID,
+                        FILE_VERSIONS.ORDINAL,
+                        FILE_VERSIONS.SIZE_BYTES,
+                        FILE_VERSIONS.CREATED_AT)
+                .values(version, WORKSPACE, entry, object, 1L, size, at)
+                .execute();
     }
 
     private void insertEntryName(UUID entry, UUID parent, String name, OffsetDateTime now) {
