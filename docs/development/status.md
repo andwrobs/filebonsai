@@ -117,8 +117,9 @@ observed results; use Git history for prior plans and completed migrations.
 
 ## Latest observed checks
 
-- Web on the SPA starter (decision 0011): `cd web && npm test` passed Biome over 152
-  files, route typegen and `tsc`, 82 Vitest tests in 23 files, and the SPA build, on
+- Web on the SPA starter (decision 0011), reached `main` at `cb62fd1` without a pull
+  request: on `main` at `642aea6`, `cd web && npm ci && npm test` passed Biome over 153
+  files, route typegen and `tsc`, 85 Vitest tests in 23 files, and the SPA build, on
   local Node 23.7/npm 10.9 (the starter targets Node 24; `node:24-alpine` builds the
   image). The ported transfer, CSRF, preview-policy, inspector-state, and formatting
   tests keep their assertions; route tests now cover Library, Library home, sign-in,
@@ -139,7 +140,19 @@ observed results; use Git history for prior plans and completed migrations.
   `/storage` and a folder, and the 900px rail worked; signed out, `/storage` went to
   sign-in. Focus moves to the new page's heading on navigation. Storage lost that
   focus when its data replaced the loading heading; one heading now spans both states,
-  with a regression test.
+  with a regression test. A fresh read-only review found no blockers; its fixes are in
+  `876ec09`. Folder creation reads a new CSRF token each time again, as before the
+  port, so a sign-in in another tab can't leave it failing with the held token. A
+  failed Storage read now wins over values cached from an earlier visit. Preview
+  loading moved into `usePreview`, sign-in keeps no password in the mutation cache once
+  an attempt settles, and the upload limit stays cached for the tab. New tests cover a
+  late create reply after moving to another folder (it refreshes its own folder and
+  leaves the new form open), cache clearing and password retention on sign-in, a fresh
+  token per creation, and a failed Storage revisit; each was confirmed to fail without
+  its fix. Against the disposable backend, `main`'s client then showed the image and
+  text previews, revoked the image's Blob URL when the selection changed, signed in
+  after a wrong password, and showed "Storage details are unavailable" on a revisit
+  after the backend stopped.
 - Server-side sort (LIB-03): `cd backend && ./mvnw test` passed 93 tests with one
   skipped, the opt-in real-R2 proof. PostgreSQL 17 Testcontainers tests covered three
   things. The copied sort keys matched their source after publication order, a name
