@@ -130,12 +130,14 @@ observed results; use Git history for prior plans and completed migrations.
   backend at 1440×900 and 390×844 (touch) were 0 for sign-in resting, focused on
   load, pending (login request held) and a wrong password at 1440, the Authentik
   variant (resting, and hover at 1440), the sign-in error page (session check failed
-  with an injected 500), and not-found resting and hovered, with `app.css` and
-  `tokens.css` switched off as well as on. Pending at 390 differed by 11 anti-aliased
-  input-corner pixels. Focus lands on the password on load and after a signed-out
+  with an injected 500), and not-found resting and hovered; every sign-in and
+  not-found state, the empty submit included, rendered identically with `app.css` and
+  `tokens.css` switched off, since `app.css`'s bare input rule now skips `lib/ui`
+  inputs (the new-folder input was unchanged). Pending at 390 differed by 11
+  anti-aliased input-corner pixels. Focus lands on the password on load and after a signed-out
   redirect, the field clears after a failure, and tab order is unchanged. Intended
   differences: an empty submit shows an inline "Enter the password." error linked to
-  the field, with an invalid border and label, instead of the browser's bubble (focus
+  the field, with a red border and label, instead of the browser's bubble (focus
   still moves to the field); after a tap at 390 the Sign in button no longer keeps its
   hover fill. The not-found page needed no change.
 - Design system tokens and shell (LIB-19): `cd web && npm test` passed (Biome,

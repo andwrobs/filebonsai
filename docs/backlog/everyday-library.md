@@ -334,4 +334,22 @@ Context: `web/src/lib/ui` already has `context-menu`, `dropdown-menu` and `comma
 - Whether to adopt a drag-and-drop library or use native HTML drag events with keyboard alternatives
 
 **Invariants:** INV-01, INV-14  
+
+## LIB-23 Letter-spacing defaults that yield to tracking utilities
+
+`P3` · `S` · Build · Web
+
+Depends on: none
+
+Context: LIB-19 set per-size letter-spacing defaults in `web/src/styles/index.css` as unlayered `[class*="text-"]` and `.text-*` rules. Unlayered rules beat every layered Tailwind utility, so any `tracking-*` class on an element with a `text-*` class is ignored: not-found's `tracking-tight`, the `tracking-*` in `lib/ui` command, dropdown-menu, context-menu and empty, and sign-in's error-page label, which needs `tracking-[0.08em]!`.
+
+**Why.** A design-system utility that silently does nothing invites wrong fixes, such as `!important`, and hides what a screen will look like.
+
+**Outcome.** The size defaults move into `@theme` as `--text-*--letter-spacing` values, or into `@layer base`, so `tracking-*` utilities win again, and the `!` on sign-in's error-page label goes.
+
+**Acceptance**
+
+- A `tracking-*` class beside a `text-*` class takes effect, shown by a unit or rendered check
+- Pixel diffs at 1440×900 and 390×844 for the shell, sign-in, not-found and the Library list name each changed screen; the not-found heading tightening is expected, other changes are reviewed rather than accepted automatically
+
 **Checks:** `web`; `rendered`

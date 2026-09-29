@@ -34,7 +34,8 @@
 .icon-button:hover:not(:disabled) { background: var(--color-surface-hover); color: var(--color-text); }
 .icon-button svg { height: var(--icon-size); width: var(--icon-size); }
 .button:disabled, .icon-button:disabled { cursor: not-allowed; opacity: 0.6; }
-input:not([type="file"]) {
+/* lib/ui inputs (data-slot="input") style themselves; this unlayered rule would beat their invalid border. */
+input:not([type="file"], [data-slot="input"]) {
   background: var(--color-surface); border: 1px solid var(--color-control-border); border-radius: var(--radius-md);
   font-size: 1rem; min-height: var(--control-height); padding: 0 var(--space-3); width: 100%;
 }

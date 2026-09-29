@@ -110,6 +110,11 @@ it("focuses the password, asks for it, and shows one pending attempt", async () 
 		"Password not recognized. Try again.",
 	);
 	expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled();
+	// The second Enter started nothing: one CSRF read and one login in all.
+	expect(logins()).toHaveLength(1);
+	expect(
+		requests.filter((request) => request.url.endsWith("/auth/csrf")),
+	).toHaveLength(1);
 });
 
 it("names throttling", async () => {
