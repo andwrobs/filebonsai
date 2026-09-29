@@ -59,7 +59,7 @@ Depends on: [ORG-01](#org-01-decision-how-entries-change), [LIB-05](everyday-lib
 
 **Why.** Reorganizing a library means moving things, sometimes many at once.
 
-**Outcome.** Move one or more entries into a folder, rejecting cycles and reporting name conflicts per item. A 'Move to…' dialog with a folder picker (the non-drag path), plus dragging onto the tree.
+**Outcome.** Move one or more entries into a folder, rejecting cycles and reporting name conflicts per item. A 'Move to…' dialog with a folder picker. Dragging entries to move them belongs to LIB-22.
 
 **Acceptance**
 
