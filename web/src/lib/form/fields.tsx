@@ -33,6 +33,18 @@ type FieldProps = {
 	isRequired?: boolean;
 };
 
+// Filebonsai's field look: small semibold labels and errors, and controls on the
+// card surface at the control height with the app's focus outline in place of
+// lib/ui's focus ring. Typed text is 1rem so iOS doesn't zoom.
+const labelClassName = "text-sm font-semibold leading-normal";
+const errorClassName = "font-semibold";
+const controlClassName =
+	"rounded-md bg-card px-3 focus-visible:border-input focus-visible:ring-0 focus-visible:outline-solid";
+const typedTextClassName = "text-[1rem] md:text-[1rem]";
+const inputClassName = `${controlClassName} ${typedTextClassName} h-auto min-h-control py-0`;
+const textareaClassName = `${controlClassName} ${typedTextClassName}`;
+const selectTriggerClassName = `${controlClassName} min-h-control data-[size=default]:h-auto`;
+
 // Errors show once the field is blurred or the form has been submitted.
 function useVisibleErrors() {
 	const field = useFieldContext<unknown>();
@@ -49,10 +61,13 @@ function TextField({
 	isRequired,
 	type = "text",
 	autoComplete,
+	autoFocus,
 	placeholder,
 }: FieldProps & {
-	type?: "text" | "email" | "tel" | "url";
+	type?: "text" | "email" | "tel" | "url" | "password";
 	autoComplete?: string;
+	/** For a page or dialog whose only job is this form. */
+	autoFocus?: boolean;
 	placeholder?: string;
 }) {
 	const field = useFieldContext<string>();
@@ -62,6 +77,7 @@ function TextField({
 			name={field.name}
 			type={type}
 			autoComplete={autoComplete}
+			autoFocus={autoFocus}
 			value={field.state.value}
 			onChange={field.handleChange}
 			onBlur={field.handleBlur}
@@ -69,10 +85,10 @@ function TextField({
 			isInvalid={errors.length > 0}
 			validationBehavior="aria"
 		>
-			<FieldLabel>{label}</FieldLabel>
-			<Input placeholder={placeholder} />
+			<FieldLabel className={labelClassName}>{label}</FieldLabel>
+			<Input className={inputClassName} placeholder={placeholder} />
 			{description && <FieldDescription>{description}</FieldDescription>}
-			<FieldError errors={errors} />
+			<FieldError className={errorClassName} errors={errors} />
 		</TextFieldRoot>
 	);
 }
@@ -95,10 +111,10 @@ function TextareaField({
 			isInvalid={errors.length > 0}
 			validationBehavior="aria"
 		>
-			<FieldLabel>{label}</FieldLabel>
-			<Textarea placeholder={placeholder} />
+			<FieldLabel className={labelClassName}>{label}</FieldLabel>
+			<Textarea className={textareaClassName} placeholder={placeholder} />
 			{description && <FieldDescription>{description}</FieldDescription>}
-			<FieldError errors={errors} />
+			<FieldError className={errorClassName} errors={errors} />
 		</TextFieldRoot>
 	);
 }
@@ -127,12 +143,12 @@ function SelectField({
 			validationBehavior="aria"
 			className={fieldVariants({ orientation: "vertical" })}
 		>
-			<FieldLabel>{label}</FieldLabel>
-			<SelectTrigger>
+			<FieldLabel className={labelClassName}>{label}</FieldLabel>
+			<SelectTrigger className={selectTriggerClassName}>
 				<SelectValue />
 			</SelectTrigger>
 			{description && <FieldDescription>{description}</FieldDescription>}
-			<FieldError errors={errors} />
+			<FieldError className={errorClassName} errors={errors} />
 			<SelectContent>
 				{options.map((option) => (
 					<SelectItem key={option.value} id={option.value}>
@@ -159,9 +175,27 @@ function CheckboxField({ label, description, isRequired }: FieldProps) {
 		>
 			<CheckboxButton>{label}</CheckboxButton>
 			{description && <FieldDescription>{description}</FieldDescription>}
-			<FieldError errors={errors} />
+			<FieldError className={errorClassName} errors={errors} />
 		</CheckboxFieldRoot>
 	);
+}
+
+// As the browser does for its own validation, an invalid submit moves focus to the
+// first control whose field has errors.
+function focusFirstInvalid(
+	element: HTMLFormElement,
+	form: ReturnType<typeof useFormContext>,
+) {
+	if (form.state.isValid) return;
+	const meta: Record<string, { errors: unknown[] } | undefined> =
+		form.state.fieldMeta;
+	for (const control of element.elements) {
+		const name = control.getAttribute("name");
+		if (name && meta[name]?.errors.length) {
+			(control as HTMLElement).focus();
+			return;
+		}
+	}
 }
 
 function Form(props: Omit<ComponentProps<"form">, "onSubmit" | "noValidate">) {
@@ -174,9 +208,13 @@ function Form(props: Omit<ComponentProps<"form">, "onSubmit" | "noValidate">) {
 				event.stopPropagation();
 				// TanStack Form starts another submission if asked while one runs.
 				if (form.state.isSubmitting) return;
+				const element = event.currentTarget;
 				// A rejected submit belongs to the submission owner (a Query mutation
 				// or fetcher), which renders the failure.
-				form.handleSubmit().catch(() => undefined);
+				form.handleSubmit().then(
+					() => focusFirstInvalid(element, form),
+					() => undefined,
+				);
 			}}
 			{...props}
 		/>

@@ -155,9 +155,9 @@ Make the daily loop of finding, looking and acting feel like the design directio
 | [LIB-16](everyday-library.md#lib-16-storage-summary-and-explanatory-panels) Storage summary and explanatory panels | Build | P2 | M | none |
 | [LIB-17](everyday-library.md#lib-17-panel-interaction-and-feedback-polish) Panel interaction and feedback polish | Build | P2 | M | [LIB-15](everyday-library.md#lib-15-inspector-hierarchy-and-description-polish), [LIB-16](everyday-library.md#lib-16-storage-summary-and-explanatory-panels) |
 | [LIB-18](everyday-library.md#lib-18-panel-visual-regression-coverage) Panel visual regression coverage | Proof | P2 | M | [ENG-02](foundations.md#eng-02-playwright-end-to-end-harness), [LIB-15](everyday-library.md#lib-15-inspector-hierarchy-and-description-polish), [LIB-16](everyday-library.md#lib-16-storage-summary-and-explanatory-panels) |
-| [LIB-20](everyday-library.md#lib-20-sign-in-and-not-found-on-the-design-system) Sign-in and not-found on the design system | Build | P2 | S | none |
 | [LIB-21](everyday-library.md#lib-21-library-list-on-the-design-system) Library list on the design system | Build | P2 | M | none |
 | [LIB-22](everyday-library.md#lib-22-entry-actions-context-menu-and-in-app-drag) Entry actions: context menu and in-app drag | Build | P2 | L | [LIB-02](everyday-library.md#lib-02-folder-tree-sidebar), [LIB-05](everyday-library.md#lib-05-selection-model), [M1-11](finish-m1.md#m1-11-drag-and-drop-upload), [ORG-02](organize.md#org-02-rename), [ORG-03](organize.md#org-03-move) |
+| [LIB-23](everyday-library.md#lib-23-letter-spacing-defaults-that-yield-to-tracking-utilities) Letter-spacing defaults that yield to tracking utilities | Build | P3 | S | none |
 
 ### [Organize](organize.md)
 

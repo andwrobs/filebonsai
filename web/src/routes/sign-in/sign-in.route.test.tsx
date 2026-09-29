@@ -57,6 +57,8 @@ it("names a wrong password, clears the field, then signs in", async () => {
 		"Password not recognized. Try again.",
 	);
 	expect(password).toHaveValue("");
+	// Clearing the field doesn't count as leaving it empty.
+	expect(password).not.toHaveAttribute("aria-invalid");
 
 	accept = true;
 	await user.type(password, "correct horse battery staple");
@@ -69,6 +71,50 @@ it("names a wrong password, clears the field, then signs in", async () => {
 		"test-csrf",
 		"test-csrf",
 	]);
+});
+
+it("focuses the password, asks for it, and shows one pending attempt", async () => {
+	let respond: (response: Response) => void = () => undefined;
+	const { requests } = stubApi((path) => {
+		if (path === "/api/v1/auth/me") return apiError(401, "AUTH_REQUIRED");
+		if (path === "/api/v1/auth/csrf") return csrf();
+		return new Promise((resolve) => {
+			respond = resolve;
+		});
+	});
+	const { user } = renderSignIn();
+	const password = await screen.findByLabelText("Password");
+	await vi.waitFor(() => expect(password).toHaveFocus());
+	expect(password).toHaveAttribute("type", "password");
+	expect(password).toHaveAttribute("autocomplete", "current-password");
+	expect(password).toBeRequired();
+
+	await user.click(screen.getByRole("button", { name: "Sign in" }));
+	expect(password).toHaveFocus();
+	expect(password).toHaveAttribute("aria-invalid", "true");
+	expect(password).toHaveAccessibleDescription("Enter the password.");
+	const logins = () =>
+		requests.filter((request) => request.url.endsWith("/login"));
+	expect(logins()).toHaveLength(0);
+
+	await user.type(password, "pending guess");
+	expect(password).not.toHaveAttribute("aria-invalid");
+	await user.keyboard("{Enter}");
+	const pending = await screen.findByRole("button", { name: "Signing in…" });
+	expect(pending).toBeDisabled();
+	await user.keyboard("{Enter}");
+	expect(logins()).toHaveLength(1);
+
+	respond(apiError(401, "INVALID_CREDENTIALS"));
+	expect(await screen.findByRole("alert")).toHaveTextContent(
+		"Password not recognized. Try again.",
+	);
+	expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled();
+	// The second Enter started nothing: one CSRF read and one login in all.
+	expect(logins()).toHaveLength(1);
+	expect(
+		requests.filter((request) => request.url.endsWith("/auth/csrf")),
+	).toHaveLength(1);
 });
 
 it("names throttling", async () => {

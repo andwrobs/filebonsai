@@ -10,9 +10,10 @@ The panel work below covers both entry details and the descriptive cards/help on
 Storage and Settings. It builds on the existing inspector rather than creating a
 second details surface.
 
-LIB-20 and LIB-21 finish the second half of decision
-[0011](../decisions/0011-web-client-follows-the-spa-template.md): the tokens and shell
-are on `web/src/lib/ui` and `web/src/styles/index.css`, and the remaining screens move
+LIB-21 finishes the second half of decision
+[0011](../decisions/0011-web-client-follows-the-spa-template.md): the tokens, shell,
+sign-in and not-found page are on `web/src/lib/ui` and `web/src/styles/index.css`
+(sign-in's password field through the `web/src/lib/form` bindings), and the remaining screens move
 off the `web/src/styles/tokens.css` aliases and `app.css` one at a time. LIB-15 and
 LIB-16 move the inspector and Storage as part of their redesigns, so neither is
 restyled twice. Web items that change the entry list depend on LIB-21.
@@ -285,24 +286,6 @@ Depends on: [ENG-02](foundations.md#eng-02-playwright-end-to-end-harness), [LIB-
 
 **Checks:** `web`; `rendered`; visual snapshots and accessibility evidence
 
-## LIB-20 Sign-in and not-found on the design system
-
-`P2` · `S` · Build · Web
-
-Depends on: none
-
-**Why.** The smallest screens prove the per-screen pattern before the Library moves.
-
-**Outcome.** The sign-in form (password and optional Authentik) and the not-found page use `lib/ui` components (`field`, `input`, `button`, `alert`) and TanStack Form bindings from `web/src/lib/form`, and their rules leave `app.css`.
-
-**Acceptance**
-
-- Labels, validation messages, the cleared password after a failure, the pending state and focus on load behave as before
-- Side-by-side comparison with `main` at 1440×900 and 390×844 shows no unintended difference
-- Whichever of LIB-15, LIB-16, LIB-20 and LIB-21 lands last deletes `tokens.css`, `app.css` and their Biome exclusions, and updates decision 0011's consequences and `web/AGENTS.md`
-
-**Checks:** `web`; `rendered`
-
 ## LIB-21 Library list on the design system
 
 `P2` · `M` · Build · Web
@@ -320,7 +303,7 @@ Context: The Library route is `web/src/routes/library`. Its entry list drops col
 - Column dropping and row stacking follow the list's own width, beside the inspector too; long names without spaces wrap
 - Row links, per-row Download and Details buttons, keyboard focus order, empty, loading, error and not-found states, and the create-folder validation behave as before
 - Side-by-side comparison with `main` at 1440×900, 1024×768 and 390×844 with a 45-item folder shows no unintended difference
-- Whichever of LIB-15, LIB-16, LIB-20 and LIB-21 lands last deletes `tokens.css`, `app.css` and their Biome exclusions, and updates decision 0011's consequences and `web/AGENTS.md`
+- Whichever of LIB-15, LIB-16 and LIB-21 lands last deletes `tokens.css`, `app.css` and their Biome exclusions, and updates decision 0011's consequences and `web/AGENTS.md`
 
 **Checks:** `web`; `rendered`
 
@@ -351,4 +334,22 @@ Context: `web/src/lib/ui` already has `context-menu`, `dropdown-menu` and `comma
 - Whether to adopt a drag-and-drop library or use native HTML drag events with keyboard alternatives
 
 **Invariants:** INV-01, INV-14  
+
+## LIB-23 Letter-spacing defaults that yield to tracking utilities
+
+`P3` · `S` · Build · Web
+
+Depends on: none
+
+Context: LIB-19 set per-size letter-spacing defaults in `web/src/styles/index.css` as unlayered `[class*="text-"]` and `.text-*` rules. Unlayered rules beat every layered Tailwind utility, so any `tracking-*` class on an element with a `text-*` class is ignored: not-found's `tracking-tight`, the `tracking-*` in `lib/ui` command, dropdown-menu, context-menu and empty, and sign-in's error-page label, which needs `tracking-[0.08em]!`.
+
+**Why.** A design-system utility that silently does nothing invites wrong fixes, such as `!important`, and hides what a screen will look like.
+
+**Outcome.** The size defaults move into `@theme` as `--text-*--letter-spacing` values, or into `@layer base`, so `tracking-*` utilities win again, and the `!` on sign-in's error-page label goes.
+
+**Acceptance**
+
+- A `tracking-*` class beside a `text-*` class takes effect, shown by a unit or rendered check
+- Pixel diffs at 1440×900 and 390×844 for the shell, sign-in, not-found and the Library list name each changed screen; the not-found heading tightening is expected, other changes are reviewed rather than accepted automatically
+
 **Checks:** `web`; `rendered`

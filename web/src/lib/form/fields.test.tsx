@@ -70,3 +70,12 @@ it("submits once while a submission is pending", async () => {
 	expect(onSubmit).toHaveBeenCalledTimes(1);
 	finish();
 });
+
+it("moves focus to the first invalid field on an invalid submit", async () => {
+	const user = userEvent.setup();
+	const onSubmit = vi.fn();
+	render(<SampleForm onSubmit={onSubmit} />);
+	await user.click(screen.getByRole("button", { name: "Send" }));
+	expect(screen.getByRole("textbox", { name: "Name" })).toHaveFocus();
+	expect(onSubmit).not.toHaveBeenCalled();
+});
