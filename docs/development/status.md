@@ -340,8 +340,10 @@ items and required tests.
    real Cloudflare R2 bucket, repair any provider mismatch, and record bounded
    streaming/recovery evidence before claiming R2 support or adding another provider.
 2. Web: move the screens onto `web/src/lib/ui` and the tokens in
-   `web/src/styles/index.css`, the second half of decision 0011, then the library's
-   table/grid views (LIB-04) and the inspector's integrity fields (LIB-14).
+   `web/src/styles/index.css`, the second half of decision 0011: tokens and shell
+   (LIB-19), then sign-in (LIB-20) and the Library list (LIB-21), then the library's
+   table/grid views (LIB-04) and the inspector's integrity fields (LIB-14). The
+   inspector and Storage move within LIB-15 and LIB-16.
 3. Photo metadata: accepted decisions
    [0009](../decisions/0009-durable-jobs-in-postgresql.md) (durable jobs) and
    [0010](../decisions/0010-media-processing-isolation.md) (processing isolation and

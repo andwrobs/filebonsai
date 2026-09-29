@@ -142,20 +142,23 @@ Make the daily loop of finding, looking and acting feel like the design directio
 
 | Item | Kind | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- |
-| [LIB-02](everyday-library.md#lib-02-folder-tree-sidebar) Folder tree sidebar | Build | P2 | M | none |
-| [LIB-04](everyday-library.md#lib-04-table-and-grid-views) Table and grid views | Build | P2 | M | none |
-| [LIB-05](everyday-library.md#lib-05-selection-model) Selection model | Build | P2 | M | none |
-| [LIB-07](everyday-library.md#lib-07-name-search) Name search | Build | P2 | M | [M1-02](finish-m1.md#m1-02-breadcrumbs-from-real-ancestors) |
-| [LIB-08](everyday-library.md#lib-08-command-palette-and-keyboard-shortcuts) Command palette and keyboard shortcuts | Build | P2 | M | none |
-| [LIB-09](everyday-library.md#lib-09-starred-and-recent) Starred and Recent | Build | P2 | M | none |
-| [LIB-11](everyday-library.md#lib-11-large-folder-performance) Large-folder performance | Proof | P3 | M | [ENG-03](foundations.md#eng-03-synthetic-demo-library-generator) |
+| [LIB-02](everyday-library.md#lib-02-folder-tree-sidebar) Folder tree sidebar | Build | P2 | M | [LIB-19](everyday-library.md#lib-19-design-system-tokens-and-shell) |
+| [LIB-04](everyday-library.md#lib-04-table-and-grid-views) Table and grid views | Build | P2 | M | [LIB-21](everyday-library.md#lib-21-library-list-on-the-design-system) |
+| [LIB-05](everyday-library.md#lib-05-selection-model) Selection model | Build | P2 | M | [LIB-21](everyday-library.md#lib-21-library-list-on-the-design-system) |
+| [LIB-07](everyday-library.md#lib-07-name-search) Name search | Build | P2 | M | [M1-02](finish-m1.md#m1-02-breadcrumbs-from-real-ancestors), [LIB-19](everyday-library.md#lib-19-design-system-tokens-and-shell) |
+| [LIB-08](everyday-library.md#lib-08-command-palette-and-keyboard-shortcuts) Command palette and keyboard shortcuts | Build | P2 | M | [LIB-19](everyday-library.md#lib-19-design-system-tokens-and-shell) |
+| [LIB-09](everyday-library.md#lib-09-starred-and-recent) Starred and Recent | Build | P2 | M | [LIB-19](everyday-library.md#lib-19-design-system-tokens-and-shell) |
+| [LIB-11](everyday-library.md#lib-11-large-folder-performance) Large-folder performance | Proof | P3 | M | [ENG-03](foundations.md#eng-03-synthetic-demo-library-generator), [LIB-21](everyday-library.md#lib-21-library-list-on-the-design-system) |
 | [LIB-12](everyday-library.md#lib-12-accessibility-audit-and-fixes) Accessibility audit and fixes | Build | P2 | M | [ENG-02](foundations.md#eng-02-playwright-end-to-end-harness) |
-| [LIB-13](everyday-library.md#lib-13-warm-dark-theme) Warm dark theme | Build | P3 | S | none |
+| [LIB-13](everyday-library.md#lib-13-warm-dark-theme) Warm dark theme | Build | P3 | S | [LIB-19](everyday-library.md#lib-19-design-system-tokens-and-shell) |
 | [LIB-14](everyday-library.md#lib-14-inspector-integrity-fields) Inspector integrity fields | Build | P2 | S | none |
-| [LIB-15](everyday-library.md#lib-15-inspector-hierarchy-and-description-polish) Inspector hierarchy and description polish | Build | P2 | M | none |
-| [LIB-16](everyday-library.md#lib-16-storage-summary-and-explanatory-panels) Storage summary and explanatory panels | Build | P2 | M | none |
+| [LIB-15](everyday-library.md#lib-15-inspector-hierarchy-and-description-polish) Inspector hierarchy and description polish | Build | P2 | M | [LIB-19](everyday-library.md#lib-19-design-system-tokens-and-shell) |
+| [LIB-16](everyday-library.md#lib-16-storage-summary-and-explanatory-panels) Storage summary and explanatory panels | Build | P2 | M | [LIB-19](everyday-library.md#lib-19-design-system-tokens-and-shell) |
 | [LIB-17](everyday-library.md#lib-17-panel-interaction-and-feedback-polish) Panel interaction and feedback polish | Build | P2 | M | [LIB-15](everyday-library.md#lib-15-inspector-hierarchy-and-description-polish), [LIB-16](everyday-library.md#lib-16-storage-summary-and-explanatory-panels) |
 | [LIB-18](everyday-library.md#lib-18-panel-visual-regression-coverage) Panel visual regression coverage | Proof | P2 | M | [ENG-02](foundations.md#eng-02-playwright-end-to-end-harness), [LIB-15](everyday-library.md#lib-15-inspector-hierarchy-and-description-polish), [LIB-16](everyday-library.md#lib-16-storage-summary-and-explanatory-panels) |
+| [LIB-19](everyday-library.md#lib-19-design-system-tokens-and-shell) Design system tokens and shell | Build | P1 | M | none |
+| [LIB-20](everyday-library.md#lib-20-sign-in-and-not-found-on-the-design-system) Sign-in and not-found on the design system | Build | P2 | S | [LIB-19](everyday-library.md#lib-19-design-system-tokens-and-shell) |
+| [LIB-21](everyday-library.md#lib-21-library-list-on-the-design-system) Library list on the design system | Build | P2 | M | [LIB-19](everyday-library.md#lib-19-design-system-tokens-and-shell) |
 
 ### [Organize](organize.md)
 
