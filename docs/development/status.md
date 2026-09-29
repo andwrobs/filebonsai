@@ -84,11 +84,13 @@ observed results; use Git history for prior plans and completed migrations.
 - File responses carry `versionCount`, the current version's verified `sha256` (null
   only for an object recorded without one), and `storageConnectionName`, the configured
   connection's display name. The inspector lists them, with a copy button for the digest.
-- The web shell follows the design reference with one token file for the current
-  screens (`web/src/styles/tokens.css`) for color, type, spacing, radius, density, and
-  region sizes; the starter's `lib/ui` tokens in `web/src/styles/index.css` are loaded
-  but no screen uses `lib/ui` yet. `tokens.test.ts` fails on raw colors outside the
-  token files and on AA contrast regressions.
+- The web shell follows the design reference. `web/src/styles/index.css` is the one
+  source of color, type, spacing, radius, density, and region-size tokens, mapped onto
+  the shadcn roles `lib/ui` uses, with the system font stack (no Geist). The shell,
+  transfer tray, and floating upload use `lib/ui` and Tailwind utilities; the other
+  screens still read `app.css` through role aliases in `tokens.css`, which holds no
+  colors. `tokens.test.ts` fails on raw colors outside `index.css` and checks AA text
+  and 3:1 control and focus contrast on its roles.
   Icons are Lucide (ISC); the identity uses supplied SVG artwork for the shell,
   sign-in, favicon, and touch icon. A
   pathless layout route keeps navigation and the transfer tray mounted across Library
@@ -121,6 +123,17 @@ observed results; use Git history for prior plans and completed migrations.
 
 ## Latest observed checks
 
+- Design system tokens and shell (LIB-19): `cd web && npm test` passed (Biome,
+  typegen and `tsc`, 86 Vitest tests, build); `tokens.test.ts` now reads the light
+  roles in `index.css`. Playwright pixel diffs against `main` on the shared
+  PostgreSQL-profile backend at 1440×900, 1024×768, 768×1024 and 390×844 (touch at the
+  last two) were 0 for the Library root, the 45-item folder, Storage, the inspector,
+  the transfer tray and sign-in, and for skip-link focus, tab order, keyboard focus and
+  a busy upload. Nav hover matched at 1440 and 1024; a collapsed tray differed by one
+  anti-aliased focus-ring pixel at 768. Intended differences: the not-found
+  page (already on `lib/ui`) takes Filebonsai's colors and button density and its
+  `space-y` gaps now apply; hover fills in the shell and tray no longer stick on
+  touch-only pointers. Coarse pointers keep 44px nav targets.
 - Playwright end-to-end harness (ENG-02): `cd web && npm run e2e` (pinned
   `@playwright/test` 1.59.1, cached Chromium 1217) passed twice in a row, each in about
   12 s with the backend jar already built. Each run started `postgres:17.6-alpine` on a
@@ -410,11 +423,10 @@ items and required tests.
 1. Cloud transfer: run the decision 0007 compatibility proof against a disposable
    real Cloudflare R2 bucket, repair any provider mismatch, and record bounded
    streaming/recovery evidence before claiming R2 support or adding another provider.
-2. Web: move the screens onto `web/src/lib/ui` and the tokens in
-   `web/src/styles/index.css`, the second half of decision 0011: tokens and shell
-   (LIB-19), then sign-in (LIB-20) and the Library list (LIB-21), then the library's
-   table/grid views (LIB-04). The inspector and Storage move within LIB-15 and
-   LIB-16.
+2. Web: with the tokens and shell moved, move the remaining screens onto
+   `web/src/lib/ui`, the second half of decision 0011: sign-in (LIB-20) and the
+   Library list (LIB-21), then the library's table/grid views (LIB-04). The
+   inspector and Storage move within LIB-15 and LIB-16.
 3. Photo metadata: accepted decisions
    [0009](../decisions/0009-durable-jobs-in-postgresql.md) (durable jobs) and
    [0010](../decisions/0010-media-processing-isolation.md) (processing isolation and

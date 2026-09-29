@@ -50,10 +50,12 @@ must serve `index.html` for app routes and serve assets and API paths normally.
 
 ## Design tokens and layout
 
-Screens still use `src/styles/tokens.css` and `src/styles/app.css`; they move onto
-`src/lib/ui` and the tokens in `src/styles/index.css` screen by screen.
-`src/styles/tokens.test.ts` fails on a raw color outside the token files and on AA
-contrast regressions. The shell (`src/routes/app-shell`) shows a sidebar from 1100px,
+`src/styles/index.css` holds every token: Filebonsai's palette on the shadcn roles,
+plus its type scale, density and region sizes. The shell and transfer tray use
+`src/lib/ui`; the other screens still use `src/styles/app.css` through the role
+aliases in `src/styles/tokens.css`, and move onto `src/lib/ui` screen by screen.
+`src/styles/tokens.test.ts` fails on a raw color outside `index.css` and on AA text
+or 3:1 control and focus contrast regressions. The shell (`src/routes/app-shell`) shows a sidebar from 1100px,
 an icon rail from 768px, and top and bottom bars below that. The folder list uses
 container queries, so it adapts to its own width. Icons come from `lucide-react` (ISC
 license).
