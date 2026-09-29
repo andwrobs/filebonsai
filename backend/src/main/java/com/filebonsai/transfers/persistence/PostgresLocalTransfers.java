@@ -42,6 +42,8 @@ import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class PostgresLocalTransfers
         implements BeginUpload,
@@ -51,6 +53,7 @@ public final class PostgresLocalTransfers
                 CompleteUpload,
                 CancelUpload,
                 DownloadOriginal {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PostgresLocalTransfers.class);
     private static final String SESSION_COLUMNS = "u.id, u.workspace_id, u.principal_id, u.parent_id, u.name, "
             + "u.entry_id, u.version_id, u.object_id, u.expected_size_bytes, u.expected_sha256, "
             + "u.computed_sha256, u.state, u.fence, u.active_attempt_id, u.recovery_claim_id, "
@@ -204,6 +207,10 @@ public final class PostgresLocalTransfers
             resetAfterRejectedAttempt(lease);
             throw new UploadFailure(SIZE_MISMATCH, "Content length does not match the upload intent");
         } catch (IOException exception) {
+            if (!(exception instanceof LocalObjectStorage.StorageBusyException
+                    || exception instanceof LocalObjectStorage.TransferTimedOutException)) {
+                logStorageFailure("Upload content was not accepted", uploadId, exception);
+            }
             resetAfterStorageFailure(lease);
             throw new UploadFailure(STORAGE_UNAVAILABLE, "Local storage could not accept content", exception);
         }
@@ -263,6 +270,7 @@ public final class PostgresLocalTransfers
             deleteQuietly(temporaryKey);
             return get(scope, uploadId);
         } catch (IOException | DataAccessException exception) {
+            logStorageFailure("Upload completion deferred to reconciliation", uploadId, exception);
             markReconciling(scope, uploadId, completion.claimId());
             throw new UploadFailure(STORAGE_UNAVAILABLE, "Upload completion requires reconciliation", exception);
         }
@@ -467,6 +475,7 @@ public final class PostgresLocalTransfers
                 failUnrecoverable(uploadId, claimId);
             }
         } catch (RuntimeException | IOException exception) {
+            logStorageFailure("Upload reconciliation deferred; it will retry", uploadId, exception);
             markReconciling(uploadId, claimId);
         }
     }
@@ -726,6 +735,18 @@ public final class PostgresLocalTransfers
                 transaction.execute("delete from catalog_names where id = ? and claim_kind = 'reservation'", uploadId);
             }
         });
+    }
+
+    /**
+     * Records why a transfer stalled without the exception message, which for filesystem failures names the
+     * internal storage path.
+     */
+    private static void logStorageFailure(String event, UUID uploadId, Exception exception) {
+        LOGGER.warn(
+                "{}: uploadId={} cause={}",
+                event,
+                uploadId,
+                exception.getClass().getName());
     }
 
     private void deleteQuietly(String key) {

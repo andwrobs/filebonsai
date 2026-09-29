@@ -120,6 +120,20 @@ observed results; use Git history for prior plans and completed migrations.
 
 ## Latest observed checks
 
+- Local storage directory race: two first uploads into a new workspace could both find
+  its `objects/` (or `attempts/`) directory missing, and the second
+  `Files.createDirectory` threw `FileAlreadyExistsException`, which `complete` turned
+  into 503 "Upload completion requires reconciliation". `ensureDirectory` now accepts a
+  concurrently created component only after the same no-follow check rejects symbolic
+  links and non-directories. Transfer storage failures log a WARN with the upload ID and
+  exception class, never the message, which names the storage path. On the old code,
+  the new `LocalObjectStorageTest` concurrency test (16 writers then 16 promoters behind
+  a start gate, 25 rounds) failed with `FileAlreadyExistsException`; with the fix it
+  passed three times. `./mvnw test -Dtest='LocalObjectStorageTest,PostgresLocalTransfersTest,PostgresR2TransfersTest'`
+  passed 34 tests against PostgreSQL 17 Testcontainers, including 8 concurrent first
+  completions that all became available and downloaded intact, and rejection of a
+  regular file, a dangling symbolic link and a symbolic link at a workspace directory.
+
 - Inspector integrity fields (LIB-14): targeted `cd backend && ./mvnw test` runs
   passed `CatalogHttpTest` (8), `FixtureCatalogTest` (20), `PostgresCatalogTest` (18,
   PostgreSQL 17 Testcontainers) and `AccessHttpPostgresTest` (12). The new PostgreSQL
