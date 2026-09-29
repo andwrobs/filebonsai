@@ -61,7 +61,7 @@ still written when the work starts, as decision 0006 requires.
 
 | Check | Command or evidence |
 | --- | --- |
-| `web` | `cd web && npm test && npm run typecheck:run && npm run build` |
+| `web` | `cd web && npm test` (Biome, route typegen and `tsc`, Vitest, build) |
 | `rendered` | Rendered inspection at 1440×900 and 390×844 against the real PostgreSQL-profile backend |
 | `contract` | Targeted contract tests while implementing; one final `cd backend && ./scripts/verify.sh` (backend tests, export, generation, client compilation/decoding) and OpenAPI diff review, following `filebonsai-api-contract`; fresh read-only contract review |
 | `postgres` | Targeted PostgreSQL Testcontainers tests; one integrated backend run (reuse `contract` verification when both apply); fresh read-only persistence review |
@@ -83,7 +83,7 @@ Drive/Dropbox/Photos workflows to their owning epics and records research source
 | Storage and retention choices in the app | TIER-10, CFG-11, POL-01 | Existing TIER setup; POL-02/03/04/05 |
 | Fast mobile and desktop organization | TDY-01 and ORG-01 | TDY-02 through 06, TDY-10/11 and PHO-05 |
 | Beautiful adaptable layouts | Existing CFG-01 and LIB polish | CFG-02/03/04/10/12/13 |
-| Clear hook/store orchestration | ARC-01 | Small independent ARC-02 through 05 refactors |
+| Clear hook/store orchestration | Decision 0011; ARC-02 through 05, independently | ARC-06 enforcement |
 | Credible everyday alternative | Existing M1/LIB/ORG/ACC work | PAR gaps, migration, recovery and OSS readiness |
 
 This is a navigation aid, not a second committed sequence. Dependencies on the actual
@@ -388,11 +388,10 @@ Keep React views readable as the product grows. Components render state and disp
 
 | Item | Kind | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- |
-| [ARC-01](encapsulation.md#arc-01-decision-web-state-and-effect-ownership) Decision: web state and effect ownership | Decision | P1 | S | none |
-| [ARC-02](encapsulation.md#arc-02-extract-library-commands-and-mutation-lifecycle) Extract Library commands and mutation lifecycle | Build | P2 | M | [ARC-01](encapsulation.md#arc-01-decision-web-state-and-effect-ownership) |
-| [ARC-03](encapsulation.md#arc-03-extract-preview-and-download-resource-owners) Extract preview and download resource owners | Build | P2 | M | [ARC-01](encapsulation.md#arc-01-decision-web-state-and-effect-ownership) |
-| [ARC-04](encapsulation.md#arc-04-separate-inspector-state-from-panel-presentation) Separate inspector state from panel presentation | Build | P2 | M | [ARC-01](encapsulation.md#arc-01-decision-web-state-and-effect-ownership) |
-| [ARC-05](encapsulation.md#arc-05-shared-storage-summary-and-transfer-completion-events) Shared storage summary and transfer completion events | Build | P2 | M | [ARC-01](encapsulation.md#arc-01-decision-web-state-and-effect-ownership) |
+| [ARC-02](encapsulation.md#arc-02-extract-library-commands-and-mutation-lifecycle) Extract Library commands and mutation lifecycle | Build | P2 | M | none |
+| [ARC-03](encapsulation.md#arc-03-extract-preview-and-download-resource-owners) Extract preview and download resource owners | Build | P2 | M | none |
+| [ARC-04](encapsulation.md#arc-04-separate-inspector-state-from-panel-presentation) Separate inspector state from panel presentation | Build | P2 | M | none |
+| [ARC-05](encapsulation.md#arc-05-shared-storage-summary-and-transfer-completion-events) Shared storage summary and transfer completion events | Build | P2 | M | none |
 | [ARC-06](encapsulation.md#arc-06-enforce-capability-boundaries-and-feature-patterns) Enforce capability boundaries and feature patterns | Build | P2 | S | [ARC-02](encapsulation.md#arc-02-extract-library-commands-and-mutation-lifecycle), [ARC-03](encapsulation.md#arc-03-extract-preview-and-download-resource-owners), [ARC-04](encapsulation.md#arc-04-separate-inspector-state-from-panel-presentation), [ARC-05](encapsulation.md#arc-05-shared-storage-summary-and-transfer-completion-events) |
 | [ARC-07](encapsulation.md#arc-07-backend-orchestration-boundary-audit) Backend orchestration boundary audit | Spike | P2 | M | none |
 

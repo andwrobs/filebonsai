@@ -38,6 +38,8 @@ Git history when provenance is needed.
   collaboration, and learning goals that affect how work is presented.
 - [`development/local-setup.md`](development/local-setup.md): local prerequisites and
   commands.
+- [`../web/AGENTS.md`](../web/AGENTS.md) and [`../web/docs/`](../web/docs/): web client
+  conventions from the React Router SPA starter (decision 0011).
 - [`development/java.md`](development/java.md): Java structure and style.
 - [`development/testing.md`](development/testing.md): checks and evidence expectations.
 - [`development/pull-request-review.md`](development/pull-request-review.md): Codex

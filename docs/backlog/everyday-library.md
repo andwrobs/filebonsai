@@ -16,7 +16,7 @@ second details surface.
 
 Depends on: none
 
-Context: LIB-01/LIB-10 added the responsive shell: tokens in `web/app/styles/tokens.css` (raw colors anywhere else fail `tokens.test.ts`), Lucide icons, and the `routes/app-shell.tsx` layout route with sidebar, icon rail and bottom navigation. The tree goes in the sidebar's existing navigation; the rail and phone layouts need the sheet this item describes.
+Context: LIB-01/LIB-10 added the responsive shell: tokens in `web/src/styles/tokens.css` (raw colors outside the token files fail `tokens.test.ts`), Lucide icons, and the `web/src/routes/app-shell` layout route with sidebar, icon rail and bottom navigation. The tree goes in the sidebar's existing navigation; the rail and phone layouts need the sheet this item describes.
 
 **Why.** The design reference relies on a visible folder tree for orientation.
 
@@ -36,7 +36,7 @@ Context: LIB-01/LIB-10 added the responsive shell: tokens in `web/app/styles/tok
 
 Depends on: none
 
-Context: LIB-03 added `sort` (`name`, `updatedAt`, `size`), `order` (`asc`, `desc`) and `foldersFirst` to `listChildren`. Each cursor is bound to all three, so changing a header must restart paging from the first page. Kind is not a server sort: the column's label comes from the filename extension, so a Kind header can map to `foldersFirst` or stay unsortable. LIB-01/LIB-10 added the responsive shell: tokens in `web/app/styles/tokens.css` (raw colors anywhere else fail `tokens.test.ts`), Lucide icons, and the `routes/app-shell.tsx` layout route with sidebar, icon rail and bottom navigation. The folder list already has icon, name, kind, size and modified columns that drop and stack through container queries; this item adds sortable headers and the grid.
+Context: LIB-03 added `sort` (`name`, `updatedAt`, `size`), `order` (`asc`, `desc`) and `foldersFirst` to `listChildren`. Each cursor is bound to all three, so changing a header must restart paging from the first page. Kind is not a server sort: the column's label comes from the filename extension, so a Kind header can map to `foldersFirst` or stay unsortable. LIB-01/LIB-10 added the responsive shell: tokens in `web/src/styles/tokens.css` (raw colors outside the token files fail `tokens.test.ts`), Lucide icons, and the `web/src/routes/app-shell` layout route with sidebar, icon rail and bottom navigation. The folder list already has icon, name, kind, size and modified columns that drop and stack through container queries; this item adds sortable headers and the grid.
 
 **Why.** The design reference shows a dense table and a calm grid over the same data.
 
@@ -97,7 +97,7 @@ Depends on: [M1-02](finish-m1.md#m1-02-breadcrumbs-from-real-ancestors)
 
 Depends on: none
 
-Context: LIB-01/LIB-10 added the responsive shell: tokens in `web/app/styles/tokens.css` (raw colors anywhere else fail `tokens.test.ts`), Lucide icons, and the `routes/app-shell.tsx` layout route with sidebar, icon rail and bottom navigation.
+Context: LIB-01/LIB-10 added the responsive shell: tokens in `web/src/styles/tokens.css` (raw colors outside the token files fail `tokens.test.ts`), Lucide icons, and the `web/src/routes/app-shell` layout route with sidebar, icon rail and bottom navigation.
 
 **Why.** A keyboard-first file library should have Cmd+K.
 
@@ -169,7 +169,7 @@ Depends on: [ENG-02](foundations.md#eng-02-playwright-end-to-end-harness)
 
 Depends on: none
 
-Context: LIB-01/LIB-10 added the responsive shell: tokens in `web/app/styles/tokens.css` (raw colors anywhere else fail `tokens.test.ts`), Lucide icons, and the `routes/app-shell.tsx` layout route with sidebar, icon rail and bottom navigation. Add the dark palette as a second set of the same tokens; `tokens.test.ts` checks contrast for the light set and should cover both.
+Context: LIB-01/LIB-10 added the responsive shell: tokens in `web/src/styles/tokens.css` (raw colors outside the token files fail `tokens.test.ts`), Lucide icons, and the `web/src/routes/app-shell` layout route with sidebar, icon rail and bottom navigation. Add the dark palette as a second set of the same tokens; `tokens.test.ts` checks contrast for the light set and should cover both.
 
 **Why.** Many people browse at night. The token work makes a dark theme cheap.
 
@@ -193,7 +193,7 @@ Context: LIB-01/LIB-10 added the responsive shell: tokens in `web/app/styles/tok
 
 Depends on: none
 
-Context: LIB-06 added the inspector in `web/app/features/catalog/inspector.tsx`. It is a docked column from 1100px, a modal drawer below that and a bottom sheet on phones. Each row's Details button or the toolbar toggle opens it, and it shows the current folder when nothing is chosen. The Details list has size, dates and the ID; there are no tabs yet. Add the new fields to that list.
+Context: LIB-06 added the inspector, now in `web/src/routes/library/components/Inspector/`. It is a docked column from 1100px, a modal drawer below that and a bottom sheet on phones. Each row's Details button or the toolbar toggle opens it, and it shows the current folder when nothing is chosen. The Details list has size, dates and the ID; there are no tabs yet. Add the new fields to that list.
 
 **Why.** File responses don't expose the SHA-256, version count or storage connection, which are what make a file's details trustworthy.
 
@@ -213,7 +213,7 @@ Context: LIB-06 added the inspector in `web/app/features/catalog/inspector.tsx`.
 
 Depends on: none
 
-Context: LIB-06 added the inspector in `web/app/features/catalog/inspector.tsx`. It is a docked column from 1100px, a modal drawer below that and a bottom sheet on phones. Each row's Details button or the toolbar toggle opens it, and it shows the current folder when nothing is chosen. The Details list has size, dates and the ID; there are no tabs yet.
+Context: LIB-06 added the inspector, now in `web/src/routes/library/components/Inspector/`. It is a docked column from 1100px, a modal drawer below that and a bottom sheet on phones. Each row's Details button or the toolbar toggle opens it, and it shows the current folder when nothing is chosen. The Details list has size, dates and the ID; there are no tabs yet.
 
 Integrity fields (SHA-256, version count, storage connection) come from [LIB-14](#lib-14-inspector-integrity-fields); place them in the technical disclosure once it ships.
 

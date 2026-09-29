@@ -1,14 +1,21 @@
 {
-  "compilerOptions": {
-    "lib": ["DOM", "ES2024"],
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "noEmit": true,
-    "noUncheckedIndexedAccess": true,
-    "strict": true,
-    "target": "ES2024",
-    "types": ["node"],
-    "verbatimModuleSyntax": true
-  },
-  "include": ["src/**/*.ts"]
+	"include": ["**/*", "**/.client/**/*", ".react-router/types/**/*"],
+	"compilerOptions": {
+		"lib": ["DOM", "DOM.Iterable", "ES2022"],
+		"types": ["node", "vite/client"],
+		"target": "ES2022",
+		"module": "ES2022",
+		"moduleResolution": "bundler",
+		"jsx": "react-jsx",
+		"rootDirs": [".", "./.react-router/types"],
+		"paths": {
+			"~/*": ["./src/*"]
+		},
+		"esModuleInterop": true,
+		"verbatimModuleSyntax": true,
+		"noEmit": true,
+		"resolveJsonModule": true,
+		"skipLibCheck": true,
+		"strict": true
+	}
 }

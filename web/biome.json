@@ -1,0 +1,198 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.4.16/schema.json",
+	"vcs": {
+		"enabled": false,
+		"clientKind": "git",
+		"useIgnoreFile": false
+	},
+	"files": {
+		"ignoreUnknown": false,
+		"includes": [
+			"**",
+			"!node_modules",
+			"!build",
+			"!coverage",
+			"!.react-router",
+			"!src/lib/api/generated",
+			"!src/styles/app.css",
+			"!src/styles/tokens.css"
+		]
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "tab"
+	},
+	"css": {
+		"parser": {
+			"tailwindDirectives": true
+		}
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"recommended": true,
+			"suspicious": {
+				"noUnknownAtRules": "off"
+			}
+		}
+	},
+	"overrides": [
+		{
+			"includes": [
+				"src/**",
+				"!src/services.ts",
+				"!**/*.service.ts",
+				"!**/*.test.ts",
+				"!**/*.test.tsx"
+			],
+			"linter": {
+				"rules": {
+					"style": {
+						"noRestrictedImports": {
+							"level": "error",
+							"options": {
+								"patterns": [
+									{
+										"group": ["**/*.service"],
+										"message": "Import the service instance from ~/services. Only the composition root (src/services.ts) and tests import service modules."
+									}
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		{
+			"includes": [
+				"src/lib/**",
+				"!**/*.service.ts",
+				"!**/*.test.ts",
+				"!**/*.test.tsx"
+			],
+			"linter": {
+				"rules": {
+					"style": {
+						"noRestrictedImports": {
+							"level": "error",
+							"options": {
+								"patterns": [
+									{
+										"group": ["~/routes/**"],
+										"message": "src/lib must not import route code. Promote shared code into a named src/lib capability."
+									},
+									{
+										"group": ["**/*.service"],
+										"message": "Import the service instance from ~/services. Only the composition root (src/services.ts) and tests import service modules."
+									}
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		{
+			"includes": ["src/lib/**/*.test.ts", "src/lib/**/*.test.tsx"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noRestrictedImports": {
+							"level": "error",
+							"options": {
+								"patterns": [
+									{
+										"group": ["~/routes/**"],
+										"message": "src/lib must not import route code. Promote shared code into a named src/lib capability."
+									}
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		{
+			"includes": ["src/**/*.service.ts"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noRestrictedImports": {
+							"level": "error",
+							"options": {
+								"paths": {
+									"react": "Services hold I/O and domain logic. They import no React, router, TanStack, Zustand, UI, routes, or service instances; dependencies arrive through Deps.",
+									"react-dom": "Services hold I/O and domain logic. They import no React, router, TanStack, Zustand, UI, routes, or service instances; dependencies arrive through Deps.",
+									"react-router": "Services hold I/O and domain logic. They import no React, router, TanStack, Zustand, UI, routes, or service instances; dependencies arrive through Deps.",
+									"zustand": "Services hold I/O and domain logic. They import no React, router, TanStack, Zustand, UI, routes, or service instances; dependencies arrive through Deps.",
+									"~/services": "Services hold I/O and domain logic. They import no React, router, TanStack, Zustand, UI, routes, or service instances; dependencies arrive through Deps."
+								},
+								"patterns": [
+									{
+										"group": [
+											"@tanstack/**",
+											"~/lib/ui/**",
+											"~/routes/**",
+											"**/*.query",
+											"**/*.route"
+										],
+										"message": "Services hold I/O and domain logic. They import no React, router, TanStack, Zustand, UI, routes, or service instances; dependencies arrive through Deps."
+									}
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		{
+			"includes": ["src/lib/ui/**"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noRestrictedImports": {
+							"level": "error",
+							"options": {
+								"paths": {
+									"react-router": "lib/ui is the design system and stays router-agnostic. Aria links navigate through the RouterProvider in lib/app.",
+									"zustand": "lib/ui is the design system; app state belongs to routes or a named src/lib capability."
+								},
+								"patterns": [
+									{
+										"group": ["@tanstack/**"],
+										"message": "lib/ui is the design system. Bind TanStack to UI in the owning route or a named capability such as lib/form."
+									},
+									{
+										"group": ["~/**", "!~/lib/ui/**"],
+										"message": "lib/ui imports only itself. App wiring lives in lib/app; other capabilities compose lib/ui, not the reverse."
+									}
+								]
+							}
+						}
+					},
+					"a11y": {
+						"useSemanticElements": "off",
+						"useFocusableInteractive": "off",
+						"useAriaPropsForRole": "off"
+					},
+					"suspicious": {
+						"noArrayIndexKey": "off"
+					}
+				}
+			}
+		}
+	],
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "double"
+		}
+	},
+	"assist": {
+		"enabled": true,
+		"actions": {
+			"source": {
+				"organizeImports": "on"
+			}
+		}
+	}
+}

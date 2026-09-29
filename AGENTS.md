@@ -26,11 +26,13 @@ add archive, handoff, legacy, or canonical-tracing copies to `docs/`.
 2. Read the product, architecture, API, and development documents relevant to the
    requested slice. Read [`docs/development/principles.md`](docs/development/principles.md)
    when explaining tradeoffs or shaping user-facing artifacts. For backend changes
-   also read [`backend/AGENTS.md`](backend/AGENTS.md).
+   also read [`backend/AGENTS.md`](backend/AGENTS.md); for web changes,
+   [`web/AGENTS.md`](web/AGENTS.md).
 3. For a bounded implementation or refactor, use the `filebonsai-task` skill. For a
    public API or generated-client change, also use `filebonsai-api-contract`.
    When creating, updating, or reviewing a pull request, use
-   `.agents/skills/filebonsai-pr/SKILL.md`.
+   `.agents/skills/filebonsai-pr/SKILL.md`. To add a web page, use `new-route`; for
+   other web route work, `react-router`.
 4. Before editing, state the outcome, owned paths, dependencies, observable acceptance
    criteria, and checks. Resolve decisions that materially change the solution first.
 
@@ -102,14 +104,14 @@ add archive, handoff, legacy, or canonical-tracing copies to `docs/`.
 ## Repository ownership
 
 - `backend/`: Java server; follow `backend/AGENTS.md` and backend architecture docs.
-- `web/`: React Router client when implemented; load current official guidance then.
+- `web/`: React Router SPA on the React Router SPA starter; follow `web/AGENTS.md`.
 - `ios/`: SwiftUI/TCA client when implemented; load current official guidance then.
 - `docs/`: active product, architecture, API, decision, and development truth.
 - `infra/`: runtime/deployment resources. Root `scripts/`: small developer/CI wrappers.
 - `.agents/skills/`: Filebonsai-specific task procedures. `.codex/agents/`: only
   specialized worker/reviewer profiles with a current ownership boundary.
-- `CLAUDE.md`, `backend/CLAUDE.md`, and `.claude/` are derived Claude Code adapters:
-  the `CLAUDE.md` files import `AGENTS.md`, `.claude/skills` links to
+- `CLAUDE.md`, `backend/CLAUDE.md`, `web/CLAUDE.md`, and `.claude/` are derived Claude
+  Code adapters: the `CLAUDE.md` files import `AGENTS.md`, `.claude/skills` links to
   `.agents/skills`, and `scripts/sync-claude-agents` generates `.claude/agents/` from
   `.codex/agents/`. Edit the sources, rerun the script, and never edit the adapters.
 - Do not create `packages/`, `tooling/`, `services/`, or `apps/` until a concrete

@@ -139,7 +139,7 @@ Depends on: [ORG-01](#org-01-decision-how-entries-change)
 
 Depends on: [ORG-06](#org-06-upload-a-new-version-of-a-file)
 
-Context: LIB-06 added the inspector in `web/app/features/catalog/inspector.tsx`. It is a docked column from 1100px, a modal drawer below that and a bottom sheet on phones. Each row's Details button or the toolbar toggle opens it, and it shows the current folder when nothing is chosen. The Details list has size, dates and the ID; there are no tabs yet. The Versions tab is its first tab, so this item adds the tab structure.
+Context: LIB-06 added the inspector, now in `web/src/routes/library/components/Inspector/`. It is a docked column from 1100px, a modal drawer below that and a bottom sheet on phones. Each row's Details button or the toolbar toggle opens it, and it shows the current folder when nothing is chosen. The Details list has size, dates and the ID; there are no tabs yet. The Versions tab is its first tab, so this item adds the tab structure.
 
 **Why.** Immutable versions are a core promise, and users should be able to see them.
 
@@ -159,7 +159,7 @@ Context: LIB-06 added the inspector in `web/app/features/catalog/inspector.tsx`.
 
 Depends on: none
 
-Context: LIB-06 added the inspector in `web/app/features/catalog/inspector.tsx`. It is a docked column from 1100px, a modal drawer below that and a bottom sheet on phones. Each row's Details button or the toolbar toggle opens it, and it shows the current folder when nothing is chosen. The Details list has size, dates and the ID; there are no tabs yet.
+Context: LIB-06 added the inspector, now in `web/src/routes/library/components/Inspector/`. It is a docked column from 1100px, a modal drawer below that and a bottom sheet on phones. Each row's Details button or the toolbar toggle opens it, and it shows the current folder when nothing is chosen. The Details list has size, dates and the ID; there are no tabs yet.
 
 **Why.** The design reference shows tag chips, and tags cut across folders.
 
@@ -252,7 +252,7 @@ Depends on: [ORG-02](#org-02-rename), [ORG-03](#org-03-move), [ORG-04](#org-04-t
 
 Depends on: none
 
-Context: LIB-06 added the inspector in `web/app/features/catalog/inspector.tsx`. It is a docked column from 1100px, a modal drawer below that and a bottom sheet on phones. Each row's Details button or the toolbar toggle opens it, and it shows the current folder when nothing is chosen. The Details list has size, dates and the ID; there are no tabs yet.
+Context: LIB-06 added the inspector, now in `web/src/routes/library/components/Inspector/`. It is a docked column from 1100px, a modal drawer below that and a bottom sheet on phones. Each row's Details button or the toolbar toggle opens it, and it shows the current folder when nothing is chosen. The Details list has size, dates and the ID; there are no tabs yet.
 
 **Why.** A short note on a file ('the signed copy') is small and useful.
 

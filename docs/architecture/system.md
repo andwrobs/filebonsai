@@ -16,7 +16,7 @@ React Router is the web application's routing architecture. SwiftUI/TCA is the i
 ## Ownership
 
 - `backend/` owns Java domain, application, HTTP, persistence, and fixture code.
-- `web/` will own the React Router application and its local generated client once implementation starts.
+- `web/` owns the React Router SPA and its local generated client, built on the React Router SPA starter (decision 0011).
 - `ios/` will own the SwiftUI/TCA application and its local generated client once implementation starts.
 - `docs/` is durable architecture, API, product, and engineering guidance.
 - `infra/` describes runtime resources such as local PostgreSQL or object storage; it does not contain application code.

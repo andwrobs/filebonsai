@@ -1,6 +1,6 @@
 # Verified status and next work
 
-Updated 2026-09-28. This is the only live status and sequencing document. Record only
+Updated 2026-09-29. This is the only live status and sequencing document. Record only
 observed results; use Git history for prior plans and completed migrations.
 
 ## Current implementation
@@ -53,8 +53,11 @@ observed results; use Git history for prior plans and completed migrations.
   fails without replacing the packet; restart preserves authenticated catalog access.
 - The committed OpenAPI is exported from the PostgreSQL profile and includes Access
   and Catalog. The fixture profile still authors deterministic response fixtures.
-- `web/` owns a React Router Catalog application over a generated
-  `openapi-typescript` schema and handwritten `openapi-fetch` service. It discovers
+- `web/` is a React Router SPA built on the React Router SPA starter (decision 0011):
+  code in `src/` with route folders and named `src/lib` capabilities, services built
+  once in `src/services.ts`, TanStack Query for remote data, a Zustand store for
+  uploads, Biome, and Vitest. Its transport is a generated `openapi-typescript` schema
+  wrapped by an `openapi-fetch` client that holds the CSRF token. It discovers
   the session workspace root, browses direct children, navigates folders, handles
   password sign-in for anonymous visitors (plus **Continue with Authentik** when
   `VITE_FILEBONSAI_OIDC=authentik`), loading/empty/error/not-found states, and exposes
@@ -77,9 +80,11 @@ observed results; use Git history for prior plans and completed migrations.
   credential, or path. The web `/storage` page shows it with the upload limit and has its
   own loading, error, and unavailable states. The shell links Library and Storage in
   every layout.
-- The web shell follows the design reference with one token file
-  (`web/app/styles/tokens.css`) for color, type, spacing, radius, density, and region
-  sizes. `tokens.test.ts` fails on raw colors elsewhere and on AA contrast regressions.
+- The web shell follows the design reference with one token file for the current
+  screens (`web/src/styles/tokens.css`) for color, type, spacing, radius, density, and
+  region sizes; the starter's `lib/ui` tokens in `web/src/styles/index.css` are loaded
+  but no screen uses `lib/ui` yet. `tokens.test.ts` fails on raw colors outside the
+  token files and on AA contrast regressions.
   Icons are Lucide (ISC); the identity uses supplied SVG artwork for the shell,
   sign-in, favicon, and touch icon. A
   pathless layout route keeps navigation and the transfer tray mounted across Library
@@ -94,7 +99,7 @@ observed results; use Git history for prior plans and completed migrations.
   Storage entry shows the connection name and committed bytes. The Recent, Shared,
   and Archive placeholders are gone. Breadcrumbs still show only Library and the
   current folder (M1-02).
-- The Library has an inspector (`web/app/features/catalog/inspector.tsx`). Each row has
+- The Library has an inspector (`web/src/routes/library/components/Inspector/`). Each row has
   a Details button. The toolbar's Details toggle shows the current folder when no row
   is chosen. The inspector shows name, kind, rounded and exact size, created and
   modified date and time, and the entry ID with a copy button. Files get Download and
@@ -112,6 +117,29 @@ observed results; use Git history for prior plans and completed migrations.
 
 ## Latest observed checks
 
+- Web on the SPA starter (decision 0011): `cd web && npm test` passed Biome over 152
+  files, route typegen and `tsc`, 82 Vitest tests in 23 files, and the SPA build, on
+  local Node 23.7/npm 10.9 (the starter targets Node 24; `node:24-alpine` builds the
+  image). The ported transfer, CSRF, preview-policy, inspector-state, and formatting
+  tests keep their assertions; route tests now cover Library, Library home, sign-in,
+  and Storage against a stubbed API. `npm run generate:schema` reproduced the
+  committed schema byte for byte. A disposable PostgreSQL 18.4 cluster and this
+  branch's PostgreSQL-profile backend (1 MiB upload limit, synthetic files) served
+  `main`'s client and this branch's side by side. Per-element box and computed-style
+  fingerprints matched at 1440×900 and 390×844 for sign-in, Library, the docked
+  inspector with an image preview, the phone sheet with a text preview, the new-folder
+  form, the transfer tray, and Storage. The only differences were Tailwind preflight
+  defaults with no layout effect (button padding inside fixed-size icon buttons, the
+  hidden skip link's underline) and the missing-folder heading, which now reads "This
+  folder is not available." where `main` showed the server's reason phrase. On this
+  branch, a wrong password showed its message and cleared the field; empty-name
+  validation and folder creation refreshed the list; a small upload became available
+  and refreshed the list and storage summary; a 2 MiB file was refused before begin
+  after one shared and one confirming limit read; Back/Forward, direct loads of
+  `/storage` and a folder, and the 900px rail worked; signed out, `/storage` went to
+  sign-in. Focus moves to the new page's heading on navigation. Storage lost that
+  focus when its data replaced the loading heading; one heading now spans both states,
+  with a regression test.
 - Server-side sort (LIB-03): `cd backend && ./mvnw test` passed 93 tests with one
   skipped, the opt-in real-R2 proof. PostgreSQL 17 Testcontainers tests covered three
   things. The copied sort keys matched their source after publication order, a name
@@ -311,8 +339,9 @@ items and required tests.
 1. Cloud transfer: run the decision 0007 compatibility proof against a disposable
    real Cloudflare R2 bucket, repair any provider mismatch, and record bounded
    streaming/recovery evidence before claiming R2 support or adding another provider.
-2. Web library, in this order: table/grid views (LIB-04), then the inspector's
-   integrity fields (LIB-14).
+2. Web: move the screens onto `web/src/lib/ui` and the tokens in
+   `web/src/styles/index.css`, the second half of decision 0011, then the library's
+   table/grid views (LIB-04) and the inspector's integrity fields (LIB-14).
 3. Photo metadata: accepted decisions
    [0009](../decisions/0009-durable-jobs-in-postgresql.md) (durable jobs) and
    [0010](../decisions/0010-media-processing-isolation.md) (processing isolation and
@@ -332,7 +361,6 @@ acceptance criteria, checks, and a handoff. The ordered list is not blanket auth
   selects the first provider and its initial server-mediated transfer contract.
 - Configurable-shell schema, precedence, persistence, and delivery milestone.
 - JavaScript workspace manager, generated-client packaging, and Swift generator path.
-- React Query/Zustand roles beyond the initial React Catalog application.
 - License, contribution/release conventions, supported deployment matrix, backup/
   restore format, retention rules, sharing semantics, and resource limits.
 - Service decomposition, deployment platform, and infrastructure-as-code remain

@@ -10,12 +10,14 @@ borders, a visible folder tree, coherent grid/table views, discoverable storage 
 details, and purposeful mobile layouts. It is art direction, not proof of an
 implemented screen or an exact component specification.
 
-The web client carries this direction through one token file,
-`web/app/styles/tokens.css`, which is the only place raw interface colors live. It
-uses system sans-serif faces, the supplied editable Filebonsai SVG identity, and
-Lucide icons (ISC license). The shell adapts at every width: a sidebar on wide
-screens, an icon rail on tablets, and bottom navigation with a floating upload button
-on phones. Content regions size to their container, not to a fixed page width.
+The web client carries this direction through its token files:
+`web/src/styles/tokens.css` for the current screens and `web/src/styles/index.css` for
+the `lib/ui` design system they are moving onto. They are the only places raw
+interface colors live. It uses system sans-serif faces, the supplied editable
+Filebonsai SVG identity, and Lucide icons (ISC license). The shell adapts at every
+width: a sidebar on wide screens, an icon rail on tablets, and bottom navigation with a
+floating upload button on phones. Content regions size to their container, not to a
+fixed page width.
 
 The web identity uses the supplied mark and wordmark in navigation, the lockup on
 sign-in, the app icon as its favicon, and the iOS icon rendered for its home-screen

@@ -2,41 +2,17 @@
 
 Keep React views readable as the product grows. Components render state and dispatch user intent. Capability hooks/controllers own request sequencing, cancellation, mutation state and errors; stores own shared state whose lifetime exceeds a view. Pure functions own policies and state transitions. DOM focus, measurement and local presentation state may remain in components or focused UI hooks.
 
-Observed on main at `5fcca5d` (2026-09-28): `web/app/routes/library.tsx` embeds folder-create orchestration; `features/catalog/file-preview.tsx` owns fetching, cancellation and Blob cleanup; `features/catalog/inspector.tsx` combines a controller hook with panel presentation; `features/transfers/transfer-controls.tsx` combines download logic and tray effects; `features/shell/app-navigation.tsx` fetches storage detail. The existing `transfer-store.ts` already owns transfers outside route lifetime and should be preserved.
+Decision [0011](../decisions/0011-web-client-follows-the-spa-template.md) (2026-09-29) settled ownership: `web/` follows the React Router SPA starter, so Query owns remote data, TanStack Form owns form state, Zustand holds only shared client state, and `web/docs/code-organization.md` holds the behavior-ownership rules. Folder creation already runs as a Query mutation in `web/src/routes/library/components/NewFolderForm/`, the storage summary is one shared query, and uploads live in the Zustand store `web/src/lib/transfers/transfer-store.ts`, which should be preserved. Still to do, observed at that change: `routes/library/components/FilePreview/` owns fetching, cancellation and Blob cleanup inside its component; `components/Inspector/` pairs `useInspector` with panel presentation and the route passes it to every row; `lib/transfers/TransferTray.tsx` combines completion refreshes, height publishing and tray effects with rendering; and `routes/library/useOriginalDownload.ts` owns download state in a hook with DOM side effects.
 
-This is an incremental behavior-preserving epic, not a framework migration or a ban on hooks inside components. React Router remains the route boundary. Choose React Query/Zustand only if a concrete ownership problem needs them. [React's custom-hook guidance](https://react.dev/learn/reusing-logic-with-custom-hooks) (checked 2026-09-28) supports extracting reusable behavior; a hook call alone does not create shared state. Each slice should be reviewable independently and should not block unrelated product work.
+This is an incremental behavior-preserving epic, not a framework migration or a ban on hooks inside components. React Router remains the route boundary. [React's custom-hook guidance](https://react.dev/learn/reusing-logic-with-custom-hooks) (checked 2026-09-28) supports extracting reusable behavior; a hook call alone does not create shared state. Each slice should be reviewable independently and should not block unrelated product work.
 
 See [the backlog index](README.md) for pickup, checks and retirement rules.
-
-## ARC-01 Decision: web state and effect ownership
-
-`P1` · `S` · Decision · Web, Docs
-
-Depends on: none
-
-**Why.** “Move logic into hooks” needs a precise boundary to avoid replacing large components with large hooks.
-
-**Outcome.** Document current owners and choose capability-local controller interfaces, injected service dependencies, route loading responsibilities, shared-store lifetimes, cache invalidation and reset on identity/workspace change. Include one small before/after example from Library.
-
-**Acceptance**
-
-- Inventory server, form, selection, layout, preview and transfer state with one owner each.
-- Components may retain UI-only state; business sequencing is testable without rendering a whole page.
-- Record a minimal-library recommendation and an explicit trigger for adding a shared cache/store package.
-
-**Settle first.** Router loader versus client query-cache ownership; keep existing transfer semantics and generated transport boundary.
-
-**Invariants:** INV-01, INV-09, INV-10, INV-14
-
-**Read:** `docs/architecture/system.md`, `docs/development/status.md`, `web/app/routes/library.tsx`, `web/app/features/transfers/transfer-store.ts`
-
-**Checks:** `decision-review`
 
 ## ARC-02 Extract Library commands and mutation lifecycle
 
 `P2` · `M` · Build · Web
 
-Depends on: [ARC-01](#arc-01-decision-web-state-and-effect-ownership)
+Depends on: none
 
 **Why.** Folder creation currently coordinates request, form reset, errors and revalidation in the route component.
 
@@ -60,7 +36,7 @@ Depends on: [ARC-01](#arc-01-decision-web-state-and-effect-ownership)
 
 `P2` · `M` · Build · Web
 
-Depends on: [ARC-01](#arc-01-decision-web-state-and-effect-ownership)
+Depends on: none
 
 **Why.** Blob lifetime, aborts and version races should be easy to reason about independently of markup.
 
@@ -84,7 +60,7 @@ Depends on: [ARC-01](#arc-01-decision-web-state-and-effect-ownership)
 
 `P2` · `M` · Build · Web
 
-Depends on: [ARC-01](#arc-01-decision-web-state-and-effect-ownership)
+Depends on: none
 
 **Why.** Inspector selection and persistence are currently colocated with modal/docked rendering.
 
@@ -108,7 +84,7 @@ Depends on: [ARC-01](#arc-01-decision-web-state-and-effect-ownership)
 
 `P2` · `M` · Build · Web
 
-Depends on: [ARC-01](#arc-01-decision-web-state-and-effect-ownership)
+Depends on: none
 
 **Why.** Navigation and the tray currently coordinate reads and refreshes through component effects.
 

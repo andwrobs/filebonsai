@@ -1,33 +1,95 @@
 {
-  "name": "@filebonsai/web-client",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "build": "react-router build",
-    "dev": "react-router dev",
-    "generate:schema": "openapi-typescript ../backend/contract/openapi.json -o src/lib/api/generated/schema.ts",
-    "test": "node --import tsx --test src/lib/api/filebonsai-service.test.ts app/features/catalog/catalog-data.test.ts app/features/catalog/inspector-state.test.ts app/features/catalog/preview-policy.test.ts app/features/transfers/transfer-store.test.ts app/features/storage/storage-data.test.ts app/styles/tokens.test.ts",
-    "typecheck:run": "react-router typegen && tsc --noEmit"
-  },
-  "dependencies": {
-    "@react-router/node": "8.4.0",
-    "@tanstack/react-form": "1.33.5",
-    "isbot": "5.2.2",
-    "lucide-react": "1.48.0",
-    "openapi-fetch": "0.17.0",
-    "react": "19.2.8",
-    "react-dom": "19.2.8",
-    "react-router": "8.4.0"
-  },
-  "devDependencies": {
-    "@react-router/dev": "8.4.0",
-    "@types/node": "24.13.6",
-    "@types/react": "19.2.18",
-    "@types/react-dom": "19.2.7",
-    "openapi-typescript": "7.13.0",
-    "tsx": "4.23.15",
-    "typescript": "5.9.3",
-    "vite": "8.0.3"
-  }
+	"name": "@filebonsai/web-client",
+	"version": "0.1.0",
+	"author": "andwrobs",
+	"type": "module",
+	"engines": {
+		"node": ">=22.22.0",
+		"npm": ">=11.19.0"
+	},
+	"scripts": {
+		"dev": "react-router dev",
+		"build": "react-router build",
+		"build:analyze": "react-router build --mode analyze",
+		"preview": "vite preview --outDir build/client",
+		"typecheck": "react-router typegen && tsc",
+		"format": "biome format . --write",
+		"format:check": "biome format .",
+		"lint": "biome lint . --write",
+		"lint:check": "biome lint .",
+		"fix": "biome check . --write",
+		"fix:check": "biome check .",
+		"test:run": "vitest run",
+		"test:watch": "vitest --silent=true",
+		"test:watch:verbose": "vitest",
+		"test:debug": "vitest run --inspect --no-file-parallelism",
+		"test:update-snapshots": "vitest run -u",
+		"test:coverage": "vitest run --coverage --silent=true",
+		"test:coverage:verbose": "vitest run --coverage",
+		"test": "npm run fix:check && npm run typecheck && npm run test:run && npm run build",
+		"deps:check": "node scripts/check-updates.mjs",
+		"ui:add": "shadcn add",
+		"generate:schema": "openapi-typescript ../backend/contract/openapi.json -o src/lib/api/generated/schema.ts"
+	},
+	"dependencies": {
+		"@fontsource-variable/geist": "5.3.0",
+		"@react-router/node": "8.4.0",
+		"@tailwindcss/vite": "4.3.0",
+		"@tanstack/react-form": "1.33.5",
+		"@tanstack/react-pacer": "0.23.0",
+		"@tanstack/react-query": "5.104.0",
+		"@tanstack/react-table": "9.2.4",
+		"class-variance-authority": "0.7.1",
+		"clsx": "2.1.1",
+		"embla-carousel-react": "8.6.0",
+		"input-otp": "1.5.0",
+		"isbot": "5.1.40",
+		"lucide-react": "1.17.0",
+		"openapi-fetch": "0.17.0",
+		"react": "19.2.7",
+		"react-aria-components": "1.21.1",
+		"react-dom": "19.2.7",
+		"react-resizable-panels": "4.14.1",
+		"react-router": "8.4.0",
+		"recharts": "3.8.0",
+		"shadcn": "4.21.0",
+		"sonner": "2.0.8",
+		"tailwind-merge": "3.6.0",
+		"tailwindcss": "4.3.0",
+		"tw-animate-css": "1.4.0",
+		"zod": "4.4.3",
+		"zustand": "5.0.14"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.4.16",
+		"@react-router/dev": "8.4.0",
+		"@testing-library/dom": "10.4.1",
+		"@testing-library/jest-dom": "6.9.1",
+		"@testing-library/react": "16.3.2",
+		"@testing-library/user-event": "14.6.1",
+		"@types/node": "25.9.1",
+		"@types/react": "19.2.16",
+		"@types/react-dom": "19.2.3",
+		"@vitejs/plugin-react": "6.0.2",
+		"@vitest/coverage-v8": "4.1.8",
+		"@vitest/ui": "4.1.8",
+		"jsdom": "29.1.1",
+		"openapi-typescript": "7.13.0",
+		"rollup-plugin-visualizer": "7.0.1",
+		"typescript": "6.0.3",
+		"vite": "8.0.16",
+		"vitest": "4.1.8"
+	},
+	"private": true,
+	"packageManager": "npm@11.19.0",
+	"template": {
+		"name": "react-router-spa-template",
+		"version": "0.1.0",
+		"commit": "5b0e9d5"
+	},
+	"overrides": {
+		"openapi-typescript": {
+			"typescript": "$typescript"
+		}
+	}
 }
