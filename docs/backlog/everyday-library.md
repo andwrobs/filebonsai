@@ -323,3 +323,32 @@ Context: The Library route is `web/src/routes/library`. Its entry list drops col
 - Whichever of LIB-15, LIB-16, LIB-20 and LIB-21 lands last deletes `tokens.css`, `app.css` and their Biome exclusions, and updates decision 0011's consequences and `web/AGENTS.md`
 
 **Checks:** `web`; `rendered`
+
+## LIB-22 Entry actions: context menu and in-app drag
+
+`P2` · `L` · Build · Web
+
+Depends on: [LIB-02](#lib-02-folder-tree-sidebar), [LIB-05](#lib-05-selection-model), [M1-11](finish-m1.md#m1-11-drag-and-drop-upload), [ORG-02](organize.md#org-02-rename), [ORG-03](organize.md#org-03-move)
+
+Context: `web/src/lib/ui` already has `context-menu`, `dropdown-menu` and `command` components. ORG-02 adds an overflow menu for touch rows, ORG-03 the move API and 'Move to…' dialog, and LIB-08 the command palette. Without one action list, each of these grows its own menu.
+
+**Why.** People expect to right-click a file or folder, drag entries between folders, and act on folders from the tree, as they do in Finder, Explorer, Drive and Dropbox.
+
+**Outcome.** One list of entry actions: each action has a label, an icon, a shortcut, whether it applies to the selection, and a check that it is available. The context menu, the touch overflow menu, the inspector and the command palette all read from it. Right-click or Shift+F10 on a list row or tree node opens a context menu for that entry, or for the selection when the entry is part of it. The menu offers only actions that exist: Open, Rename, Move to…, New folder here, Upload here, Download, and, when they ship, Trash, Star and Tags. Entries can be dragged, singly or as a selection, onto folder rows, tree nodes and breadcrumbs to move them. Collapsed tree nodes expand when a drag hovers over them. Files dropped from the computer onto a tree node upload into that folder. From the tree you can also create a folder inside a node and rename a node in place.
+
+**Acceptance**
+
+- Every menu and drag action has a keyboard and touch path that doesn't need right-click or dragging
+- The context menu follows the WAI-ARIA menu pattern, opens with the Menu key and Shift+F10, and returns focus to the entry when it closes
+- Invalid drop targets (the entry itself, its own descendant, its current parent) are refused before any request is made, and the reason is shown with more than color
+- A multi-item drag shows the item count, and per-item name conflicts are reported following ORG-01
+- Escape cancels a drag without moving anything
+- An action the viewer can't perform is hidden or disabled with a reason, never offered and then rejected
+
+**Settle first**
+
+- Whether hidden or disabled is the default for unavailable actions
+- Whether to adopt a drag-and-drop library or use native HTML drag events with keyboard alternatives
+
+**Invariants:** INV-01, INV-14  
+**Checks:** `web`; `rendered`
