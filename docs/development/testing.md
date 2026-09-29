@@ -3,6 +3,7 @@
 - Java formatting and unit/HTTP tests: `cd backend && ./mvnw test`
 - Full contract and client compatibility check: `cd backend && ./scripts/verify.sh`
 - PostgreSQL migrations, constraints, ordering, scope, idempotency, rollback, concurrency, and jOOQ schema drift: `cd backend && ./mvnw -Dtest=PostgresCatalogTest test`
+- Web checks: `cd web && npm test`. The browser journey against a disposable PostgreSQL-profile stack (needs Docker): `cd web && npm run e2e`; see [web testing](../../web/docs/testing.md#end-to-end)
 
 UI work requires rendered inspection. Persistence and locking claims require PostgreSQL-backed tests. Generated client or production-readiness claims must cite an observed command and its environment.
 

@@ -12,6 +12,7 @@
 			"!node_modules",
 			"!build",
 			"!coverage",
+			"!e2e/.output",
 			"!.react-router",
 			"!src/lib/api/generated",
 			"!src/styles/app.css",
