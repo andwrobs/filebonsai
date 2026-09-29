@@ -11,11 +11,8 @@ export default defineConfig({
 	globalSetup: "./global-setup.ts",
 	forbidOnly: true,
 	retries: 0,
-	// One at a time: two first uploads completing together into a new storage
-	// root can hit the directory-creation race fixed by
-	// https://github.com/andwrobs/filebonsai/pull/25 (a 503 "requires
-	// reconciliation"). Return to 2 workers once that fix is on main.
-	workers: 1,
+	// The desktop and phone projects share one stack and run in parallel.
+	workers: 2,
 	timeout: 60_000,
 	expect: { timeout: 10_000 },
 	// One line per test; a failure adds its error and the trace to open.

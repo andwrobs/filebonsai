@@ -136,8 +136,8 @@ observed results; use Git history for prior plans and completed migrations.
   run stops with a one-line message. On the first run, with the two projects in
   parallel, the desktop upload's `complete` returned 503 `Upload completion requires
   reconciliation` while the phone's succeeded. The cause is concurrent creation of the
-  first storage directory (`LocalObjectStorage.ensureDirectory`); PR #25 fixes it
-  separately, and the projects run one at a time until it lands. That failure printed its screenshot and the
+  first storage directory (`LocalObjectStorage.ensureDirectory`); PR #25 fixed it,
+  and the two projects now run in parallel again. That failure printed its screenshot and the
   `npx playwright show-trace` command. `cd web && npm test` passed Biome over 163 files,
   typegen and `tsc` including `e2e/`, 86 Vitest tests, and the build.
 - Local storage directory race: two first uploads into a new workspace could both find

@@ -61,8 +61,7 @@ your shell.
 downloads it. It checks the saved file's SHA-256, then signs out. It runs in a
 1440×900 `desktop` project and a 390×844 touch `phone` project, both with reduced
 motion. The shell has no sign-out control yet (backlog M1-14), so `Session.signOut`
-calls the logout API from the page. The projects run one at a time until the
-storage-directory race fix (PR #25) lands.
+calls the logout API from the page.
 
 Each test prints one line. A failure also prints its error, a screenshot path, and the
 `npx playwright show-trace` command for its trace. Build, backend, web, and PostgreSQL
