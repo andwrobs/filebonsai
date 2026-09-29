@@ -3,10 +3,10 @@ import { Screen } from "./screen";
 
 export class Session extends Screen {
 	/**
-	 * Ends the session. The web client has no sign-out control yet, so this
-	 * does what its AccessService.logout does, from the page: read a CSRF token
-	 * and POST /api/v1/auth/logout with the session cookie. Switch it to the
-	 * control once the shell has one.
+	 * Ends the session. The web client has no sign-out control yet (backlog
+	 * M1-14), so this does what its AccessService.logout does, from the page:
+	 * read a CSRF token and POST /api/v1/auth/logout with the session cookie.
+	 * Switch it to the control once the shell has one.
 	 */
 	async signOut() {
 		const status = await this.page.evaluate(async () => {

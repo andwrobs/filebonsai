@@ -48,22 +48,28 @@ run it. On a new machine, run `npx playwright install chromium` once.
 
 Global setup (`e2e/stack.ts`) starts a disposable PostgreSQL 17.6 container on a free
 port. It builds `../backend` with `./mvnw package` when the jar is missing or older than
-`backend/src/main` or the POM. It starts the backend with the `postgres` profile and a
-generated owner password kept in a private temporary directory. Then it builds the web
-client and serves it with `vite preview`, which proxies `/api` to that backend.
-Teardown, including after Ctrl-C, stops all of it and deletes the directory. The run
-never touches your local database, backend, or settings.
+`backend/src/main` or the POM, which replaces `backend/target`'s jar. It starts the
+backend with the `postgres` profile and a generated owner password kept in a private
+temporary directory. Then it builds the web client, overwriting `build/`, and serves it
+with `vite preview`, which proxies `/api` to that backend. Teardown removes the
+container (found by a per-run label), stops the backend and web server, and deletes
+the directory. It also runs on Ctrl-C, SIGTERM, SIGHUP, and a crashed runner. The run
+uses no local database, backend, or Spring, Filebonsai, or JVM option settings from
+your shell.
 
 `journey.e2e.ts` signs in, creates and opens a folder, uploads a synthetic body, and
 downloads it. It checks the saved file's SHA-256, then signs out. It runs in a
 1440×900 `desktop` project and a 390×844 touch `phone` project, both with reduced
-motion. The shell has no sign-out control yet, so `Session.signOut` calls the logout
-API from the page.
+motion. The shell has no sign-out control yet (backlog M1-14), so `Session.signOut`
+calls the logout API from the page. The projects run one at a time until the
+storage-directory race fix (PR #25) lands.
 
 Each test prints one line. A failure also prints its error, a screenshot path, and the
 `npx playwright show-trace` command for its trace. Build, backend, web, and PostgreSQL
-logs and failure artifacts go to the gitignored `e2e/.output/`. A trace records typed
-values, including that run's disposable owner password.
+logs and failure artifacts go to the gitignored `e2e/.output/`. A retained trace holds
+typed values and network traffic: that run's disposable owner password, the sign-in
+request body, and session cookies. They open only the run's destroyed database, but
+don't share traces outside the machine.
 
 New specs are named `*.e2e.ts`, which Vitest ignores. They import `test` and `expect`
 from `e2e/fixtures.ts`. The fixtures supply `ownerPassword` and the page objects in
