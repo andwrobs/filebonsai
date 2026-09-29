@@ -99,6 +99,29 @@ add archive, handoff, legacy, or canonical-tracing copies to `docs/`.
   narrate routine reads, commands, or passing checks. Surface only consequential
   decisions, blockers, meaningful progress, and the final outcome.
 
+## Worktree completion
+
+- Cleanup is part of task completion and an authorized merge, not a separate request.
+  Retire the task's worktree before the final handoff once its changes are delivered
+  and no remaining implementation, check, or review needs that checkout. An open PR
+  alone is not a reason to retain it; keep the pushed branch available for revisions.
+- After a merge, including a merge performed elsewhere, check for and retire the
+  completed branch's remaining worktree the next time handling that task. A merged
+  PR does not mean its local checkout has disappeared.
+- Before retirement, verify the delivered commits or merged PR, tracked and untracked
+  changes, ignored files that need preserving, and any task or process using the
+  checkout. Stop the task's disposable servers when finished. Preserve unfinished
+  work and needed local data; never discard them just to make cleanup succeed.
+- Use the owning application's worktree archive tool for managed worktrees so its
+  recovery snapshot and registration stay consistent. For an ordinary Git worktree,
+  preserve any needed local-only files, then use `git worktree remove` from outside
+  that checkout. Do not use recursive filesystem deletion or force removal to bypass
+  dirty, locked, shared, pinned, or in-use worktrees. Keep the primary checkout.
+- Verify retirement in `git worktree list` and, for a managed worktree, its artifact
+  list. Keep the chat and any open PR. If cleanup is blocked, name the exact retained
+  worktree and concrete reason in the final handoff; do not silently leave it behind
+  or report cleanup as complete. Do not ask again for routine cleanup authorization.
+
 ## Repository ownership
 
 - `backend/`: Java server; follow `backend/AGENTS.md` and backend architecture docs.

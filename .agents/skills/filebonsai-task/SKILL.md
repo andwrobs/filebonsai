@@ -34,6 +34,9 @@ When the task is a backlog item, follow `docs/backlog/README.md` to pick it up a
 8. Deliver on a `<agent>/<short-slug>` branch from current `main`, in its own worktree.
    Commit only the owned paths, push, and open or update the pull request with the
    `filebonsai-pr` skill. Do not commit to `main` or merge without an explicit request.
+9. Complete the root `AGENTS.md` worktree-completion procedure before the final
+   handoff. Report the retired worktree or the exact retained path and reason. An
+   open PR does not require keeping an otherwise completed checkout.
 
 Bound routine command output and inspect targeted failure reports instead of importing
 full build, generator, or container logs. Do not reread unchanged material already in
