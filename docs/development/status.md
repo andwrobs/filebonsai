@@ -87,9 +87,10 @@ observed results; use Git history for prior plans and completed migrations.
 - The web shell follows the design reference. `web/src/styles/index.css` is the one
   source of color, type, spacing, radius, density, and region-size tokens, mapped onto
   the shadcn roles `lib/ui` uses, with the system font stack (no Geist). The shell,
-  transfer tray, and floating upload use `lib/ui` and Tailwind utilities; the other
-  screens still read `app.css` through role aliases in `tokens.css`, which holds no
-  colors. `tokens.test.ts` fails on raw colors outside `index.css` and checks AA text
+  transfer tray, floating upload, sign-in, and not-found page use `lib/ui` and Tailwind
+  utilities (sign-in's password field through the `lib/form` TanStack Form bindings);
+  the other screens still read `app.css` through role aliases in `tokens.css`, which
+  holds no colors. `tokens.test.ts` fails on raw colors outside `index.css` and checks AA text
   and 3:1 control and focus contrast on its roles.
   Icons are Lucide (ISC); the identity uses supplied SVG artwork for the shell,
   sign-in, favicon, and touch icon. A
@@ -123,6 +124,20 @@ observed results; use Git history for prior plans and completed migrations.
 
 ## Latest observed checks
 
+- Sign-in and not-found on the design system (LIB-20): `cd web && npm test` passed
+  (Biome, typegen and `tsc`, 90 Vitest tests, build) and `npm run e2e` passed (phone
+  and desktop). Playwright pixel diffs against LIB-19 on the shared PostgreSQL-profile
+  backend at 1440×900 and 390×844 (touch) were 0 for sign-in resting, focused on
+  load, pending (login request held) and a wrong password at 1440, the Authentik
+  variant (resting, and hover at 1440), the sign-in error page (session check failed
+  with an injected 500), and not-found resting and hovered, with `app.css` and
+  `tokens.css` switched off as well as on. Pending at 390 differed by 11 anti-aliased
+  input-corner pixels. Focus lands on the password on load and after a signed-out
+  redirect, the field clears after a failure, and tab order is unchanged. Intended
+  differences: an empty submit shows an inline "Enter the password." error linked to
+  the field, with an invalid border and label, instead of the browser's bubble (focus
+  still moves to the field); after a tap at 390 the Sign in button no longer keeps its
+  hover fill. The not-found page needed no change.
 - Design system tokens and shell (LIB-19): `cd web && npm test` passed (Biome,
   typegen and `tsc`, 88 Vitest tests, build), and `npm run e2e` passed after
   rebasing onto ENG-02; `tokens.test.ts` now reads the light roles in `index.css`. Playwright pixel diffs against `main` on the shared
@@ -424,9 +439,9 @@ items and required tests.
    real Cloudflare R2 bucket, repair any provider mismatch, and record bounded
    streaming/recovery evidence before claiming R2 support or adding another provider.
 2. Web: with the tokens and shell moved, move the remaining screens onto
-   `web/src/lib/ui`, the second half of decision 0011: sign-in (LIB-20) and the
-   Library list (LIB-21), then the library's table/grid views (LIB-04). The
-   inspector and Storage move within LIB-15 and LIB-16.
+   `web/src/lib/ui`, the second half of decision 0011: the Library list (LIB-21), then
+   the library's table/grid views (LIB-04). The inspector and Storage move within
+   LIB-15 and LIB-16.
 3. Photo metadata: accepted decisions
    [0009](../decisions/0009-durable-jobs-in-postgresql.md) (durable jobs) and
    [0010](../decisions/0010-media-processing-isolation.md) (processing isolation and

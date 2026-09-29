@@ -51,8 +51,9 @@ must serve `index.html` for app routes and serve assets and API paths normally.
 ## Design tokens and layout
 
 `src/styles/index.css` holds every token: Filebonsai's palette on the shadcn roles,
-plus its type scale, density and region sizes. The shell and transfer tray use
-`src/lib/ui`; the other screens still use `src/styles/app.css` through the role
+plus its type scale, density and region sizes. The shell, transfer tray, sign-in and
+not-found page use `src/lib/ui` (forms through the TanStack Form bindings in
+`src/lib/form`); the other screens still use `src/styles/app.css` through the role
 aliases in `src/styles/tokens.css`, and move onto `src/lib/ui` screen by screen.
 `src/styles/tokens.test.ts` fails on a raw color outside `index.css` and on AA text
 or 3:1 control and focus contrast regressions. The shell (`src/routes/app-shell`) shows a sidebar from 1100px,
