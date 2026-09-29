@@ -3,11 +3,12 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { catalogKeys } from "~/lib/catalog/catalog.query";
 import { storageKeys } from "~/lib/storage/storage.query";
-import { transferStore, useTransfers } from "./transfer-store";
+import { useTransfers } from "./transfer-store";
 import { needsAttention, settled } from "./transfers";
 
 export function TransferTray() {
 	const items = useTransfers((state) => state.items);
+	const run = useTransfers((state) => state.run);
 	const queryClient = useQueryClient();
 	const [expanded, setExpanded] = useState(true);
 	const bodyId = useId();
@@ -62,7 +63,6 @@ export function TransferTray() {
 		return () => window.removeEventListener("beforeunload", warn);
 	}, [active]);
 	if (!shown) return null;
-	const { run } = transferStore.getState();
 	return (
 		<section
 			ref={tray}

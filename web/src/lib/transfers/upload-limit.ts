@@ -20,8 +20,13 @@ type Deps = {
 };
 
 export function createUploadLimit({ queryClient, storage }: Deps): UploadLimit {
+	// Marks the held limit stale so the next read fetches; an open Storage page
+	// stays subscribed to the same entry.
 	function forget() {
-		queryClient.removeQueries({ queryKey: storageKeys.uploadLimits() });
+		void queryClient.invalidateQueries({
+			queryKey: storageKeys.uploadLimits(),
+			refetchType: "none",
+		});
 	}
 
 	async function read() {

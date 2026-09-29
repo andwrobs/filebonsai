@@ -131,3 +131,39 @@ it("keeps focus on the heading when details finish loading after navigation", as
 	expect(await screen.findByText("Family archive")).toBeInTheDocument();
 	expect(screen.getByRole("heading", { level: 1 })).toHaveFocus();
 });
+
+it("reports a failure on a later visit instead of showing earlier values", async () => {
+	let fail = false;
+	stubApi((path) => {
+		if (fail)
+			return apiError(500, "INTERNAL_ERROR", "Request could not be processed");
+		return path === "/api/v1/storage"
+			? Response.json(summary)
+			: Response.json({ maximumBytes: "134217728" });
+	});
+	const { user } = renderRoute([
+		{
+			Component: () => (
+				<>
+					<Link to="/">Home</Link>
+					<Outlet />
+				</>
+			),
+			children: [
+				{ path: "/", Component: () => <Link to="/storage">Open storage</Link> },
+				{ path: "/storage", Component: StorageRoute },
+			],
+		},
+	]);
+	await user.click(screen.getByRole("link", { name: "Open storage" }));
+	expect(await screen.findByText("Family archive")).toBeInTheDocument();
+	await user.click(screen.getByRole("link", { name: "Home" }));
+	fail = true;
+	await user.click(screen.getByRole("link", { name: "Open storage" }));
+	expect(
+		await screen.findByRole("heading", {
+			name: "Could not load storage details",
+		}),
+	).toBeInTheDocument();
+	expect(screen.queryByText("Family archive")).not.toBeInTheDocument();
+});

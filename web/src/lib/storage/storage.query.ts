@@ -14,9 +14,9 @@ export function storageSummaryQuery() {
 	});
 }
 
-// Read once per tab: transfers read it again after a 413 or before refusing a
-// file (lib/transfers/upload-limit.ts), and the Storage page on every visit.
-// A failed read isn't retried; the server still enforces the limit.
+// Read once per tab and kept for it: transfers read it again after a 413 or
+// before refusing a file (lib/transfers/upload-limit.ts), and the Storage page
+// on every visit. A failed read isn't retried; the server still enforces it.
 export function uploadLimitsQuery(
 	storage: Pick<typeof storageService, "uploadLimits"> = storageService,
 ) {
@@ -24,6 +24,7 @@ export function uploadLimitsQuery(
 		queryKey: storageKeys.uploadLimits(),
 		queryFn: ({ signal }) => storage.uploadLimits({ signal }),
 		staleTime: Number.POSITIVE_INFINITY,
+		gcTime: Number.POSITIVE_INFINITY,
 		retry: false,
 	});
 }

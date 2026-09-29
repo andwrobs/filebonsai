@@ -28,17 +28,22 @@ export function useStorageDetails() {
 		if (signedOut) void navigate("/sign-in", { replace: true });
 	}, [signedOut, navigate]);
 
+	// A failed read wins over values cached from an earlier visit, so the page
+	// never presents them as current.
 	let state: StorageDetailsState = { status: "loading" };
-	if (summary.data && !limits.isPending) {
+	if (summary.isError && !summary.isFetching) {
+		if (!signedOut) {
+			state = { status: "failed", failure: storageFailure(summary.error) };
+		}
+	} else if (summary.data && !limits.isPending) {
 		// The page still describes the connection when only the limit read fails.
-		const limit = limits.data ? maximumBytes(limits.data) : undefined;
+		const limit =
+			limits.data && !limits.isError ? maximumBytes(limits.data) : undefined;
 		state = {
 			status: "ready",
 			summary: summary.data,
 			maximumBytes: limit ?? null,
 		};
-	} else if (summary.isError && !summary.isFetching && !signedOut) {
-		state = { status: "failed", failure: storageFailure(summary.error) };
 	}
 
 	return {

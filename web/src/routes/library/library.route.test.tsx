@@ -1,6 +1,7 @@
 import { screen, within } from "@testing-library/react";
 import type { LoaderFunctionArgs } from "react-router";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { catalogKeys } from "~/lib/catalog/catalog.query";
 import { queryClient } from "~/lib/query/client";
 import { renderRoute } from "../../../test-utils/render-route";
 import { apiError, csrf, stubApi } from "../../../test-utils/stub-api";
@@ -177,4 +178,50 @@ it("treats a file at a folder address as missing", async () => {
 			name: "This folder is not available.",
 		}),
 	).toBeInTheDocument();
+});
+
+it("lets a late reply refresh its own folder without closing the next folder's form", async () => {
+	let reply!: () => void;
+	const replied = new Promise<void>((resolve) => {
+		reply = resolve;
+	});
+	const serve = serveFolder(() => [travel]);
+	stubApi(async (path) => {
+		if (path === "/api/v1/auth/csrf") return csrf();
+		if (path === "/api/v1/folders") {
+			await replied;
+			return Response.json(
+				{ ...travel, id: "photos", name: "Photos" },
+				{ status: 201 },
+			);
+		}
+		if (path === "/api/v1/entries/travel") return Response.json(travel);
+		if (path === "/api/v1/entries/travel/children") {
+			return Response.json({ entries: [], nextCursor: null });
+		}
+		return serve(path);
+	});
+	const { user } = renderLibrary();
+	await user.click(await screen.findByRole("button", { name: "New folder" }));
+	await user.type(screen.getByLabelText("Folder name"), "Photos");
+	await user.click(
+		within(screen.getByRole("region", { name: "Create folder" })).getByRole(
+			"button",
+			{ name: "Create folder" },
+		),
+	);
+	await user.click(screen.getByRole("link", { name: "Travel" }));
+	expect(
+		await screen.findByRole("heading", { level: 1, name: "Travel" }),
+	).toBeInTheDocument();
+	const nextForm = screen.getByLabelText("Folder name");
+	expect(nextForm).toHaveValue("");
+
+	reply();
+	await vi.waitFor(() =>
+		expect(
+			queryClient.getQueryState(catalogKeys.folder("root"))?.isInvalidated,
+		).toBe(true),
+	);
+	expect(screen.getByLabelText("Folder name")).toBe(nextForm);
 });

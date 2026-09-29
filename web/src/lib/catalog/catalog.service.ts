@@ -75,6 +75,8 @@ export function createCatalogService({ api }: Deps): CatalogService {
 		};
 	}
 
+	// Reads a new CSRF token for each creation: a sign-in in another tab rotates
+	// the session, and a held token would then fail until reload.
 	async function createFolder({
 		idempotencyKey,
 		name,
@@ -85,7 +87,7 @@ export function createCatalogService({ api }: Deps): CatalogService {
 				params: {
 					header: {
 						"Idempotency-Key": idempotencyKey,
-						"X-CSRF-TOKEN": await api.csrfToken(),
+						"X-CSRF-TOKEN": await api.refreshCsrf(),
 					},
 				},
 				body: { name, parentId },

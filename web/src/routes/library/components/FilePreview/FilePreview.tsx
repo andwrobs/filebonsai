@@ -1,14 +1,8 @@
-import { useEffect, useId, useState } from "react";
+import { useId } from "react";
 import type { FileEntry } from "~/lib/catalog/catalog";
 import { formatBytes } from "~/lib/format/bytes";
-import { catalogService } from "~/services";
 import { type PreviewPolicy, previewPolicy } from "../../preview-policy";
-
-type PreviewState =
-	| { kind: "loading" }
-	| { kind: "image"; url: string }
-	| { kind: "text"; content: string }
-	| { kind: "failed" };
+import { usePreview } from "./usePreview";
 
 export function FilePreview({ entry }: { entry: FileEntry }) {
 	const titleId = useId();
@@ -47,49 +41,7 @@ function LoadedPreview({
 	entry: FileEntry;
 	policy: Extract<PreviewPolicy, { kind: "image" | "text" }>;
 }) {
-	const [state, setState] = useState<PreviewState>({ kind: "loading" });
-	// biome-ignore lint/correctness/useExhaustiveDependencies: a new version is new content.
-	useEffect(() => {
-		let active = true;
-		let objectUrl: string | undefined;
-		const controller = new AbortController();
-		setState({ kind: "loading" });
-		async function load() {
-			try {
-				const original = await catalogService.downloadOriginal(entry.id, {
-					signal: controller.signal,
-				});
-				if (!active) return;
-				if (original.size > policy.maxBytes) {
-					throw new Error("Preview unavailable");
-				}
-				// The content endpoint is an attachment. Give only allow-listed extensions a safe type.
-				const typed = new Blob([original], { type: policy.mimeType });
-				if (policy.kind === "text") {
-					const content = await typed.text();
-					if (active) setState({ kind: "text", content });
-				} else {
-					objectUrl = URL.createObjectURL(typed);
-					setState({ kind: "image", url: objectUrl });
-				}
-			} catch {
-				if (active) setState({ kind: "failed" });
-			}
-		}
-		void load();
-		return () => {
-			active = false;
-			controller.abort();
-			if (objectUrl) URL.revokeObjectURL(objectUrl);
-		};
-	}, [
-		entry.id,
-		entry.currentVersion.id,
-		policy.kind,
-		policy.maxBytes,
-		policy.mimeType,
-	]);
-
+	const { state, failDecode } = usePreview(entry, policy);
 	if (state.kind === "loading") {
 		return (
 			<p className="inspector-preview-message" role="status">
@@ -111,10 +63,7 @@ function LoadedPreview({
 		<img
 			alt={`Preview of ${entry.name}`}
 			className="inspector-preview-image"
-			onError={() => {
-				URL.revokeObjectURL(state.url);
-				setState({ kind: "failed" });
-			}}
+			onError={failDecode}
 			src={state.url}
 		/>
 	);

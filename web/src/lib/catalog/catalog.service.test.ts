@@ -95,10 +95,11 @@ it("lists a folder with deduplicated children and refuses a file", async () => {
 	await expect(catalog.folder(file.id)).rejects.toBeInstanceOf(NotAFolderError);
 });
 
-it("sends CSRF and the caller's idempotency key when creating a folder", async () => {
+it("sends a fresh CSRF token and the caller's idempotency key when creating a folder", async () => {
+	let tokens = 0;
 	const { catalog, requests } = service((request) =>
 		request.url.endsWith("/csrf")
-			? Response.json({ headerName: "X-CSRF-TOKEN", token: "csrf-1" })
+			? Response.json({ headerName: "X-CSRF-TOKEN", token: `csrf-${++tokens}` })
 			: Response.json({ ...folder, name: "Photos" }, { status: 201 }),
 	);
 	const created = await catalog.createFolder({
@@ -116,6 +117,13 @@ it("sends CSRF and the caller's idempotency key when creating a folder", async (
 		name: "Photos",
 		parentId: rootId,
 	});
+	// The session may have rotated since; the next creation reads a new token.
+	await catalog.createFolder({
+		idempotencyKey: "50000000-0000-4000-8000-000000000002",
+		name: "Receipts",
+		parentId: rootId,
+	});
+	expect(requests[3]?.headers.get("X-CSRF-TOKEN")).toBe("csrf-2");
 });
 
 it("returns original bytes and preserves an HTTP failure", async () => {
