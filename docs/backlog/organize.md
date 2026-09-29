@@ -264,3 +264,28 @@ Context: LIB-06 added the inspector in `web/app/features/catalog/inspector.tsx`.
 - Included in audit events without its content
 
 **Checks:** `postgres`; `contract`; `web`
+
+## ORG-14 Copy files without coupling their lifecycle
+
+`P2` · `L` · Build · Backend, Web · Public API change
+
+Depends on: [ORG-01](#org-01-decision-how-entries-change), [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer)
+
+**Why.** Copy/paste and “Make a copy” are ordinary drive actions that differ from move, album membership and storage replicas.
+
+**Outcome.** Copy a file to a chosen folder as a new logical entry with independent future versions and annotations. Begin with single files; define a later bounded recursive-folder slice only after this lifecycle is proven. Prefer verified physical copying under existing invariants unless shared immutable object references receive an explicit design decision.
+
+**Acceptance**
+
+- Name reservation, source revision and destination authorization are checked; replay creates one copy.
+- Cancelling or restarting a copy never exposes incomplete content, deletes the source or leaves an unowned cleanup obligation.
+- Editing, trashing and permanently deleting either entry cannot damage the other.
+- The UI distinguishes copy, move and add-to-album, with progress and conflict handling; annotations copied or omitted follow an explicit rule.
+
+**Settle first.** Byte-copy versus safe reference-counted sharing; copy current version only versus history (recommend current only initially); metadata/GPS/share-grant handling.
+
+**Invariants:** INV-01, INV-03, INV-04, INV-05, INV-07, INV-09, INV-10
+
+**Read:** `docs/product/domain.md`, `docs/architecture/storage-and-transfers.md`, `docs/backlog/metadata.md`
+
+**Checks:** `postgres`; `contract`; `web`; `rendered`

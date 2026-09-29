@@ -103,7 +103,7 @@ Depends on: [COST-04](#cost-04-monthly-estimate-on-the-storage-page), [TIER-01](
 
 `P3` · `M` · Build · Backend, Web · Public API change
 
-Depends on: [TDY-04](tidy-mode.md#tdy-04-tidy-deck-candidates-api), [TDY-03](tidy-mode.md#tdy-03-access-recency-signal)
+Depends on: [TDY-04](tidy-mode.md#tdy-04-tidy-deck-candidates-api), [TDY-03](tidy-mode.md#tdy-03-access-recency-signal), [POL-02](lifecycle-policies.md#pol-02-policy-registry-and-effective-policy-explanation)
 
 **Why.** Rules should suggest, never act, until explicit policy semantics exist.
 
@@ -112,7 +112,7 @@ Depends on: [TDY-04](tidy-mode.md#tdy-04-tidy-deck-candidates-api), [TDY-03](tid
 **Acceptance**
 
 - No automatic moves or deletion
-- Rules versioned and auditable
+- Rules versioned and auditable through POL-02; reuse POL-03 previews when available
 
 **Checks:** `postgres`; `contract`; `web`
 

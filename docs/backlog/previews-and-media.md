@@ -49,7 +49,9 @@ Depends on: [PRV-02](#prv-02-image-thumbnail-pipeline), [LIB-04](everyday-librar
 
 Depends on: [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer), [PRV-10](#prv-10-processing-sandbox-container)
 
-Context: LIB-03 (merged in PR #17) owns the sort parameter that 'Taken' joins. Split at pickup: extraction and storage first, then the API, inspector and sort.
+Context: LIB-03 (merged in PR #17) owns the sort parameter that 'Taken' joins. Accepted decisions 0009 and 0010 from PR #18 define jobs, processing isolation and the extracted field set. Split at pickup: extraction and storage first, then the API, inspector and sort.
+
+**Boundary.** This item owns the first extraction pipeline. [MET-01](metadata.md#met-01-decision-metadata-authority-and-provenance)/[MET-02](metadata.md#met-02-revisioned-annotations-and-effective-metadata-api) extend it with provenance and user corrections; they reuse this result rather than create a second extractor. Both parser tiers require PRV-10's per-job sandbox under accepted decision 0010.
 
 **Why.** Capture dates and dimensions drive sorting, 'On this day' and Tidy. The user asked on 2026-09-27 for files to capture and show more metadata.
 
@@ -57,8 +59,8 @@ Context: LIB-03 (merged in PR #17) owns the sort parameter that 'Taken' joins. S
 
 **Acceptance**
 
-- GPS is absent from listings and never included in shares or exports without explicit opt-in
-- Malformed metadata never fails the job hard; each version records one outcome
+- Private GPS fields are absent from ordinary listings and shares/exports without explicit opt-in. Unchanged originals may contain GPS; [MET-09](metadata.md#met-09-privacy-safe-media-downloads) owns sanitized media delivery
+- Malformed fields have bounded outcomes and do not affect original availability; extractor version and outcome distinguish absent, unsupported and failed processing
 - Tier A evidence from decision 0010: malformed fixtures, a killed over-budget child, heap and output caps, an empty child environment, network denial and per-job filesystem isolation
 - Other workspaces get 404 for metadata
 
@@ -117,7 +119,7 @@ Depends on: [PRV-04](#prv-04-photo-metadata-extraction), [PRV-03](#prv-03-galler
 
 ## PRV-08 Spike: map of geotagged photos
 
-`P3` · `S` · Spike · Web · Fun
+`P2` · `M` · Spike · Web · Fun
 
 Depends on: [PRV-04](#prv-04-photo-metadata-extraction)
 
@@ -127,7 +129,9 @@ Depends on: [PRV-04](#prv-04-photo-metadata-extraction)
 
 **Acceptance**
 
-- Tile-provider terms and privacy recorded
+- Tile-provider attribution, cache/offline limits, budget and outbound-request privacy recorded; consult [OSM tile policy](https://operations.osmfoundation.org/policies/tiles/) (checked 2026-09-28). Public OSM tiles are not an unrestricted offline tile service
+- Compare self-hosted and operator-selected tile/geocoding sources; enabling a map explains that tile requests reveal viewed areas and client/network metadata
+- Evaluate bounded viewport queries and indexes on 100,000 synthetic locations, including antimeridian and polar bounds
 - Clear recommendation
 
 **Checks:** `spike-notes`

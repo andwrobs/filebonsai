@@ -22,7 +22,7 @@ Depends on: none
 - A web type error fails CI
 - A typical run finishes in under 10 minutes
 
-**Checks:** Ask before pushing a branch, then observe the workflow run
+**Checks:** Push the task branch through the normal PR delivery path, then observe the workflow run
 
 ## ENG-02 Playwright end-to-end harness
 

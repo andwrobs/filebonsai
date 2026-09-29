@@ -60,6 +60,8 @@ Depends on: none
 **Acceptance**
 
 - Abuse cases listed with mitigations
+- Distinguish safe derived media from unchanged originals carrying EXIF/GPS; [MET-09](metadata.md#met-09-privacy-safe-media-downloads) owns sanitization, with no silent original fallback
+- Recommend defaults for expiry, optional password and download permission; define revocation for version-bound assets and live folders
 
 **Invariants:** INV-01, INV-11, INV-12  
 **Checks:** `decision-review`
@@ -78,6 +80,7 @@ Depends on: [ACC-03](#acc-03-decision-read-only-sharing), [ORG-11](organize.md#o
 
 - A revoked or expired link returns the same response as an unknown link
 - Public responses carry no session
+- If sanitized photo sharing is promised, [MET-09](metadata.md#met-09-privacy-safe-media-downloads) is a prerequisite; otherwise original-download disclosure and consent follow ACC-03
 
 **Checks:** `postgres`; `contract`; `web`; `rendered`
 
