@@ -74,7 +74,14 @@ it("text roles meet WCAG AA on every surface they appear on", () => {
 });
 
 it("focus and control boundaries meet the 3:1 non-text minimum", () => {
-	for (const surface of ["background", "card", "muted", "selection"]) {
+	for (const surface of [
+		"background",
+		"card",
+		"muted",
+		"accent",
+		"secondary",
+		"selection",
+	]) {
 		atLeast("ring", surface, 3);
 	}
 	atLeast("sidebar-ring", "sidebar", 3);

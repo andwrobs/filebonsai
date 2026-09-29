@@ -52,7 +52,7 @@ Depends on: [M1-11](finish-m1.md#m1-11-drag-and-drop-upload)
 
 Depends on: none
 
-Context: LIB-01/LIB-10 added the responsive shell: tokens in `web/src/styles/tokens.css` (raw colors outside the token files fail `tokens.test.ts`), Lucide icons, and the `web/src/routes/app-shell` layout route with sidebar, icon rail and bottom navigation. The root layout already sets `viewport-fit=cover` and the phone shell honours safe-area insets.
+Context: LIB-01/LIB-10 added the responsive shell: tokens in `web/src/styles/index.css` (raw colors anywhere else fail `tokens.test.ts`), Lucide icons, and the `web/src/routes/app-shell` layout route with sidebar, icon rail and bottom navigation. The root layout already sets `viewport-fit=cover` and the phone shell honours safe-area insets.
 
 **Why.** It should be at home on a phone's home screen.
 

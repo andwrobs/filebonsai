@@ -124,15 +124,15 @@ observed results; use Git history for prior plans and completed migrations.
 ## Latest observed checks
 
 - Design system tokens and shell (LIB-19): `cd web && npm test` passed (Biome,
-  typegen and `tsc`, 86 Vitest tests, build); `tokens.test.ts` now reads the light
-  roles in `index.css`. Playwright pixel diffs against `main` on the shared
+  typegen and `tsc`, 88 Vitest tests, build), and `npm run e2e` passed after
+  rebasing onto ENG-02; `tokens.test.ts` now reads the light roles in `index.css`. Playwright pixel diffs against `main` on the shared
   PostgreSQL-profile backend at 1440×900, 1024×768, 768×1024 and 390×844 (touch at the
   last two) were 0 for the Library root, the 45-item folder, Storage, the inspector,
   the transfer tray and sign-in, and for skip-link focus, tab order, keyboard focus and
   a busy upload. Nav hover matched at 1440 and 1024; a collapsed tray differed by one
   anti-aliased focus-ring pixel at 768. Intended differences: the not-found
-  page (already on `lib/ui`) takes Filebonsai's colors and button density and its
-  `space-y` gaps now apply; hover fills in the shell and tray no longer stick on
+  page (already on `lib/ui`) takes Filebonsai's colors, button density and hover
+  (a mouse hover darkens it to `primary-hover`) and its `space-y` gaps now apply; hover fills in the shell and tray no longer stick on
   touch-only pointers. Coarse pointers keep 44px nav targets.
 - Playwright end-to-end harness (ENG-02): `cd web && npm run e2e` (pinned
   `@playwright/test` 1.59.1, cached Chromium 1217) passed twice in a row, each in about

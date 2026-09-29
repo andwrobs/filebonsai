@@ -23,7 +23,7 @@ restyled twice. Web items that change the entry list depend on LIB-21.
 
 Depends on: none
 
-Context: LIB-01/LIB-10 added the responsive shell: tokens in `web/src/styles/tokens.css` (raw colors outside the token files fail `tokens.test.ts`), Lucide icons, and the `web/src/routes/app-shell` layout route with sidebar, icon rail and bottom navigation. The tree goes in the sidebar's existing navigation; the rail and phone layouts need the sheet this item describes.
+Context: LIB-01/LIB-10 added the responsive shell: tokens in `web/src/styles/index.css` (raw colors anywhere else fail `tokens.test.ts`), Lucide icons, and the `web/src/routes/app-shell` layout route with sidebar, icon rail and bottom navigation. The tree goes in the sidebar's existing navigation; the rail and phone layouts need the sheet this item describes.
 
 **Why.** The design reference relies on a visible folder tree for orientation.
 
@@ -43,7 +43,7 @@ Context: LIB-01/LIB-10 added the responsive shell: tokens in `web/src/styles/tok
 
 Depends on: [LIB-21](#lib-21-library-list-on-the-design-system)
 
-Context: LIB-03 added `sort` (`name`, `updatedAt`, `size`), `order` (`asc`, `desc`) and `foldersFirst` to `listChildren`. Each cursor is bound to all three, so changing a header must restart paging from the first page. Kind is not a server sort: the column's label comes from the filename extension, so a Kind header can map to `foldersFirst` or stay unsortable. LIB-01/LIB-10 added the responsive shell: tokens in `web/src/styles/tokens.css` (raw colors outside the token files fail `tokens.test.ts`), Lucide icons, and the `web/src/routes/app-shell` layout route with sidebar, icon rail and bottom navigation. The folder list already has icon, name, kind, size and modified columns that drop and stack through container queries; this item adds sortable headers and the grid.
+Context: LIB-03 added `sort` (`name`, `updatedAt`, `size`), `order` (`asc`, `desc`) and `foldersFirst` to `listChildren`. Each cursor is bound to all three, so changing a header must restart paging from the first page. Kind is not a server sort: the column's label comes from the filename extension, so a Kind header can map to `foldersFirst` or stay unsortable. LIB-01/LIB-10 added the responsive shell: tokens in `web/src/styles/index.css` (raw colors anywhere else fail `tokens.test.ts`), Lucide icons, and the `web/src/routes/app-shell` layout route with sidebar, icon rail and bottom navigation. The folder list already has icon, name, kind, size and modified columns that drop and stack through container queries; this item adds sortable headers and the grid.
 
 **Why.** The design reference shows a dense table and a calm grid over the same data.
 
@@ -104,7 +104,7 @@ Depends on: [M1-02](finish-m1.md#m1-02-breadcrumbs-from-real-ancestors)
 
 Depends on: none
 
-Context: LIB-01/LIB-10 added the responsive shell: tokens in `web/src/styles/tokens.css` (raw colors outside the token files fail `tokens.test.ts`), Lucide icons, and the `web/src/routes/app-shell` layout route with sidebar, icon rail and bottom navigation.
+Context: LIB-01/LIB-10 added the responsive shell: tokens in `web/src/styles/index.css` (raw colors anywhere else fail `tokens.test.ts`), Lucide icons, and the `web/src/routes/app-shell` layout route with sidebar, icon rail and bottom navigation.
 
 **Why.** A keyboard-first file library should have Cmd+K.
 
@@ -299,7 +299,7 @@ Depends on: none
 
 - Labels, validation messages, the cleared password after a failure, the pending state and focus on load behave as before
 - Side-by-side comparison with `main` at 1440×900 and 390×844 shows no unintended difference
-- Whichever of LIB-15, LIB-16, LIB-20 and LIB-21 lands last deletes `tokens.css`, `app.css`, their Biome exclusions and `tokens.test.ts` entry, and updates decision 0011's consequences, `web/AGENTS.md` and the Context lines that name `tokens.css`
+- Whichever of LIB-15, LIB-16, LIB-20 and LIB-21 lands last deletes `tokens.css`, `app.css` and their Biome exclusions, and updates decision 0011's consequences and `web/AGENTS.md`
 
 **Checks:** `web`; `rendered`
 
@@ -320,6 +320,6 @@ Context: The Library route is `web/src/routes/library`. Its entry list drops col
 - Column dropping and row stacking follow the list's own width, beside the inspector too; long names without spaces wrap
 - Row links, per-row Download and Details buttons, keyboard focus order, empty, loading, error and not-found states, and the create-folder validation behave as before
 - Side-by-side comparison with `main` at 1440×900, 1024×768 and 390×844 with a 45-item folder shows no unintended difference
-- Whichever of LIB-15, LIB-16, LIB-20 and LIB-21 lands last deletes `tokens.css`, `app.css`, their Biome exclusions and `tokens.test.ts` entry, and updates decision 0011's consequences, `web/AGENTS.md` and the Context lines that name `tokens.css`
+- Whichever of LIB-15, LIB-16, LIB-20 and LIB-21 lands last deletes `tokens.css`, `app.css` and their Biome exclusions, and updates decision 0011's consequences and `web/AGENTS.md`
 
 **Checks:** `web`; `rendered`

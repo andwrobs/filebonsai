@@ -89,6 +89,9 @@ export function TransferTray() {
 				<Button
 					aria-controls={bodyId}
 					aria-expanded={expanded}
+					// A disclosure, not a popup: the chevron shows its state, so it skips
+					// the open-trigger fill and only fills on hover.
+					className="aria-expanded:not-hover:bg-transparent aria-expanded:not-hover:text-muted-foreground"
 					onPress={() => setExpanded((value) => !value)}
 					size="icon"
 					variant="ghost"

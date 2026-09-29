@@ -21,7 +21,6 @@
 
   --color-accent: var(--primary);
   --color-accent-hover: var(--primary-hover);
-  --color-accent-text: var(--primary-text);
   --color-on-accent: var(--primary-foreground);
   --color-selection: var(--selection);
   --color-selection-text: var(--selection-foreground);
@@ -29,7 +28,6 @@
   --color-focus: var(--ring);
 
   --color-danger: var(--destructive);
-  --color-danger-surface: var(--destructive-surface);
 
   --color-kind-folder: var(--kind-folder);
   --color-kind-image: var(--kind-image);
@@ -45,7 +43,6 @@
 
   --color-scrim: var(--scrim);
 
-  --weight-regular: var(--font-weight-normal);
   --weight-medium: var(--font-weight-medium);
   --weight-semibold: var(--font-weight-semibold);
   --weight-bold: var(--font-weight-bold);
@@ -57,6 +54,5 @@
   --space-5: calc(var(--spacing) * 5);
   --space-6: calc(var(--spacing) * 6);
   --space-8: calc(var(--spacing) * 8);
-  --space-10: calc(var(--spacing) * 10);
   --space-12: calc(var(--spacing) * 12);
 }
