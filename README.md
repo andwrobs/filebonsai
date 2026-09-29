@@ -1,5 +1,7 @@
 # Filebonsai
 
+**[Docs at a glance](docs/README.md)** — product, status, backlog, setup, and references.
+
 Filebonsai is a polished, open-source, self-hosted file library for people who want
 control of their storage. It starts as a Java/Spring modular monolith with PostgreSQL
 and generated transports for planned React and Swift clients.
@@ -26,6 +28,5 @@ Run backend checks from `backend/`:
 ./scripts/verify.sh
 ```
 
-PostgreSQL tests require Docker. Start with the active [documentation map](docs/README.md)
-and [verified status](docs/development/status.md). Agent instructions live in
+PostgreSQL tests require Docker. Agent instructions live in
 [`AGENTS.md`](AGENTS.md); superseded material lives only in Git history.
