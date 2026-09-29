@@ -80,6 +80,9 @@ observed results; use Git history for prior plans and completed migrations.
   credential, or path. The web `/storage` page shows it with the upload limit and has its
   own loading, error, and unavailable states. The shell links Library and Storage in
   every layout.
+- File responses carry `versionCount`, the current version's verified `sha256` (null
+  only for an object recorded without one), and `storageConnectionName`, the configured
+  connection's display name. The inspector lists them, with a copy button for the digest.
 - The web shell follows the design reference with one token file for the current
   screens (`web/src/styles/tokens.css`) for color, type, spacing, radius, density, and
   region sizes; the starter's `lib/ui` tokens in `web/src/styles/index.css` are loaded
@@ -117,6 +120,27 @@ observed results; use Git history for prior plans and completed migrations.
 
 ## Latest observed checks
 
+- Inspector integrity fields (LIB-14): targeted `cd backend && ./mvnw test` runs
+  passed `CatalogHttpTest` (8), `FixtureCatalogTest` (20), `PostgresCatalogTest` (18,
+  PostgreSQL 17 Testcontainers) and `AccessHttpPostgresTest` (12). The new PostgreSQL
+  test reads a legacy null digest and a count of 1, then a second version's digest and a
+  count of 2 through both get and list. The listing index-plan tests still pass with the
+  object join and version count. Over HTTP, an upload's entry returned its computed
+  digest, the configured display name and `versionCount` 1, and `currentVersion` has
+  exactly `id`, `sizeBytes`, `sha256` and `storageConnectionName`. `./scripts/verify.sh`
+  passed with 94 backend tests (1 opt-in R2 proof skipped), export, generation and
+  both clients. The added client checks then passed (Swift 11, TypeScript 10),
+  including a null digest. `cd web && npm test` passed with 86 Vitest tests and the
+  build. A disposable PostgreSQL 17.6 container backed this branch's PostgreSQL-profile
+  backend (display name `Studio NAS`) with three synthetic uploads. Two SQL edits added
+  versions: one file had 3, and another had a current version whose object had no
+  digest. In the Claude desktop in-app browser at 1440×900, the docked inspector
+  showed Versions 3, Stored on Studio NAS, and a SHA-256 equal to `shasum -a 256` of
+  the uploaded body. The legacy file showed "Not recorded" with no copy button, and
+  the earlier copy message did not carry over. At 390×844 with touch emulated, the
+  sheet showed a 94-character name and a wrapped digest that matched its upload. Both
+  copy buttons measured 44px, and nothing overflowed horizontally. Copy SHA-256 showed
+  its fallback message because the in-app browser denies clipboard writes.
 - Web on the SPA starter (decision 0011), reached `main` at `cb62fd1` without a pull
   request: on `main` at `642aea6`, `cd web && npm ci && npm test` passed Biome over 153
   files, route typegen and `tsc`, 85 Vitest tests in 23 files, and the SPA build, on
@@ -354,7 +378,7 @@ items and required tests.
    streaming/recovery evidence before claiming R2 support or adding another provider.
 2. Web: move the screens onto `web/src/lib/ui` and the tokens in
    `web/src/styles/index.css`, the second half of decision 0011, then the library's
-   table/grid views (LIB-04) and the inspector's integrity fields (LIB-14).
+   table/grid views (LIB-04).
 3. Photo metadata: accepted decisions
    [0009](../decisions/0009-durable-jobs-in-postgresql.md) (durable jobs) and
    [0010](../decisions/0010-media-processing-isolation.md) (processing isolation and

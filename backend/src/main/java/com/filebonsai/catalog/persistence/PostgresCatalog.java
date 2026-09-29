@@ -9,6 +9,7 @@ import static com.filebonsai.catalog.persistence.jooq.Tables.CATALOG_ENTRIES;
 import static com.filebonsai.catalog.persistence.jooq.Tables.CATALOG_NAMES;
 import static com.filebonsai.catalog.persistence.jooq.Tables.FILE_VERSIONS;
 import static com.filebonsai.catalog.persistence.jooq.Tables.IDEMPOTENCY_RECORDS;
+import static com.filebonsai.catalog.persistence.jooq.Tables.PHYSICAL_OBJECTS;
 import static com.filebonsai.catalog.persistence.jooq.Tables.WORKSPACE_MEMBERS;
 
 import com.filebonsai.catalog.application.CatalogCursor;
@@ -32,6 +33,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -58,6 +60,9 @@ public final class PostgresCatalog
     private static final Field<Long> SORT_SIZE = DSL.field(
             "coalesce({0}, -1)", Long.class, DSL.field(DSL.name("catalog_names", "entry_size_bytes"), Long.class));
     private static final Field<String> SORT_NAME = DSL.field("{0} collate \"C\"", String.class, CATALOG_NAMES.NAME);
+    // Added by V7, after the generated classes.
+    private static final Field<byte[]> OBJECT_SHA256 = DSL.field(DSL.name("physical_objects", "sha256"), byte[].class);
+    private static final Field<Integer> VERSION_COUNT = versionCount();
     private static final String CREATE_FOLDER_OPERATION = "create-folder";
 
     private final DSLContext database;
@@ -189,6 +194,8 @@ public final class PostgresCatalog
                         CATALOG_ENTRIES.UPDATED_AT,
                         FILE_VERSIONS.ID,
                         FILE_VERSIONS.SIZE_BYTES,
+                        OBJECT_SHA256,
+                        VERSION_COUNT,
                         SORT_KIND,
                         SORT_UPDATED_AT,
                         SORT_SIZE)
@@ -197,6 +204,8 @@ public final class PostgresCatalog
                 .on(CATALOG_ENTRIES.ID.eq(CATALOG_NAMES.ENTRY_ID))
                 .leftJoin(FILE_VERSIONS)
                 .on(FILE_VERSIONS.ID.eq(CATALOG_ENTRIES.CURRENT_VERSION_ID))
+                .leftJoin(PHYSICAL_OBJECTS)
+                .on(currentObject())
                 .where(CATALOG_NAMES.WORKSPACE_ID.eq(scope.workspaceId()))
                 .and(CATALOG_NAMES.PARENT_ID.eq(folderId.value()))
                 // A literal, so even a generic plan can prove the partial indexes' predicate.
@@ -348,6 +357,20 @@ public final class PostgresCatalog
                 .and(WORKSPACE_MEMBERS.PRINCIPAL_ID.eq(scope.principalId())));
     }
 
+    private static Condition currentObject() {
+        return PHYSICAL_OBJECTS
+                .WORKSPACE_ID
+                .eq(FILE_VERSIONS.WORKSPACE_ID)
+                .and(PHYSICAL_OBJECTS.ID.eq(FILE_VERSIONS.OBJECT_ID));
+    }
+
+    /** Every committed version of the row's entry; zero for a folder. Read through the (entry, ordinal) index. */
+    private static Field<Integer> versionCount() {
+        var counted = FILE_VERSIONS.as("counted_versions");
+        return DSL.field(DSL.selectCount().from(counted).where(counted.ENTRY_ID.eq(CATALOG_ENTRIES.ID)))
+                .as("version_count");
+    }
+
     private Entry.Folder folder(DSLContext context, CatalogScope scope, EntryId id) {
         Entry entry = getInternal(context, scope, id);
         if (entry instanceof Entry.Folder folder) {
@@ -365,12 +388,16 @@ public final class PostgresCatalog
                         CATALOG_ENTRIES.CREATED_AT,
                         CATALOG_ENTRIES.UPDATED_AT,
                         FILE_VERSIONS.ID,
-                        FILE_VERSIONS.SIZE_BYTES)
+                        FILE_VERSIONS.SIZE_BYTES,
+                        OBJECT_SHA256,
+                        VERSION_COUNT)
                 .from(CATALOG_ENTRIES)
                 .join(CATALOG_NAMES)
                 .on(CATALOG_NAMES.ENTRY_ID.eq(CATALOG_ENTRIES.ID).and(CATALOG_NAMES.CLAIM_KIND.eq(ENTRY_CLAIM)))
                 .leftJoin(FILE_VERSIONS)
                 .on(FILE_VERSIONS.ID.eq(CATALOG_ENTRIES.CURRENT_VERSION_ID))
+                .leftJoin(PHYSICAL_OBJECTS)
+                .on(currentObject())
                 .where(CATALOG_ENTRIES.WORKSPACE_ID.eq(scope.workspaceId()))
                 .and(member(scope))
                 .and(CATALOG_ENTRIES.ID.eq(id.value()))
@@ -390,6 +417,7 @@ public final class PostgresCatalog
         if (FOLDER.equals(row.get(CATALOG_ENTRIES.KIND))) {
             return new Entry.Folder(id, parent == null ? null : new EntryId(parent), name, created, updated);
         }
+        byte[] digest = row.get(OBJECT_SHA256);
         return new Entry.File(
                 id,
                 new EntryId(parent),
@@ -397,7 +425,10 @@ public final class PostgresCatalog
                 created,
                 updated,
                 new Entry.Version(
-                        new VersionId(row.get(FILE_VERSIONS.ID)), new ByteCount(row.get(FILE_VERSIONS.SIZE_BYTES))));
+                        new VersionId(row.get(FILE_VERSIONS.ID)),
+                        new ByteCount(row.get(FILE_VERSIONS.SIZE_BYTES)),
+                        digest == null ? null : HexFormat.of().formatHex(digest)),
+                row.get(VERSION_COUNT));
     }
 
     private byte[] intent(EntryId parentId, FileName name) {

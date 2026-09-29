@@ -45,6 +45,17 @@ field error. Query booleans accept only `true` and `false`. An empty value, such
 without a snapshot, so changes behind the cursor may be missed and changes ahead may
 repeat an entry.
 
+## File details
+
+Every file in a listing or `GET /api/v1/entries/{id}` carries `versionCount`, the number
+of committed versions, current included (at least 1). `currentVersion.sha256` is the
+lowercase hex SHA-256 verified when that version was committed; it is required and
+nullable, and null only for an object recorded without a digest.
+`currentVersion.storageConnectionName` is the configured connection's display name,
+the same value as `connection.displayName` on `GET /api/v1/storage`. A deployment has
+one connection, and it serves every version's bytes. None of these fields carries a
+storage key, path, bucket, endpoint or provider ID.
+
 ## Local transfer API
 
 `POST /api/v1/uploads` reserves a new filename and durable upload identity. Its JSON

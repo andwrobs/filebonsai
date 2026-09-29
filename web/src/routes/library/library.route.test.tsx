@@ -27,7 +27,13 @@ const photo = {
 	kind: "file",
 	name: "IMG_8421.JPG",
 	parentId: "root",
-	currentVersion: { id: "v1", sizeBytes: "5505024" },
+	currentVersion: {
+		id: "v1",
+		sha256: "4f8b42c22dd3729b519ba6f68d2da7cc5b2d606d05daed5ad5128cc03e6c6358",
+		sizeBytes: "5505024",
+		storageConnectionName: "Local disk",
+	},
+	versionCount: 1,
 };
 
 beforeEach(() => {
@@ -224,4 +230,37 @@ it("lets a late reply refresh its own folder without closing the next folder's f
 		).toBe(true),
 	);
 	expect(screen.getByLabelText("Folder name")).toBe(nextForm);
+});
+
+it("shows a file's versions, storage connection and copyable digest", async () => {
+	const legacy = {
+		...photo,
+		currentVersion: { ...photo.currentVersion, id: "v0", sha256: null },
+		id: "legacy",
+		name: "scan.tiff",
+		versionCount: 3,
+	};
+	stubApi(serveFolder(() => [photo, legacy]));
+	const { user } = renderLibrary();
+	await user.click(
+		await screen.findByRole("button", { name: "Details for IMG_8421.JPG" }),
+	);
+	const details = screen.getByRole("complementary", { name: "Details" });
+	const field = (term: string) =>
+		within(details).getByText(term, { selector: "dt" }).nextElementSibling;
+	expect(field("Versions")).toHaveTextContent("1");
+	expect(field("Stored on")).toHaveTextContent("Local disk");
+	expect(field("SHA-256")).toHaveTextContent(photo.currentVersion.sha256);
+	expect(
+		within(details).getByRole("button", { name: "Copy SHA-256" }),
+	).toBeInTheDocument();
+
+	await user.click(
+		screen.getByRole("button", { name: "Details for scan.tiff" }),
+	);
+	expect(field("Versions")).toHaveTextContent("3");
+	expect(field("SHA-256")).toHaveTextContent("Not recorded");
+	expect(
+		within(details).queryByRole("button", { name: "Copy SHA-256" }),
+	).not.toBeInTheDocument();
 });

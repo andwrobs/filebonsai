@@ -97,6 +97,64 @@ class PostgresCatalogTest {
     }
 
     @Test
+    void readsTheCurrentDigestAndCountsEveryVersionOfTheEntry() {
+        Entry.File legacy = (Entry.File) catalog.get(scope, FILE);
+        assertThat(legacy.currentVersion().sha256()).isNull();
+        assertThat(legacy.versionCount()).isEqualTo(1);
+
+        byte[] digest = new byte[32];
+        digest[0] = (byte) 0xab;
+        digest[31] = 0x01;
+        UUID object = UUID.randomUUID();
+        UUID version = UUID.randomUUID();
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        database.transaction(configuration -> {
+            DSLContext transaction = DSL.using(configuration);
+            transaction
+                    .insertInto(PHYSICAL_OBJECTS)
+                    .columns(
+                            PHYSICAL_OBJECTS.ID,
+                            PHYSICAL_OBJECTS.WORKSPACE_ID,
+                            PHYSICAL_OBJECTS.STORAGE_KEY,
+                            PHYSICAL_OBJECTS.SIZE_BYTES,
+                            PHYSICAL_OBJECTS.CREATED_AT,
+                            DSL.field(DSL.name("sha256"), byte[].class))
+                    .values(object, WORKSPACE, "objects/" + object, 12L, now, digest)
+                    .execute();
+            transaction
+                    .insertInto(FILE_VERSIONS)
+                    .columns(
+                            FILE_VERSIONS.ID,
+                            FILE_VERSIONS.WORKSPACE_ID,
+                            FILE_VERSIONS.ENTRY_ID,
+                            FILE_VERSIONS.OBJECT_ID,
+                            FILE_VERSIONS.ORDINAL,
+                            FILE_VERSIONS.SIZE_BYTES,
+                            FILE_VERSIONS.CREATED_AT)
+                    .values(version, WORKSPACE, FILE.value(), object, 2L, 12L, now)
+                    .execute();
+            transaction
+                    .update(CATALOG_ENTRIES)
+                    .set(CATALOG_ENTRIES.CURRENT_VERSION_ID, version)
+                    .where(CATALOG_ENTRIES.ID.eq(FILE.value()))
+                    .execute();
+        });
+
+        String hex = "ab" + "00".repeat(30) + "01";
+        Entry.File current = (Entry.File) catalog.get(scope, FILE);
+        assertThat(current.currentVersion().id().value()).isEqualTo(version);
+        assertThat(current.currentVersion().sha256()).isEqualTo(hex);
+        assertThat(current.versionCount()).isEqualTo(2);
+        Entry.File listed = catalog.list(scope, ROOT, ListOrder.DEFAULT, 100, null).entries().stream()
+                .filter(entry -> entry.id().equals(FILE))
+                .map(Entry.File.class::cast)
+                .findFirst()
+                .orElseThrow();
+        assertThat(listed.currentVersion().sha256()).isEqualTo(hex);
+        assertThat(listed.versionCount()).isEqualTo(2);
+    }
+
+    @Test
     void readsTypedEntriesAndHidesOtherScopes() {
         assertThat(catalog.get(scope, ROOT)).isInstanceOf(Entry.Folder.class);
         Entry.File file = (Entry.File) catalog.get(scope, FILE);

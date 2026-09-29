@@ -51,8 +51,11 @@ it("leads compact meta with size for files and kind for folders", () => {
 		updatedAt: "2026-08-28T12:00:00Z",
 		currentVersion: {
 			id: "00000000-0000-4000-8000-000000000002",
+			sha256: null,
 			sizeBytes: "5505024",
+			storageConnectionName: "Local disk",
 		},
+		versionCount: 1,
 	};
 	expect(entryMeta(folder, now, "en-US", "UTC")).toBe("Folder · Sep 21");
 	expect(entryMeta(file, now, "en-US", "UTC")).toBe("5.2 MB · Aug 28");
