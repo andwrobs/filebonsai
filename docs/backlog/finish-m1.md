@@ -237,3 +237,26 @@ Depends on: none
 
 **Invariants:** INV-08  
 **Checks:** `postgres`
+
+## M1-14 Sign-out control in the web shell
+
+`P2` · `S` · Build · Web
+
+Depends on: none
+
+**Why.** The web client cannot end its session. `AccessService.logout` exists but nothing calls it, so leaving means clearing cookies, and the e2e journey signs out through the API instead of the UI.
+
+**Outcome.** A labelled Sign out action in the shell at every layout (sidebar, icon rail, and phone top bar). It calls logout, clears private cached data, and lands on sign-in.
+
+**Acceptance**
+
+- Reachable by keyboard and touch at 1440×900 and 390×844, with a pending state and no duplicate submit
+- Afterwards the Query cache and the transfer store hold nothing from the old session, Back shows no private data, and `/api/v1/auth/me` returns 401
+- A failed logout says so and leaves the person signed in
+- The e2e `Session.signOut` helper uses the control
+
+**Settle first**
+
+- What sign-out does to uploads still in progress: cancel them, or wait until they settle
+
+**Checks:** `web`; `npm run e2e`

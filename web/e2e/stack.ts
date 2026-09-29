@@ -46,14 +46,18 @@ export type Stack = {
 
 type Cleanup = { async: () => Promise<void>; sync: () => void };
 
+const signals = { SIGHUP: 1, SIGTERM: 15 } as const;
+
 export async function startStack(): Promise<Stack> {
 	mkdirSync(logRoot, { recursive: true });
 	const cleanups: Cleanup[] = [];
-	let stopped = false;
+	// Each cleanup runs once, whichever path reaches it first. The synchronous
+	// path covers an exit, a signal, or a second Ctrl-C during an async stop.
+	const done = new Set<Cleanup>();
 	const stopSync = () => {
-		if (stopped) return;
-		stopped = true;
 		for (const cleanup of [...cleanups].reverse()) {
+			if (done.has(cleanup)) continue;
+			done.add(cleanup);
 			try {
 				cleanup.sync();
 			} catch {
@@ -61,13 +65,20 @@ export async function startStack(): Promise<Stack> {
 			}
 		}
 	};
-	// A crashed or interrupted runner still removes the container and processes.
+	const onSignal = (signal: NodeJS.Signals) => {
+		stopSync();
+		process.exit(128 + signals[signal as keyof typeof signals]);
+	};
 	process.once("exit", stopSync);
+	for (const signal of Object.keys(signals)) process.once(signal, onSignal);
 	const stop = async () => {
-		if (stopped) return;
-		stopped = true;
+		for (const cleanup of [...cleanups].reverse()) {
+			if (done.has(cleanup)) continue;
+			await cleanup.async();
+			done.add(cleanup);
+		}
 		process.off("exit", stopSync);
-		for (const cleanup of [...cleanups].reverse()) await cleanup.async();
+		for (const signal of Object.keys(signals)) process.off(signal, onSignal);
 	};
 
 	try {
@@ -111,6 +122,39 @@ async function startPostgres(password: string, cleanups: Cleanup[]) {
 			"e2e: Docker is not reachable. Start Docker, then run `npm run e2e` again.",
 		);
 	}
+	// The run's label finds its container even when an interruption lands
+	// between `docker run` and reading the container ID.
+	const label = `filebonsai.e2e=${randomBytes(8).toString("hex")}`;
+	const containers = () =>
+		execFileSync(
+			"docker",
+			["ps", "--all", "--quiet", "--filter", `label=${label}`],
+			{
+				encoding: "utf8",
+			},
+		)
+			.split("\n")
+			.filter(Boolean);
+	cleanups.push({
+		async: async () => {
+			for (const id of containers()) {
+				// Keep the server log beside the others; it names SQL errors that
+				// the API reports only as a status.
+				await run("docker", ["logs", id], { maxBuffer: 16 * 1024 * 1024 })
+					.then(({ stdout, stderr }) =>
+						writeFileSync(path.join(logRoot, "postgres.log"), stdout + stderr),
+					)
+					.catch(() => {});
+				await run("docker", ["rm", "--force", id]).catch(() => {});
+			}
+		},
+		sync: () => {
+			const ids = containers();
+			if (ids.length) {
+				execFileSync("docker", ["rm", "--force", ...ids], { stdio: "ignore" });
+			}
+		},
+	});
 	// -e POSTGRES_PASSWORD without a value reads it from this process's
 	// environment, so the password never appears in the process list.
 	const { stdout } = await run(
@@ -120,7 +164,7 @@ async function startPostgres(password: string, cleanups: Cleanup[]) {
 			"--detach",
 			"--rm",
 			"--label",
-			"filebonsai.e2e=true",
+			label,
 			"--tmpfs",
 			"/var/lib/postgresql/data",
 			"--publish",
@@ -136,21 +180,6 @@ async function startPostgres(password: string, cleanups: Cleanup[]) {
 		{ env: { ...process.env, POSTGRES_PASSWORD: password } },
 	);
 	const container = stdout.trim();
-	cleanups.push({
-		async: async () => {
-			// Keep the server log beside the others; it names SQL errors that the
-			// API reports only as a status.
-			await run("docker", ["logs", container], { maxBuffer: 16 * 1024 * 1024 })
-				.then(({ stdout, stderr }) =>
-					writeFileSync(path.join(logRoot, "postgres.log"), stdout + stderr),
-				)
-				.catch(() => {});
-			await run("docker", ["rm", "--force", container]).catch(() => {});
-		},
-		sync: () => {
-			execFileSync("docker", ["rm", "--force", container], { stdio: "ignore" });
-		},
-	});
 	const { stdout: mapping } = await run("docker", [
 		"port",
 		container,
@@ -206,11 +235,15 @@ async function startBackend(options: {
 	const java = process.env.JAVA_HOME
 		? path.join(process.env.JAVA_HOME, "bin/java")
 		: "java";
-	// Start from a clean slate: a developer's shell may export Spring or
-	// Filebonsai settings (R2, storage) that must not reach this backend.
+	// Start from a clean slate: a developer's shell may export Spring,
+	// Filebonsai (R2, storage), or JVM option settings that must not reach
+	// this backend.
 	const env = Object.fromEntries(
 		Object.entries(process.env).filter(
-			([name]) => !/^(SPRING_|FILEBONSAI_)/.test(name),
+			([name]) =>
+				!/^(SPRING_|FILEBONSAI_|JAVA_TOOL_OPTIONS$|JDK_JAVA_OPTIONS$)/.test(
+					name,
+				),
 		),
 	);
 	const backend = startProcess(
@@ -396,12 +429,13 @@ function freePort() {
 	});
 }
 
+// The newest boot jar, if several versions are in target/.
 function findJar(target: string) {
 	try {
-		const jar = readdirSync(target).find((name) =>
-			/^filebonsai-catalog-.+\.jar$/.test(name),
-		);
-		return jar ? path.join(target, jar) : undefined;
+		return readdirSync(target)
+			.filter((name) => /^filebonsai-catalog-.+\.jar$/.test(name))
+			.map((name) => path.join(target, name))
+			.sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)[0];
 	} catch {
 		return undefined;
 	}

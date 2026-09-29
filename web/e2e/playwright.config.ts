@@ -11,8 +11,10 @@ export default defineConfig({
 	globalSetup: "./global-setup.ts",
 	forbidOnly: true,
 	retries: 0,
-	// The projects share one owner and workspace, and the journey is not a
-	// concurrency test, so they run one after another.
+	// One at a time: two first uploads completing together into a new storage
+	// root can hit the directory-creation race fixed by
+	// https://github.com/andwrobs/filebonsai/pull/25 (a 503 "requires
+	// reconciliation"). Return to 2 workers once that fix is on main.
 	workers: 1,
 	timeout: 60_000,
 	expect: { timeout: 10_000 },
