@@ -6,32 +6,11 @@ Image thumbnails come first, as storage-and-transfers.md says, and they need a s
 
 See [the backlog index](README.md) for how to pick up and retire items.
 
-## PRV-01 Decision: preview processing sandbox
-
-`P2` · `S` · Decision · Backend
-
-Depends on: none
-
-In flight: `claude/media-metadata-decisions` proposes [decision 0010](../decisions/0010-media-processing-isolation.md) for review. It also covers the metadata extraction PRV-04 needs. On acceptance, that branch deletes this item.
-
-**Why.** Image decoders are an attack surface, and storage-and-transfers.md requires bounded processing.
-
-**Outcome.** A decision covering the processor (a libvips subprocess vs ImageIO or TwelveMonkeys), process isolation (CPU, memory, time, no network), pixel-count limits against decode bombs, supported formats, outputs (WebP at 256 and 1024), where derived assets live, authorized serving and caching, EXIF orientation and stripping, and processor-version stamping.
-
-**Acceptance**
-
-- Threat model included
-- First formats named, with rationale
-
-**Invariants:** INV-12, INV-15  
-**Read:** `docs/architecture/storage-and-transfers.md`  
-**Checks:** `decision-review`
-
 ## PRV-02 Image thumbnail pipeline
 
 `P2` · `L` · Build · Backend · Public API change
 
-Depends on: [PRV-01](#prv-01-decision-preview-processing-sandbox), [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer), [PRV-10](#prv-10-processing-sandbox-container)
+Depends on: [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer), [PRV-10](#prv-10-processing-sandbox-container)
 
 **Why.** Thumbnails transform browsing, Tidy cards and the gallery.
 
@@ -68,19 +47,19 @@ Depends on: [PRV-02](#prv-02-image-thumbnail-pipeline), [LIB-04](everyday-librar
 
 `P2` · `L` · Build · Backend, Web · Public API change
 
-Depends on: [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer), [PRV-01](#prv-01-decision-preview-processing-sandbox)
+Depends on: [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer), [PRV-10](#prv-10-processing-sandbox-container)
 
-Context: LIB-03 (in flight on `claude/server-side-sort`) owns the sort parameter that 'Taken' joins. Split at pickup: extraction and storage first, then the API, inspector and sort.
+Context: LIB-03 (merged in PR #17) owns the sort parameter that 'Taken' joins. Split at pickup: extraction and storage first, then the API, inspector and sort.
 
 **Why.** Capture dates and dimensions drive sorting, 'On this day' and Tidy. The user asked on 2026-09-27 for files to capture and show more metadata.
 
-**Outcome.** Decision 0010's Tier A child process extracts its allow-listed field set: dimensions, orientation, taken time, camera, lens, exposure settings, authorship and GPS. Location goes in a separate private table. Publication enqueues extraction, and a sweeper backfills existing versions and re-runs older extractor versions. The inspector shows the fields and 'Taken' becomes a sort option.
+**Outcome.** Decision 0010's Tier A sandboxed child process extracts its allow-listed field set: dimensions, orientation, taken time, camera, lens, exposure settings, authorship and GPS. Location goes in a separate private table. Publication enqueues extraction, and a sweeper backfills existing versions and re-runs older extractor versions. The inspector shows the fields and 'Taken' becomes a sort option.
 
 **Acceptance**
 
 - GPS is absent from listings and never included in shares or exports without explicit opt-in
 - Malformed metadata never fails the job hard; each version records one outcome
-- Tier A evidence from decision 0010: malformed fixtures, a killed over-budget child, heap and output caps, an empty child environment
+- Tier A evidence from decision 0010: malformed fixtures, a killed over-budget child, heap and output caps, an empty child environment, network denial and per-job filesystem isolation
 - Other workspaces get 404 for metadata
 
 **Checks:** `postgres`; `contract`; `web`
@@ -89,7 +68,7 @@ Context: LIB-03 (in flight on `claude/server-side-sort`) owns the sort parameter
 
 `P3` · `M` · Build · Backend, Web
 
-Depends on: [PRV-01](#prv-01-decision-preview-processing-sandbox), [PRV-10](#prv-10-processing-sandbox-container)
+Depends on: [PRV-10](#prv-10-processing-sandbox-container)
 
 **Why.** Documents are most of a library after photos.
 
@@ -157,18 +136,19 @@ Depends on: [PRV-04](#prv-04-photo-metadata-extraction)
 
 `P2` · `L` · Build · Backend, Infra
 
-Depends on: [PRV-01](#prv-01-decision-preview-processing-sandbox)
+Depends on: none
 
-**Why.** Native decoders are the riskiest code Filebonsai would run. Decision 0010 confines them to a container with no network or secrets that sees only the job's input.
+**Why.** A parser compromise must not reach backend secrets, originals or another job. Decision 0010 requires a per-job sandbox for both metadata parsing and native decoding.
 
-**Outcome.** A processor image built with the release, and a Compose service with no network, a read-only root, capped scratch, memory, CPU and PID limits, and no capabilities. Work is exchanged through a spool volume, with deadlines on both sides, and the backend gets a client. libvips runs with untrusted operations blocked and only allow-listed loaders enabled. The first operation is a header probe (format and dimensions) for PRV-02's pixel cap. Without the container, Tier B reports that it is unavailable.
+**Outcome.** A processor image built with the release, and a Compose service with no network, a read-only root, capped scratch, memory, CPU and PID limits, and no capabilities. Each job has a separate sandbox with private read-only input and bounded output mounts, with deadlines on both sides; no job can mount the shared spool root. The backend gets a client through a restricted trusted launcher. Tier A runs its child JVM inside this boundary. libvips runs with untrusted operations blocked and only allow-listed loaders enabled. The first operation is a header probe (format and dimensions) for PRV-02's pixel cap. Without the sandbox, both tiers report that they are unavailable.
 
 **Acceptance**
 
 - From inside the sandbox, a network connection fails, and backend secret files and storage are unreadable
 - A MAT, SVG or PDF body named `.jpg` is refused
 - A decode bomb and a hung job stop within budget, and the backend stays responsive
-- The backend rejects oversized or malformed processor output
+- Concurrent jobs cannot read or modify each other's inputs or outputs
+- The backend reaps the sandbox before reading output; links, special files, unexpected paths, and oversized or malformed output are rejected through pinned descriptors
 
 **Invariants:** INV-11, INV-15  
 **Read:** `docs/decisions/0010-media-processing-isolation.md`  

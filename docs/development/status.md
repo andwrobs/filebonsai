@@ -1,6 +1,6 @@
 # Verified status and next work
 
-Updated 2026-09-26. This is the only live status and sequencing document. Record only
+Updated 2026-09-28. This is the only live status and sequencing document. Record only
 observed results; use Git history for prior plans and completed migrations.
 
 ## Current implementation
@@ -29,10 +29,17 @@ observed results; use Git history for prior plans and completed migrations.
   PostgreSQL-backed transfer scenarios, injected uncertain responses around real
   provider calls, bounded resource observations, and prefix-scoped cleanup. Its local
   fixture, fault-ordering, and gate checks pass; no live R2 result has been observed.
-- The jOOQ PostgreSQL adapter remains behind operation ports. Its 13 Testcontainers
+- The jOOQ PostgreSQL adapter remains behind operation ports. Its 17 Testcontainers
   tests cover workspace scope, deterministic ordering, reservations, idempotency,
   rollback/concurrency, immutable identities/versions/objects, domain constraints,
-  root protection, and generated-schema drift.
+  root protection, generated-schema drift, and the listing orders below.
+- `GET /api/v1/entries/{id}/children` takes optional `sort` (`name`, `updatedAt`,
+  `size`), `order` (`asc`, `desc`), and `foldersFirst`. Each order ends in name bytes,
+  then UUID; a folder sizes below any file. Cursors are bound to all three, and
+  default-order cursors issued before they existed still work. Flyway V9 copies each
+  entry's kind, `updated_at`, and current size onto its name row through triggers, and
+  four partial indexes page every order without a sort. The web client does not use the
+  new parameters yet (LIB-04).
 - The PostgreSQL profile exposes authenticated Catalog HTTP through session-derived
   membership scope. Local-owner access includes secret-file bootstrap/reset,
   PostgreSQL-backed sessions, rotation/logout/reset invalidation, CSRF, persisted
@@ -105,6 +112,19 @@ observed results; use Git history for prior plans and completed migrations.
 
 ## Latest observed checks
 
+- Server-side sort (LIB-03): `cd backend && ./mvnw test` passed 93 tests with one
+  skipped, the opt-in real-R2 proof. PostgreSQL 17 Testcontainers tests covered three
+  things. The copied sort keys matched their source after publication order, a name
+  written before its version, an `updated_at` change, and a direct overwrite. All 12
+  orders were paged 3 at a time with 2 inserts between pages: positions strictly
+  increased, nothing repeated, and every earlier entry and every insert ahead of the
+  cursor came back. `EXPLAIN ANALYZE` over 10,000 children (1,000 folders) ran for every
+  order and group, from the start and from a mid-page cursor. Each run was an index scan
+  on an `ix_catalog_names_page*` index with no Sort or Seq Scan node. It returned 51
+  rows, filtered out at most 16, and took at most 0.25 ms. HTTP tests covered invalid
+  and coerced values and cursors reused across orders. `./scripts/verify.sh` passed:
+  TypeScript 9/9 and Swift 10/10, each including a check of the new query parameters.
+  The regenerated web schema passed `npm test` (43), `typecheck:run`, and `build`.
 - Browser originals preview (PRV-09): `cd web && npm test && npm run
   typecheck:run && npm run build` passed with 43 tests, strict TypeScript, and a
   production SPA build. The new policy tests cover allowed types, excluded markup,
@@ -274,17 +294,30 @@ observed results; use Git history for prior plans and completed migrations.
   proof was skipped by its required opt-in property. The proof script rejected missing
   settings before Maven.
 
+## Jobs and processing decisions — 2026-09-28
+
+Decisions 0009 and 0010 are accepted through PR #18. Merge review repaired the
+same-period deduplication gap and required filesystem/process isolation for both
+parser tiers, private per-job spool mounts, and safe output consumption. ENG-04 and
+PRV-01 are retired; ENG-05 and PRV-10 implement the decisions. No processing code or
+migration was added, and resource budgets remain unmeasured starting points.
+A task-scoped documentation validator passed 470 relative links/anchors, 120 unique
+backlog items with matching index dependencies, and an acyclic dependency graph;
+`git diff --check` passed. Runtime isolation and job guarantees await their build
+items and required tests.
+
 ## Ordered work
 
 1. Cloud transfer: run the decision 0007 compatibility proof against a disposable
    real Cloudflare R2 bucket, repair any provider mismatch, and record bounded
    streaming/recovery evidence before claiming R2 support or adding another provider.
-2. Web library, in this order: server-side sort (LIB-03), table/grid views (LIB-04),
-   then the inspector's integrity fields (LIB-14).
-3. Photo metadata, requested 2026-09-27: proposed decisions
-   [0009](../decisions/0009-durable-jobs-in-postgresql.md) (durable jobs, ENG-04) and
+2. Web library, in this order: table/grid views (LIB-04), then the inspector's
+   integrity fields (LIB-14).
+3. Photo metadata: accepted decisions
+   [0009](../decisions/0009-durable-jobs-in-postgresql.md) (durable jobs) and
    [0010](../decisions/0010-media-processing-isolation.md) (processing isolation and
-   metadata model, PRV-01) await review. After acceptance: ENG-05, then PRV-04.
+   metadata model). Build ENG-05 and PRV-10, then PRV-04. Both metadata parsing and
+   native decoding require the per-job sandbox; an in-backend child JVM is insufficient.
 4. iOS Catalog remains deferred by user preference. When resumed, implement the
    SwiftUI/TCA slice through a generated transport and handwritten application adapter.
 

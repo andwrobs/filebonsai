@@ -24,13 +24,21 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     private static final Logger LOG = LoggerFactory.getLogger(ApiExceptionHandler.class);
 
     @InitBinder
-    void strictUuidBinding(WebDataBinder binder) {
+    void strictScalarBinding(WebDataBinder binder) {
         binder.registerCustomEditor(UUID.class, new PropertyEditorSupport() {
             @Override
             public void setAsText(String text) {
                 setValue(ApiConfiguration.strictUuid(text));
             }
         });
+        var strictBoolean = new PropertyEditorSupport() {
+            @Override
+            public void setAsText(String text) {
+                setValue(ApiConfiguration.strictBoolean(text));
+            }
+        };
+        binder.registerCustomEditor(boolean.class, strictBoolean);
+        binder.registerCustomEditor(Boolean.class, strictBoolean);
     }
 
     @ExceptionHandler(InvalidField.class)

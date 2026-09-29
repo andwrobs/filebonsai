@@ -1,6 +1,7 @@
 # 0010: Isolate media processing by risk and keep photo location private
 
-Status: proposed
+Status: accepted
+Accepted: 2026-09-28
 Date: 2026-09-27
 
 ## Context
@@ -51,38 +52,51 @@ pictures are misleading.
 
 ### Two isolation tiers
 
-Isolation strength follows the parser's memory safety and capabilities.
+Parser choice and resource budgets follow memory safety and capabilities. Both
+tiers require the same per-job container security boundary. A parser compromise
+must not gain access to backend mounts, credentials, another job, or another workspace.
 
 **Tier A: memory-safe metadata parsing.** metadata-extractor 2.19 (Apache-2.0) is pure
 Java. It reads metadata without decoding pixels and follows no external references.
-It runs in a child JVM that the backend starts for each batch. The child has:
+It runs in a child JVM inside a separate per-job sandbox container, never in the
+backend container. One job handles one immutable version. The child has:
 
-- an empty environment and no credentials;
+- an empty environment, no credentials, no network, and no backend or storage mounts;
 - capped heap, metaspace and thread stacks, one processor, and exit on out-of-memory;
 - input streamed on stdin within a byte budget;
 - a single JSON document on stdout within an output cap;
 - a wall-clock deadline, after which the backend kills its process tree.
 
-A child handles a bounded batch of versions, and a breach fails only the version in
-progress. The child shares the backend's container, so Tier A does not enforce network
-isolation. This is a deliberate exception: the parser has no network or file access
-paths, and the remaining risk is a JVM code-execution bug reached through parsing.
-Moving Tier A into the Tier B sandbox later changes nothing else in this record.
+The sandbox also has the read-only root, resource limits, restricted user and private
+job mounts described below. Clearing an environment or choosing a memory-safe parser
+does not constrain filesystem access after code execution. Tier A therefore depends
+on PRV-10, just as Tier B does. Without the sandbox, extraction is unavailable and
+original availability is unaffected.
 
 **Tier B: native decode and encode (libvips).** Tier B runs in a separate processor
-container built with each release. The container has:
+container per job, using an image built with each release. The container has:
 
 - no network (`network_mode: none`);
 - a read-only root and size-capped tmpfs scratch;
 - memory, CPU and PID limits, no capabilities and `no-new-privileges`;
 - a non-root user, and no secrets or storage mounts.
 
-The backend and the processor exchange work only through a dedicated spool volume that
-holds in-flight inputs and outputs. Each job runs as its own process under resource
-limits and a deadline. The backend enforces its own deadline too, and removes spool
-files once it has read them. libvips runs with untrusted operations blocked and only
-the allow-listed loaders enabled. Without the container, Tier B is disabled: previews
-report that they are unavailable, and originals are unaffected.
+The backend stages a private directory for each job. Only that job's read-only input
+and bounded output directory are mounted into its sandbox; the shared spool root,
+other jobs, backend data, credential files and container-control sockets are never
+mounted. A separate process inside a shared spool mount is not sufficient isolation.
+The trusted launcher must enforce these restrictions rather than accept arbitrary
+paths, mounts or commands from a processor.
+
+Each job has a deadline on both sides. Before consuming output, the backend stops
+and reaps the sandbox and its children, then opens only the expected regular files
+without following links. Symlinks, hard links, special files, path traversal,
+unexpected files and oversized output are rejected; validation and consumption use
+the same pinned file descriptors. The backend chooses the final storage keys and
+removes job directories after consumption or failure. libvips runs with untrusted
+operations blocked and only the allow-listed loaders enabled. Without the container,
+Tier B is disabled: previews report that they are unavailable, and originals are
+unaffected.
 
 Two alternatives are rejected. ImageIO with TwelveMonkeys in the backend JVM would
 decode whole rasters into the server heap: a 100-megapixel ARGB image needs about
@@ -171,10 +185,10 @@ do not wait for the sweeper. Tool versions are logged but are not keys.
 
 ## Consequences
 
-- `storage-and-transfers.md` describes processing through this record, including the
-  Tier A network exception.
-- PRV-10 builds the Tier B sandbox. PRV-02 and PRV-05's PDF thumbnails depend on it.
-  PRV-04 builds Tier A and does not wait for the container.
+- `storage-and-transfers.md` describes processing through this record with no
+  in-backend parsing or network-isolation exception.
+- PRV-10 builds the shared per-job sandbox boundary for both tiers. PRV-04 metadata,
+  PRV-02 thumbnails and PRV-05's PDF thumbnails depend on it.
 - New configuration covers processing enablement, budgets and the spool path.
 - Evidence obligations for Tier A:
   - malformed and truncated fixtures for every format, looping IFDs and oversized
@@ -182,13 +196,16 @@ do not wait for the sweeper. Tool versions are logged but are not keys.
   - a time-budget breach kills the child and records the outcome;
   - the heap and output caps hold;
   - uploads and downloads continue meanwhile;
-  - the child's environment is empty.
+  - the child's environment is empty; backend data, credentials, control sockets and
+    another concurrently running job's files are inaccessible; network connections fail.
 - Evidence obligations for Tier B:
   - from inside the sandbox, network connections fail, and backend secret files and
     storage are unreadable;
   - a MAT, SVG or PDF body named `.jpg` is refused;
   - a decode bomb and a hung job stop within budget;
-  - hostile processor output is rejected.
+  - two concurrent jobs cannot read inputs or alter outputs belonging to each other;
+  - hostile processor output, including links and non-regular files, is rejected
+    after sandbox termination and before storage publication.
 - Privacy and authorization evidence: GPS is absent from listings, and from shares and
   exports once they exist, and serial numbers are never stored. Metadata and previews
   return `404` to other workspaces.

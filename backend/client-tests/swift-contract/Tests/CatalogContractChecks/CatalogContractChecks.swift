@@ -118,6 +118,20 @@ final class CatalogContractChecks: XCTestCase {
         XCTAssertEqual(summary.usedBytes, "9007199254740993")
     }
 
+    func testEncodesTheListOrderAsQueryParameters() throws {
+        let builder = CatalogAPI.listChildrenWithRequestBuilder(
+            id: UUID(uuidString: "00000000-0000-4000-8000-000000000001")!,
+            limit: 1,
+            sort: .updatedat,
+            order: .desc,
+            foldersFirst: true)
+        let query = URLComponents(string: builder.URLString)?.queryItems ?? []
+
+        XCTAssertEqual(query.first { $0.name == "sort" }?.value, "updatedAt")
+        XCTAssertEqual(query.first { $0.name == "order" }?.value, "desc")
+        XCTAssertEqual(query.first { $0.name == "foldersFirst" }?.value, "true")
+    }
+
     private var decoder: JSONDecoder {
         CodableHelper.jsonDecoder
     }

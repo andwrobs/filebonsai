@@ -142,12 +142,13 @@ not establish R2 compatibility.
 Metadata and derived previews begin only from a committed immutable version through a
 durable job (decision [0009](../decisions/0009-durable-jobs-in-postgresql.md)).
 Decision [0010](../decisions/0010-media-processing-isolation.md) sets the isolation.
-Memory-safe metadata parsing runs in a budgeted child process of the backend. Native
-decoders run only in a processor container with no network, secrets, or storage mounts.
+Metadata parsing and native decoding both run in separate per-job sandbox containers
+with no network, secrets, backend data, or storage mounts. Each sandbox sees only its
+job's input and bounded output directory, never a shared spool root.
 Every job has wall-clock, memory, input, disk, and output budgets, and a breach ends
 only that job. Magic bytes choose the parser from an allow-list; the filename never
-does. The Tier A child is the one exception to network isolation, for the reasons
-0010 records. Results record their extractor or renderer version and inherit source
+does. The backend rejects hostile output, including links and non-regular files,
+after terminating the sandbox; validation and consumption use pinned descriptors. Results record their extractor or renderer version and inherit source
 authorization. Processing failure never changes original availability. Photo location
 is stored apart from other metadata and never appears in listings, shares, or exports
 without opt-in. Image thumbnails come before PDF, office, or video adapters.

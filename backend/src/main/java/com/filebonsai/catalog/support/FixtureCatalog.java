@@ -13,15 +13,15 @@ import com.filebonsai.catalog.application.CreateFolder;
 import com.filebonsai.catalog.application.GetEntry;
 import com.filebonsai.catalog.application.GetWorkspaceRoot;
 import com.filebonsai.catalog.application.ListChildren;
+import com.filebonsai.catalog.application.ListOrder;
 import com.filebonsai.catalog.domain.ByteCount;
 import com.filebonsai.catalog.domain.Entry;
 import com.filebonsai.catalog.domain.EntryId;
 import com.filebonsai.catalog.domain.FileName;
 import com.filebonsai.catalog.domain.VersionId;
-import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -88,28 +88,23 @@ public final class FixtureCatalog implements GetEntry, GetWorkspaceRoot, ListChi
     }
 
     @Override
-    public synchronized Page list(CatalogScope scope, EntryId folderId, int limit, String cursor) {
+    public synchronized Page list(CatalogScope scope, EntryId folderId, ListOrder order, int limit, String cursor) {
         folder(scope, folderId);
         if (limit < 1 || limit > 100) {
             throw new CatalogFailure(VALIDATION_FAILED, "Limit must be between 1 and 100");
         }
-        var after = cursor == null ? null : cursors.decode(cursor, scope.workspaceId(), folderId);
+        var after = cursor == null ? null : cursors.decode(cursor, scope.workspaceId(), folderId, order);
+        var comparator = order.comparator();
         List<Entry> eligible = entries.values().stream()
                 .filter(entry -> folderId.equals(entry.parentId()))
-                .filter(entry -> after == null
-                        || compare(entry.name().value(), entry.id().value(), after.name(), after.id()) > 0)
-                .sorted((left, right) -> compare(
-                        left.name().value(),
-                        left.id().value(),
-                        right.name().value(),
-                        right.id().value()))
+                .filter(entry -> after == null || comparator.compare(order.position(entry), after) > 0)
+                .sorted(Comparator.comparing(order::position, comparator))
                 .limit(limit + 1L)
                 .toList();
         List<Entry> page = eligible.subList(0, Math.min(limit, eligible.size()));
         String next = null;
         if (eligible.size() > limit) {
-            Entry last = page.getLast();
-            next = cursors.encode(scope.workspaceId(), folderId, last.name().value(), last.id());
+            next = cursors.encode(scope.workspaceId(), folderId, order, order.position(page.getLast()));
         }
         return new Page(page, next);
     }
@@ -151,12 +146,5 @@ public final class FixtureCatalog implements GetEntry, GetWorkspaceRoot, ListChi
             return folder;
         }
         throw new CatalogFailure(NOT_A_FOLDER, "Entry is not a folder");
-    }
-
-    /** Matches PostgreSQL bytewise UTF-8 C collation; UUID ties use canonical text order. */
-    private static int compare(String left, UUID leftId, String right, UUID rightId) {
-        int result =
-                Arrays.compareUnsigned(left.getBytes(StandardCharsets.UTF_8), right.getBytes(StandardCharsets.UTF_8));
-        return result == 0 ? leftId.toString().compareTo(rightId.toString()) : result;
     }
 }

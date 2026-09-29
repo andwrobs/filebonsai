@@ -97,8 +97,7 @@ Harnesses that make every later slice cheaper to prove.
 | [ENG-01](foundations.md#eng-01-web-ci-and-contract-drift-checks) Web CI and contract drift checks | Build | P1 | S | none |
 | [ENG-02](foundations.md#eng-02-playwright-end-to-end-harness) Playwright end-to-end harness | Build | P1 | M | none |
 | [ENG-03](foundations.md#eng-03-synthetic-demo-library-generator) Synthetic demo library generator | Build | P2 | S | none |
-| [ENG-04](foundations.md#eng-04-decision-durable-jobs-and-outbox) Decision: durable jobs and outbox | Decision | P1 | S | none |
-| [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer) Job runner with a first consumer | Build | P1 | L | [ENG-04](foundations.md#eng-04-decision-durable-jobs-and-outbox) |
+| [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer) Job runner with a first consumer | Build | P1 | L | none |
 | [ENG-06](foundations.md#eng-06-architecture-tests) Architecture tests | Build | P2 | S | none |
 | [ENG-07](foundations.md#eng-07-property-based-tests-for-names-and-upload-states) Property-based tests for names and upload states | Build | P2 | M | none |
 | [ENG-08](foundations.md#eng-08-crash-injection-harness-for-transfers) Crash-injection harness for transfers | Build | P2 | L | none |
@@ -115,8 +114,7 @@ Make the daily loop of finding, looking and acting feel like the design directio
 | Item | Kind | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- |
 | [LIB-02](everyday-library.md#lib-02-folder-tree-sidebar) Folder tree sidebar | Build | P2 | M | none |
-| [LIB-03](everyday-library.md#lib-03-server-side-sort-for-folder-listings) Server-side sort for folder listings | Build | P2 | M | none |
-| [LIB-04](everyday-library.md#lib-04-table-and-grid-views) Table and grid views | Build | P2 | M | [LIB-03](everyday-library.md#lib-03-server-side-sort-for-folder-listings) |
+| [LIB-04](everyday-library.md#lib-04-table-and-grid-views) Table and grid views | Build | P2 | M | none |
 | [LIB-05](everyday-library.md#lib-05-selection-model) Selection model | Build | P2 | M | none |
 | [LIB-07](everyday-library.md#lib-07-name-search) Name search | Build | P2 | M | [M1-02](finish-m1.md#m1-02-breadcrumbs-from-real-ancestors) |
 | [LIB-08](everyday-library.md#lib-08-command-palette-and-keyboard-shortcuts) Command palette and keyboard shortcuts | Build | P2 | M | none |
@@ -156,15 +154,14 @@ See a file before downloading it. Derived assets inherit authorization and never
 
 | Item | Kind | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- |
-| [PRV-01](previews-and-media.md#prv-01-decision-preview-processing-sandbox) Decision: preview processing sandbox | Decision | P2 | S | none |
-| [PRV-02](previews-and-media.md#prv-02-image-thumbnail-pipeline) Image thumbnail pipeline | Build | P2 | L | [PRV-01](previews-and-media.md#prv-01-decision-preview-processing-sandbox), [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer), [PRV-10](previews-and-media.md#prv-10-processing-sandbox-container) |
+| [PRV-02](previews-and-media.md#prv-02-image-thumbnail-pipeline) Image thumbnail pipeline | Build | P2 | L | [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer), [PRV-10](previews-and-media.md#prv-10-processing-sandbox-container) |
 | [PRV-03](previews-and-media.md#prv-03-gallery-grid-and-lightbox) Gallery grid and lightbox | Build | P2 | M | [PRV-02](previews-and-media.md#prv-02-image-thumbnail-pipeline), [LIB-04](everyday-library.md#lib-04-table-and-grid-views) |
-| [PRV-04](previews-and-media.md#prv-04-photo-metadata-extraction) Photo metadata extraction | Build | P2 | L | [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer), [PRV-01](previews-and-media.md#prv-01-decision-preview-processing-sandbox) |
-| [PRV-05](previews-and-media.md#prv-05-text-markdown-and-pdf-previews) Text, Markdown and PDF previews | Build | P3 | M | [PRV-01](previews-and-media.md#prv-01-decision-preview-processing-sandbox), [PRV-10](previews-and-media.md#prv-10-processing-sandbox-container) |
+| [PRV-04](previews-and-media.md#prv-04-photo-metadata-extraction) Photo metadata extraction | Build | P2 | L | [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer), [PRV-10](previews-and-media.md#prv-10-processing-sandbox-container) |
+| [PRV-05](previews-and-media.md#prv-05-text-markdown-and-pdf-previews) Text, Markdown and PDF previews | Build | P3 | M | [PRV-10](previews-and-media.md#prv-10-processing-sandbox-container) |
 | [PRV-06](previews-and-media.md#prv-06-video-posters-and-range-downloads) Video posters and range downloads | Build | P3 | L | [PRV-02](previews-and-media.md#prv-02-image-thumbnail-pipeline) |
 | [PRV-07](previews-and-media.md#prv-07-on-this-day) On this day | Build | P3 | S | [PRV-04](previews-and-media.md#prv-04-photo-metadata-extraction), [PRV-03](previews-and-media.md#prv-03-gallery-grid-and-lightbox) |
 | [PRV-08](previews-and-media.md#prv-08-spike-map-of-geotagged-photos) Spike: map of geotagged photos | Spike | P3 | S | [PRV-04](previews-and-media.md#prv-04-photo-metadata-extraction) |
-| [PRV-10](previews-and-media.md#prv-10-processing-sandbox-container) Processing sandbox container | Build | P2 | L | [PRV-01](previews-and-media.md#prv-01-decision-preview-processing-sandbox) |
+| [PRV-10](previews-and-media.md#prv-10-processing-sandbox-container) Processing sandbox container | Build | P2 | L | none |
 
 ### [Tidy mode](tidy-mode.md)
 
@@ -255,7 +252,7 @@ Runtime UI capabilities, synced preferences and owner settings have separate bou
 | [CFG-02](configurable-shell.md#cfg-02-module-registry-and-layout-engine) Module registry and layout engine | Build | P2 | L | [CFG-01](configurable-shell.md#cfg-01-decision-configurable-shell-model) |
 | [CFG-03](configurable-shell.md#cfg-03-customize-layout-panel) Customize Layout panel | Build | P3 | M | [CFG-02](configurable-shell.md#cfg-02-module-registry-and-layout-engine) |
 | [CFG-04](configurable-shell.md#cfg-04-preferences-api) Preferences API | Build | P2 | M | [CFG-01](configurable-shell.md#cfg-01-decision-configurable-shell-model) |
-| [CFG-05](configurable-shell.md#cfg-05-per-folder-view-settings) Per-folder view settings | Build | P3 | M | [CFG-04](configurable-shell.md#cfg-04-preferences-api), [LIB-03](everyday-library.md#lib-03-server-side-sort-for-folder-listings), [LIB-04](everyday-library.md#lib-04-table-and-grid-views) |
+| [CFG-05](configurable-shell.md#cfg-05-per-folder-view-settings) Per-folder view settings | Build | P3 | M | [CFG-04](configurable-shell.md#cfg-04-preferences-api), [LIB-04](everyday-library.md#lib-04-table-and-grid-views) |
 | [CFG-06](configurable-shell.md#cfg-06-layout-import-and-export) Layout import and export | Build | P3 | S | [CFG-02](configurable-shell.md#cfg-02-module-registry-and-layout-engine) |
 | [CFG-07](configurable-shell.md#cfg-07-saved-views-smart-folders) Saved views (smart folders) | Build | P3 | M | [LIB-07](everyday-library.md#lib-07-name-search), [ORG-08](organize.md#org-08-tags) |
 | [CFG-08](configurable-shell.md#cfg-08-operator-configuration-reference) Operator configuration reference | Build | P3 | S | none |

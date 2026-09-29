@@ -1,6 +1,7 @@
 # 0009: Durable jobs use a fenced PostgreSQL job table
 
-Status: proposed
+Status: accepted
+Accepted: 2026-09-28
 Date: 2026-09-27
 
 ## Context
@@ -49,7 +50,8 @@ and `DEAD`.
   ever appears, a job kind feeds it.
 - **Deduplicate.** `(kind, dedupe_key)` is unique while a job is `PENDING`, `RUNNING` or
   `DEAD`, so a sweeper cannot silently recreate a dead obligation; requeueing or
-  discarding it is an operator action. Keys name the obligation, for example
+  discarding it is an operator action. Periodic kinds also reserve completed keys
+  through their period as described below. Keys name the obligation, for example
   `metadata:<versionId>:v3`. Enqueue is an insert that does nothing on conflict.
 - **Claim.** One short transaction selects due `PENDING` jobs, and `RUNNING` jobs whose
   lease expired, with `FOR UPDATE SKIP LOCKED`. It increments `fence` and `attempts`
@@ -73,9 +75,13 @@ and `DEAD`.
 - **Budgets.** Each kind registers its concurrency, lease length, timeout and maximum
   attempts. A worker claims only kinds with a free slot, so a slow kind cannot starve
   the others.
-- **Periodic work.** A scheduler tick enqueues periodic kinds with a dedupe key for the
-  period, so several backend processes still enqueue once. The existing R2 loops may
-  move over later; nothing requires it.
+- **Periodic work.** A scheduler tick enqueues only the current period, using a
+  period-specific dedupe key. A separate unique period-key reservation is inserted in
+  the same transaction as the job and retained through the period's end, including
+  when the job succeeds. Later polls and newly started backend processes cannot
+  enqueue that period again. Cleanup may remove an expired reservation only after its
+  period closes; retries retain the same job and key. The existing R2 loops may move
+  over later; nothing requires it.
 - **Shutdown.** The runner stops claiming, gives running handlers a grace period, then
   releases their leases with a fence increment so the next claimant starts cleanly.
 - **Retention and visibility.** A periodic kind deletes `SUCCEEDED` rows after a
@@ -104,7 +110,8 @@ Photo metadata extraction (PRV-04) is the first product consumer.
 Migration obligations for ENG-05:
 
 - One Flyway migration adds `jobs` with check constraints on state, attempts and fence,
-  the partial unique dedupe index, and a claim index on state and `run_after`.
+  the partial unique dedupe index, a unique period-key reservation with an expiry,
+  and a claim index on state and `run_after`.
 - `workspace_id` references `workspaces` and is null only for system kinds.
 - The generated jOOQ schema is regenerated. Existing tables change only where the first
   consumer needs them.
@@ -118,6 +125,9 @@ Test obligations, all PostgreSQL-backed:
   completed once.
 - An enqueue rolls back with its state change. Concurrent duplicate enqueues create one
   job.
+- A completed periodic job cannot be enqueued again by another poll or backend
+  process during the same period. The next period can enqueue its own job. Reservation
+  cleanup and enqueue race without allowing a duplicate in the current period.
 - Backoff is applied, and a job that always fails or always crashes ends `DEAD`.
 - A handler blocked on I/O holds no connection; a query succeeds on the pool's only
   connection meanwhile, as the R2 resource test already checks.
