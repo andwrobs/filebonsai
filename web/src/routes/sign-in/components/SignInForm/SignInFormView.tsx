@@ -1,3 +1,6 @@
+import { Alert } from "~/lib/ui/alert";
+import { Button, buttonVariants } from "~/lib/ui/button";
+import { cn } from "~/lib/ui/utils";
 import type { useSignIn } from "./useSignIn";
 
 export type SignInFormProps = ReturnType<typeof useSignIn> & {
@@ -6,60 +9,70 @@ export type SignInFormProps = ReturnType<typeof useSignIn> & {
 
 export function SignInFormView({
 	busy,
+	form,
 	message,
 	offerAuthentik,
-	signIn,
 }: SignInFormProps) {
 	return (
-		<section className="sign-in-card" aria-labelledby="sign-in-heading">
+		<section
+			className="w-full max-w-[26rem] rounded-lg border bg-card p-[clamp(1.5rem,5vw,2.5rem)] shadow-raised"
+			aria-labelledby="sign-in-heading"
+		>
 			<img
 				alt="Filebonsai"
-				className="sign-in-brand"
+				className="mb-8 block h-auto w-52 max-w-full"
 				src="/brand/filebonsai-lockup.svg"
 			/>
-			<h1 id="sign-in-heading">Sign in</h1>
-			<p className="sign-in-intro">
+			<h1
+				id="sign-in-heading"
+				className="mb-2 text-2xl leading-normal font-semibold"
+			>
+				Sign in
+			</h1>
+			<p className="text-md text-muted-foreground">
 				Enter the password for the local owner account.
 			</p>
-			<form
-				onSubmit={(event) => {
-					event.preventDefault();
-					const input = event.currentTarget.elements.namedItem(
-						"password",
-					) as HTMLInputElement;
-					signIn(input.value, () => {
-						input.value = "";
-					});
-				}}
-			>
-				<label htmlFor="owner-password">Password</label>
-				<input
-					autoComplete="current-password"
-					// biome-ignore lint/a11y/noAutofocus: signing in is the only thing this page does.
-					autoFocus
-					id="owner-password"
-					name="password"
-					required
-					type="password"
-				/>
-				{message ? (
-					<p className="form-error" role="alert">
-						{message}
-					</p>
-				) : null}
-				<button className="button primary" disabled={busy} type="submit">
-					{busy ? "Signing in…" : "Sign in"}
-				</button>
-			</form>
+			<form.AppForm>
+				<form.Form className="mt-6 grid gap-2">
+					<form.AppField name="password">
+						{(field) => (
+							<field.TextField
+								autoComplete="current-password"
+								// Signing in is the only thing this page does.
+								autoFocus
+								isRequired
+								label="Password"
+								type="password"
+							/>
+						)}
+					</form.AppField>
+					{message ? (
+						<Alert variant="destructive" className="border-0 p-0 font-semibold">
+							{message}
+						</Alert>
+					) : null}
+					<Button
+						className="mt-2 min-h-touch w-full"
+						isDisabled={busy}
+						type="submit"
+					>
+						{busy ? "Signing in…" : "Sign in"}
+					</Button>
+				</form.Form>
+			</form.AppForm>
 			{offerAuthentik ? (
+				// A full page load: the server runs the Authentik redirect, not the router.
 				<a
-					className="button secondary sign-in-oidc"
+					className={cn(
+						buttonVariants({ variant: "outline" }),
+						"mt-2 min-h-touch w-full",
+					)}
 					href="/oauth2/authorization/authentik"
 				>
 					Continue with Authentik
 				</a>
 			) : null}
-			<p className="sign-in-help">
+			<p className="mt-6 border-t pt-4 text-sm text-muted-foreground">
 				First time here? Ask the server operator to set up the owner account.
 			</p>
 		</section>

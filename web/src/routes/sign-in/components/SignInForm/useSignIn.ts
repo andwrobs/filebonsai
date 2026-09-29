@@ -1,8 +1,14 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { z } from "zod";
+import { useAppForm } from "~/lib/form/app-form";
 import { accessService } from "~/services";
 import { signInFailure } from "../../sign-in";
+
+const signInSchema = z.object({
+	password: z.string().min(1, "Enter the password."),
+});
 
 /** Owns one sign-in attempt at a time and where a successful one leads. */
 export function useSignIn() {
@@ -19,20 +25,21 @@ export function useSignIn() {
 			void navigate("/", { replace: true });
 		},
 	});
-	return {
-		busy: signIn.isPending,
-		message,
-		/** `forget` clears the password field once the attempt settles. */
-		signIn(password: string, forget: () => void) {
-			if (signIn.isPending) return;
+	const form = useAppForm({
+		defaultValues: { password: "" },
+		validators: { onChange: signInSchema },
+		onSubmit: async ({ value, formApi }) => {
 			setMessage(undefined);
-			signIn.mutate(password, {
-				onError: (error) => setMessage(signInFailure(error)),
-				onSettled: () => {
-					forget();
-					signIn.reset();
-				},
-			});
+			try {
+				await signIn.mutateAsync(value.password);
+			} catch (error) {
+				setMessage(signInFailure(error));
+			} finally {
+				// Clear the password field, and its validation, once the attempt settles.
+				formApi.reset();
+				signIn.reset();
+			}
 		},
-	};
+	});
+	return { busy: signIn.isPending, form, message };
 }
