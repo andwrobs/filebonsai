@@ -121,3 +121,10 @@ When refreshing a completed review, replace only the content between:
 Do not overwrite the rest of the PR body merely to normalize wording.
 
 When explicitly asked to update the live GitHub PR, inspect the final body before posting it. Do not approve, merge, close, or modify code unless separately requested.
+
+## Completion and authorized merges
+
+After delivering a completed task or performing an explicitly authorized merge,
+follow root `AGENTS.md`'s worktree-completion procedure. Check local cleanup even when
+GitHub reports the PR merged or its remote branch deleted. Report retirement or the
+specific reason a checkout remains; PR delivery alone is not cleanup evidence.
