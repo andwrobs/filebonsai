@@ -1,7 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -14,68 +13,169 @@ html {
 	container-type: inline-size;
 }
 
+/*
+ * Filebonsai's design tokens. This file is the only place raw colors live
+ * (tokens.test.ts enforces it and checks their contrast). The palette fills the
+ * shadcn roles lib/ui reads; the roles below them are Filebonsai's own and are
+ * exposed as Tailwind colors in `@theme inline`. Screens use roles, never values.
+ */
 :root {
-	font-optical-sizing: auto;
-	--background: oklch(1 0 0);
-	--foreground: oklch(0.145 0 0);
-	--card: oklch(1 0 0);
-	--card-foreground: oklch(0.145 0 0);
-	--popover: oklch(1 0 0);
-	--popover-foreground: oklch(0.145 0 0);
-	--primary: oklch(0.205 0 0);
-	--primary-foreground: oklch(0.985 0 0);
-	--secondary: oklch(0.97 0 0);
-	--secondary-foreground: oklch(0.205 0 0);
-	--muted: oklch(0.97 0 0);
-	--muted-foreground: oklch(0.556 0 0);
-	--accent: oklch(0.97 0 0);
-	--accent-foreground: oklch(0.205 0 0);
-	--destructive: oklch(0.577 0.245 27.325);
-	--border: oklch(0.922 0 0);
-	--input: oklch(0.922 0 0);
-	--ring: oklch(0.708 0 0);
+	/* Surfaces: warm white, with a slightly deeper sidebar. */
+	--background: #f7f5f0; /* The canvas behind every region. */
+	--foreground: #1f2a24;
+	--card: #fdfcf9; /* The main region, cards, trays, and dialogs. */
+	--card-foreground: var(--foreground);
+	--popover: var(--card);
+	--popover-foreground: var(--foreground);
+	--muted: #f1efe8; /* Sunken surfaces such as the sidebar. */
+	--muted-foreground: #56625b;
+	--subtle-foreground: #616b65;
+	--accent: #eef1ea; /* Hover. */
+	--accent-foreground: var(--foreground);
+	--secondary: #eaf2ec; /* Tinted panels such as the new-folder form. */
+	--secondary-foreground: var(--foreground);
+
+	/* A restrained emerald action, and a muted sage selection. */
+	--primary: #1d6b45;
+	--primary-hover: #175a3a;
+	--primary-foreground: #ffffff;
+	--primary-text: #1a5e3d; /* Links and the current phone tab. */
+	--selection: #dde9df;
+	--selection-foreground: #174a30;
+	--selection-border: #a9c7b1;
+
+	--destructive: #a3321f;
+	--destructive-surface: #fbeeea;
+
+	--border: #e4e1d7;
+	--border-strong: #cbc7ba;
+	/* Input boundaries identify the control, so they meet 3:1 (WCAG 1.4.11). */
+	--input: #858c86;
+	--ring: #3d8b63;
+
+	/* File-type accents for icons only; the adjacent label carries the meaning. */
+	--kind-folder: #6f7c73;
+	--kind-image: #3d74a8;
+	--kind-pdf: #c0442e;
+	--kind-document: #4a6fa5;
+	--kind-spreadsheet: #2f7d4f;
+	--kind-presentation: #b8662a;
+	--kind-archive: #9a6f1c;
+	--kind-audio: #7a5aa3;
+	--kind-video: #a84d78;
+	--kind-code: #2f7a78;
+	--kind-file: #6f7c73;
+
+	/* Dims the page behind drawers and sheets. */
+	--scrim: #1f2a2466;
+
 	--chart-1: oklch(0.87 0 0);
 	--chart-2: oklch(0.556 0 0);
 	--chart-3: oklch(0.439 0 0);
 	--chart-4: oklch(0.371 0 0);
 	--chart-5: oklch(0.269 0 0);
-	--radius: 0.625rem;
-	--sidebar: oklch(0.985 0 0);
-	--sidebar-foreground: oklch(0.145 0 0);
-	--sidebar-primary: oklch(0.205 0 0);
-	--sidebar-primary-foreground: oklch(0.985 0 0);
-	--sidebar-accent: oklch(0.97 0 0);
-	--sidebar-accent-foreground: oklch(0.205 0 0);
-	--sidebar-border: oklch(0.922 0 0);
-	--sidebar-ring: oklch(0.708 0 0);
+
+	--sidebar: var(--muted);
+	--sidebar-foreground: var(--foreground);
+	--sidebar-primary: var(--primary);
+	--sidebar-primary-foreground: var(--primary-foreground);
+	--sidebar-accent: var(--accent);
+	--sidebar-accent-foreground: var(--foreground);
+	--sidebar-border: var(--border);
+	--sidebar-ring: var(--ring);
+
+	/* Radius scale: sm 0.375rem, md 0.5rem (controls), lg 0.75rem (panels). */
+	--radius: 0.5rem;
+
+	/* Density. Touch targets never go below 44px on coarse pointers. */
+	--control-height: 2.25rem;
+	--touch-target: 2.75rem;
+	--row-min-height: 2.75rem;
+	--icon-size: 1.125rem;
+
+	/* Shell regions. */
+	--sidebar-width: 15rem;
+	--rail-width: 4.5rem;
+	--mobile-bar-height: 3.25rem;
+	--bottom-nav-height: 3.75rem;
+	--tray-header-height: 3rem;
+	--inspector-width: 20rem;
+	--content-gutter: clamp(1rem, 0.6rem + 1.6vw, 2rem);
+
+	--duration-fast: 120ms;
 }
 
-@theme {
-	/* Fluid sizes (min @ 360px → max @ 1280px) */
-	--text-xs: clamp(0.75rem, calc(0.701087rem + 0.217391cqw), 0.875rem);
-	--text-sm: clamp(0.875rem, calc(0.826087rem + 0.217391cqw), 1rem);
-	--text-base: clamp(1rem, calc(0.902174rem + 0.434783cqw), 1.25rem);
-	--text-lg: clamp(1.125rem, calc(0.978261rem + 0.652174cqw), 1.5rem);
-	--text-xl: clamp(1.25rem, calc(1.005435rem + 1.086957cqw), 1.875rem);
-	--text-2xl: clamp(1.5rem, calc(1.108696rem + 1.73913cqw), 2.5rem);
-	--text-3xl: clamp(1.875rem, calc(1.23913rem + 2.826087cqw), 3.5rem);
-	--text-4xl: clamp(2.25rem, calc(1.369565rem + 3.913043cqw), 4.5rem);
+@media (pointer: coarse) {
+	:root {
+		--control-height: 2.75rem;
+		--row-min-height: 3.25rem;
+	}
+}
 
-	/* Default line-heights (Tailwind uses var(--text-*--line-height)) */
+@media (prefers-reduced-motion: reduce) {
+	:root {
+		--duration-fast: 0ms;
+	}
+}
+
+/* Always emitted: screens that haven't moved onto lib/ui read these as var()s. */
+@theme static {
+	/* System faces only, pinned for screenshots. */
+	--font-sans:
+		ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+		Roboto, "Helvetica Neue", Arial, sans-serif;
+	--font-mono:
+		ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+
+	/* Type scale. Body text is `base`; controls and navigation are `md`. */
+	--text-xs: 0.75rem;
 	--text-xs--line-height: 1.5;
+	--text-sm: 0.8125rem;
 	--text-sm--line-height: 1.5;
-	--text-base--line-height: 1.55;
+	--text-md: 0.875rem;
+	--text-md--line-height: 1.5;
+	--text-base: 0.9375rem;
+	--text-base--line-height: 1.5;
+	--text-lg: 1.0625rem;
 	--text-lg--line-height: 1.5;
-	--text-xl--line-height: 1.35;
+	--text-xl: 1.25rem;
+	--text-xl--line-height: 1.25;
+	--text-2xl: clamp(1.375rem, 1.1rem + 0.8vw, 1.75rem);
 	--text-2xl--line-height: 1.25;
+	--text-3xl: clamp(1.875rem, calc(1.23913rem + 2.826087cqw), 3.5rem);
 	--text-3xl--line-height: 1.2;
+	--text-4xl: clamp(2.25rem, calc(1.369565rem + 3.913043cqw), 4.5rem);
 	--text-4xl--line-height: 1.1;
+	--font-weight-normal: 400;
+	--font-weight-medium: 500;
+	--font-weight-semibold: 600;
+	--font-weight-bold: 700;
+	--leading-tight: 1.25;
+	--leading-normal: 1.5;
 
-	/* Consistent tracking tuned for Geist */
-	--tracking-xs: 0.005em;
+	/* Spacing: Tailwind's 0.25rem step, so `p-4` is 1rem. */
+	--spacing: 0.25rem;
+
+	--radius-sm: calc(var(--radius) * 0.75);
+	--radius-md: var(--radius);
+	--radius-lg: calc(var(--radius) * 1.5);
+	--radius-xl: calc(var(--radius) * 1.75);
+	--radius-2xl: calc(var(--radius) * 2.25);
+	--radius-3xl: calc(var(--radius) * 2.75);
+	--radius-4xl: calc(var(--radius) * 3.25);
+	--radius-pill: 999px;
+
+	--shadow-raised: 0 1px 2px #1f2a2414, 0 8px 24px #1f2a2414;
+	--shadow-floating: 0 2px 6px #1f2a2429, 0 12px 28px #1f2a241f;
+
+	/* The shell's breakpoints: `md` (48rem) is the icon rail, `wide` the sidebar. */
+	--breakpoint-wide: 68.75rem;
+
+	/* Tracking: headings tighten slightly; text at `lg` and below has none. */
+	--tracking-xs: 0em;
 	--tracking-sm: 0em;
 	--tracking-base: 0em;
-	--tracking-lg: -0.005em;
+	--tracking-lg: 0em;
 	--tracking-xl: -0.01em;
 	--tracking-2xl: -0.015em;
 	--tracking-3xl: -0.02em;
@@ -113,7 +213,6 @@ html {
 
 @theme inline {
 	--font-heading: var(--font-sans);
-	--font-sans: "Geist Variable", sans-serif;
 	--color-sidebar-ring: var(--sidebar-ring);
 	--color-sidebar-border: var(--sidebar-border);
 	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -145,13 +244,41 @@ html {
 	--color-card: var(--card);
 	--color-foreground: var(--foreground);
 	--color-background: var(--background);
-	--radius-sm: calc(var(--radius) * 0.6);
-	--radius-md: calc(var(--radius) * 0.8);
-	--radius-lg: var(--radius);
-	--radius-xl: calc(var(--radius) * 1.4);
-	--radius-2xl: calc(var(--radius) * 1.8);
-	--radius-3xl: calc(var(--radius) * 2.2);
-	--radius-4xl: calc(var(--radius) * 2.6);
+
+	/* Filebonsai roles beyond shadcn's. */
+	--color-subtle-foreground: var(--subtle-foreground);
+	--color-primary-hover: var(--primary-hover);
+	--color-primary-text: var(--primary-text);
+	--color-selection: var(--selection);
+	--color-selection-foreground: var(--selection-foreground);
+	--color-selection-border: var(--selection-border);
+	--color-destructive-surface: var(--destructive-surface);
+	--color-border-strong: var(--border-strong);
+	--color-scrim: var(--scrim);
+	--color-kind-folder: var(--kind-folder);
+	--color-kind-image: var(--kind-image);
+	--color-kind-pdf: var(--kind-pdf);
+	--color-kind-document: var(--kind-document);
+	--color-kind-spreadsheet: var(--kind-spreadsheet);
+	--color-kind-presentation: var(--kind-presentation);
+	--color-kind-archive: var(--kind-archive);
+	--color-kind-audio: var(--kind-audio);
+	--color-kind-video: var(--kind-video);
+	--color-kind-code: var(--kind-code);
+	--color-kind-file: var(--kind-file);
+
+	/* Density and regions as sizes: `min-h-control`, `size-touch`, `w-sidebar`, `px-gutter`. */
+	--spacing-control: var(--control-height);
+	--spacing-touch: var(--touch-target);
+	--spacing-row: var(--row-min-height);
+	--spacing-icon: var(--icon-size);
+	--spacing-sidebar: var(--sidebar-width);
+	--spacing-rail: var(--rail-width);
+	--spacing-mobile-bar: var(--mobile-bar-height);
+	--spacing-bottom-nav: var(--bottom-nav-height);
+	--spacing-tray-header: var(--tray-header-height);
+	--spacing-inspector: var(--inspector-width);
+	--spacing-gutter: var(--content-gutter);
 }
 
 .dark {
@@ -204,14 +331,24 @@ html {
 		}
 	}
 	/* biome-ignore-end lint/complexity/noImportantStyles: reduced motion must override component animation utilities. */
-	body {
-		@apply bg-background text-foreground;
-	}
-	/* Headings and landmarks focused by script (route changes, skip link). */
-	[tabindex="-1"]:focus {
-		@apply outline-none;
-	}
 	html {
 		@apply font-sans;
+	}
+	body {
+		@apply min-w-80 bg-background text-foreground antialiased;
+		font-size: var(--text-base);
+		font-synthesis: none;
+		line-height: var(--leading-normal);
+	}
+	a {
+		@apply text-primary-text;
+	}
+	button:not(:disabled) {
+		@apply cursor-pointer;
+	}
+	/* Headings focused by script after keyboard navigation keep this outline too;
+	   <main> opts out itself, since the skip link lands on it. */
+	:focus-visible {
+		@apply outline-2 outline-offset-2 outline-ring;
 	}
 }

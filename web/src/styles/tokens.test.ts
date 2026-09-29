@@ -6,13 +6,16 @@ import { expect, it } from "vitest";
 
 const stylesDir = import.meta.dirname;
 const srcDir = join(stylesDir, "..");
-const tokens = readFileSync(join(stylesDir, "tokens.css"), "utf8");
-const color = (name: string) => {
-	const match = tokens.match(
-		new RegExp(`--color-${name}:\\s*(#[0-9a-f]{6});`, "i"),
+// The light palette: index.css's first `:root` block. Roles may alias each other.
+const palette = readFileSync(join(stylesDir, "index.css"), "utf8").match(
+	/^:root \{([^}]*)\}/m,
+)?.[1] as string;
+const color = (name: string): string => {
+	const match = palette?.match(
+		new RegExp(`--${name}:\\s*(#[0-9a-f]{6}|var\\(--([\\w-]+)\\));`, "i"),
 	);
-	expect(match, `--color-${name} is a six-digit hex token`).toBeTruthy();
-	return match?.[1] as string;
+	expect(match, `--${name} is a six-digit hex or an alias`).toBeTruthy();
+	return match?.[2] ? color(match[2]) : (match?.[1] as string);
 };
 
 function luminance(hex: string) {
@@ -40,45 +43,54 @@ const atLeast = (foreground: string, background: string, minimum: number) =>
 	).toBeGreaterThanOrEqual(minimum);
 
 it("text roles meet WCAG AA on every surface they appear on", () => {
-	const surfaces = [
-		"canvas",
-		"surface",
-		"surface-sunken",
-		"surface-hover",
-		"surface-accent",
-	];
+	const surfaces = ["background", "card", "muted", "accent", "secondary"];
 	for (const text of [
-		"text",
-		"text-muted",
-		"text-subtle",
-		"accent-text",
-		"danger",
+		"foreground",
+		"muted-foreground",
+		"subtle-foreground",
+		"primary-text",
+		"destructive",
 	]) {
 		for (const surface of surfaces) atLeast(text, surface, 4.5);
 	}
-	atLeast("selection-text", "selection", 4.5);
-	atLeast("text-muted", "selection", 4.5);
-	atLeast("on-accent", "accent", 4.5);
-	atLeast("on-accent", "accent-hover", 4.5);
-	atLeast("danger", "danger-surface", 4.5);
+	// The shadcn pairs lib/ui renders.
+	for (const role of [
+		"card",
+		"popover",
+		"muted",
+		"accent",
+		"secondary",
+		"primary",
+		"sidebar",
+		"sidebar-accent",
+		"sidebar-primary",
+	]) {
+		atLeast(`${role}-foreground`, role, 4.5);
+	}
+	atLeast("selection-foreground", "selection", 4.5);
+	atLeast("muted-foreground", "selection", 4.5);
+	atLeast("primary-foreground", "primary-hover", 4.5);
+	atLeast("destructive", "destructive-surface", 4.5);
 });
 
 it("focus and control boundaries meet the 3:1 non-text minimum", () => {
-	for (const surface of ["canvas", "surface", "surface-sunken", "selection"]) {
-		atLeast("focus", surface, 3);
+	for (const surface of ["background", "card", "muted", "selection"]) {
+		atLeast("ring", surface, 3);
 	}
-	atLeast("accent", "surface", 3);
-	for (const surface of ["canvas", "surface", "surface-accent"]) {
-		atLeast("control-border", surface, 3);
+	atLeast("sidebar-ring", "sidebar", 3);
+	atLeast("primary", "card", 3);
+	for (const surface of ["background", "card", "secondary"]) {
+		atLeast("input", surface, 3);
 	}
 });
 
-// Screens use roles, never literal colors. The token files hold them; lib/ui
-// is registry source, whose selectors match upstream literals such as #ccc.
-const tokenFiles = ["styles/index.css", "styles/tokens.css"];
+// Screens use roles, never literal colors. index.css holds them (tokens.css only
+// aliases its roles); lib/ui is registry source, whose selectors match upstream
+// literals such as #ccc.
+const tokenFiles = ["styles/index.css"];
 const exempt = ["lib/ui/", "lib/api/generated/"];
 
-it("raw colors live only in the token files", () => {
+it("raw colors live only in index.css", () => {
 	const offenders: string[] = [];
 	const walk = (dir: string) => {
 		for (const entry of readdirSync(dir, { withFileTypes: true })) {

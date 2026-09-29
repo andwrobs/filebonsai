@@ -1,115 +1,62 @@
 /*
- * Global design tokens: the only place raw colors live (tokens.test.ts enforces this).
- * One writer owns this file; screens consume roles, never literal values.
+ * Aliases for screens that haven't moved onto lib/ui (see decision 0011). Every value
+ * lives in index.css; this file only renames its roles and holds no raw colors.
+ * Tokens index.css already defines under the same name (type scale, fonts, radii,
+ * shadows, density, shell regions, --duration-fast) need no alias. Delete this file
+ * with app.css once the last screen moves.
  */
 :root {
-  /* Surfaces: warm white, with a slightly deeper sidebar. */
-  --color-canvas: #f7f5f0;
-  --color-surface: #fdfcf9;
-  --color-surface-sunken: #f1efe8;
-  --color-surface-hover: #eef1ea;
-  --color-surface-accent: #eaf2ec;
-  --color-border: #e4e1d7;
-  --color-border-strong: #cbc7ba;
-  /* Input boundaries identify the control, so they meet 3:1 (WCAG 1.4.11). */
-  --color-control-border: #858c86;
+  --color-canvas: var(--background);
+  --color-surface: var(--card);
+  --color-surface-sunken: var(--muted);
+  --color-surface-hover: var(--accent);
+  --color-surface-accent: var(--secondary);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-control-border: var(--input);
 
-  /* Text. Every text role meets WCAG AA on every surface above. */
-  --color-text: #1f2a24;
-  --color-text-muted: #56625b;
-  --color-text-subtle: #616b65;
+  --color-text: var(--foreground);
+  --color-text-muted: var(--muted-foreground);
+  --color-text-subtle: var(--subtle-foreground);
 
-  /* Restrained emerald action, muted sage selection. */
-  --color-accent: #1d6b45;
-  --color-accent-hover: #175a3a;
-  --color-accent-text: #1a5e3d;
-  --color-on-accent: #ffffff;
-  --color-selection: #dde9df;
-  --color-selection-text: #174a30;
-  --color-selection-border: #a9c7b1;
-  --color-focus: #3d8b63;
+  --color-accent: var(--primary);
+  --color-accent-hover: var(--primary-hover);
+  --color-accent-text: var(--primary-text);
+  --color-on-accent: var(--primary-foreground);
+  --color-selection: var(--selection);
+  --color-selection-text: var(--selection-foreground);
+  --color-selection-border: var(--selection-border);
+  --color-focus: var(--ring);
 
-  --color-danger: #a3321f;
-  --color-danger-surface: #fbeeea;
+  --color-danger: var(--destructive);
+  --color-danger-surface: var(--destructive-surface);
 
-  /* File-type accents for icons only; the adjacent label carries the meaning. */
-  --color-kind-folder: #6f7c73;
-  --color-kind-image: #3d74a8;
-  --color-kind-pdf: #c0442e;
-  --color-kind-document: #4a6fa5;
-  --color-kind-spreadsheet: #2f7d4f;
-  --color-kind-presentation: #b8662a;
-  --color-kind-archive: #9a6f1c;
-  --color-kind-audio: #7a5aa3;
-  --color-kind-video: #a84d78;
-  --color-kind-code: #2f7a78;
-  --color-kind-file: #6f7c73;
+  --color-kind-folder: var(--kind-folder);
+  --color-kind-image: var(--kind-image);
+  --color-kind-pdf: var(--kind-pdf);
+  --color-kind-document: var(--kind-document);
+  --color-kind-spreadsheet: var(--kind-spreadsheet);
+  --color-kind-presentation: var(--kind-presentation);
+  --color-kind-archive: var(--kind-archive);
+  --color-kind-audio: var(--kind-audio);
+  --color-kind-video: var(--kind-video);
+  --color-kind-code: var(--kind-code);
+  --color-kind-file: var(--kind-file);
 
-  /* Dims the page behind the inspector drawer and sheet. */
-  --color-scrim: #1f2a2466;
+  --color-scrim: var(--scrim);
 
-  --shadow-raised: 0 1px 2px #1f2a2414, 0 8px 24px #1f2a2414;
-  --shadow-floating: 0 2px 6px #1f2a2429, 0 12px 28px #1f2a241f;
+  --weight-regular: var(--font-weight-normal);
+  --weight-medium: var(--font-weight-medium);
+  --weight-semibold: var(--font-weight-semibold);
+  --weight-bold: var(--font-weight-bold);
 
-  /* Type: system faces only, pinned for screenshots. */
-  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-  --text-xs: 0.75rem;
-  --text-sm: 0.8125rem;
-  --text-md: 0.875rem;
-  --text-base: 0.9375rem;
-  --text-lg: 1.0625rem;
-  --text-xl: 1.25rem;
-  --text-2xl: clamp(1.375rem, 1.1rem + 0.8vw, 1.75rem);
-  --weight-regular: 400;
-  --weight-medium: 500;
-  --weight-semibold: 600;
-  --weight-bold: 700;
-  --leading-tight: 1.25;
-  --leading-normal: 1.5;
-
-  --space-1: 0.25rem;
-  --space-2: 0.5rem;
-  --space-3: 0.75rem;
-  --space-4: 1rem;
-  --space-5: 1.25rem;
-  --space-6: 1.5rem;
-  --space-8: 2rem;
-  --space-10: 2.5rem;
-  --space-12: 3rem;
-
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-pill: 999px;
-
-  /* Density. Touch targets never go below 44px on coarse pointers. */
-  --control-height: 2.25rem;
-  --touch-target: 2.75rem;
-  --row-min-height: 2.75rem;
-  --icon-size: 1.125rem;
-
-  /* Shell regions. */
-  --sidebar-width: 15rem;
-  --rail-width: 4.5rem;
-  --mobile-bar-height: 3.25rem;
-  --bottom-nav-height: 3.75rem;
-  --tray-header-height: 3rem;
-  --inspector-width: 20rem;
-  --content-gutter: clamp(1rem, 0.6rem + 1.6vw, 2rem);
-
-  --duration-fast: 120ms;
-}
-
-@media (pointer: coarse) {
-  :root {
-    --control-height: 2.75rem;
-    --row-min-height: 3.25rem;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  :root {
-    --duration-fast: 0ms;
-  }
+  --space-1: calc(var(--spacing) * 1);
+  --space-2: calc(var(--spacing) * 2);
+  --space-3: calc(var(--spacing) * 3);
+  --space-4: calc(var(--spacing) * 4);
+  --space-5: calc(var(--spacing) * 5);
+  --space-6: calc(var(--spacing) * 6);
+  --space-8: calc(var(--spacing) * 8);
+  --space-10: calc(var(--spacing) * 10);
+  --space-12: calc(var(--spacing) * 12);
 }

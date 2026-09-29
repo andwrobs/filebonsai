@@ -1,9 +1,12 @@
 import { Upload } from "lucide-react";
 import { useRef } from "react";
+import { Button } from "~/lib/ui/button";
 import { transferStore } from "./transfer-store";
 
-// "toolbar" is the labelled page action; "fab" is the floating phone action;
-// "inline" sits in empty states.
+// "toolbar" is the labelled page action (phones hide it for the floating button);
+// "fab" is the floating phone action, kept above the bottom navigation and any
+// transfer tray (TransferTray publishes --tray-height); "inline" sits in empty
+// states. The toolbar and inline buttons move onto lib/ui with the Library list.
 export function UploadControl({
 	parentId,
 	variant = "toolbar",
@@ -12,23 +15,31 @@ export function UploadControl({
 	variant?: "toolbar" | "fab" | "inline";
 }) {
 	const input = useRef<HTMLInputElement>(null);
-	const className =
-		variant === "fab"
-			? "fab"
-			: variant === "toolbar"
-				? "button primary toolbar-upload"
-				: "button primary";
+	const choose = () => input.current?.click();
 	return (
 		<>
-			<button
-				aria-label={variant === "fab" ? "Upload files" : undefined}
-				className={className}
-				onClick={() => input.current?.click()}
-				type="button"
-			>
-				<Upload aria-hidden="true" className="button-icon" strokeWidth={2} />
-				{variant === "fab" ? null : <span>Upload</span>}
-			</button>
+			{variant === "fab" ? (
+				<Button
+					aria-label="Upload files"
+					className="fixed right-[max(--spacing(4),env(safe-area-inset-right))] bottom-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom)+var(--tray-height,0px)+--spacing(4))] z-15 size-14 rounded-pill border-0 p-0 shadow-floating md:hidden"
+					onPress={choose}
+				>
+					<Upload aria-hidden="true" className="size-6" strokeWidth={2} />
+				</Button>
+			) : (
+				<button
+					className={
+						variant === "toolbar"
+							? "button primary toolbar-upload"
+							: "button primary"
+					}
+					onClick={choose}
+					type="button"
+				>
+					<Upload aria-hidden="true" className="button-icon" strokeWidth={2} />
+					<span>Upload</span>
+				</button>
+			)}
 			<input
 				ref={input}
 				type="file"
