@@ -33,7 +33,6 @@
 		"generate:schema": "openapi-typescript ../backend/contract/openapi.json -o src/lib/api/generated/schema.ts"
 	},
 	"dependencies": {
-		"@fontsource-variable/geist": "5.3.0",
 		"@react-router/node": "8.4.0",
 		"@tailwindcss/vite": "4.3.0",
 		"@tanstack/react-form": "1.33.5",

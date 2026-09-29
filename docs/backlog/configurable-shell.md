@@ -40,7 +40,7 @@ Depends on: none
 
 Depends on: [CFG-01](#cfg-01-decision-configurable-shell-model)
 
-Context: LIB-01/LIB-10 added the responsive shell: tokens in `web/src/styles/tokens.css` (raw colors outside the token files fail `tokens.test.ts`), Lucide icons, and the `web/src/routes/app-shell` layout route with sidebar, icon rail and bottom navigation. Regions are fixed CSS today; the registry replaces them rather than adding a second layout system.
+Context: LIB-01/LIB-10 added the responsive shell: tokens in `web/src/styles/index.css` (raw colors anywhere else fail `tokens.test.ts`), Lucide icons, and the `web/src/routes/app-shell` layout route with sidebar, icon rail and bottom navigation. Regions are fixed CSS today; the registry replaces them rather than adding a second layout system.
 
 **Why.** The first real configurability.
 

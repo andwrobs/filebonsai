@@ -62,9 +62,9 @@ Filebonsai departs from the starter where its own decisions or runtime require i
 
 - ARC-01 is settled by this record. ARC-02 to ARC-06 remain candidates and apply the
   starter's ownership rules to the Library workflows that moved over unchanged.
-- Until the screens move onto `src/lib/ui`, `src/styles/tokens.css` and `app.css`
-  remain the screens' styles, excluded from Biome, and `tokens.test.ts` treats both
-  token files as the only places raw colors may live.
+- Until the screens move onto `src/lib/ui`, `src/styles/app.css` and the role aliases
+  in `src/styles/tokens.css` remain their styles, excluded from Biome. Raw colors live
+  only in `src/styles/index.css`, which `tokens.test.ts` enforces.
 - `openapi-typescript` 7.13 declares a TypeScript 5 peer; an npm override lets it run
   with the starter's TypeScript 6. The regenerated schema is byte-identical.
 - Starter updates are applied by comparing `web/` with a fresh generation, not by
