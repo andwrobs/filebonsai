@@ -10,12 +10,12 @@ The panel work below covers both entry details and the descriptive cards/help on
 Storage and Settings. It builds on the existing inspector rather than creating a
 second details surface.
 
-LIB-20 and LIB-21 finish the second half of decision
-[0011](../decisions/0011-web-client-follows-the-spa-template.md): the tokens and shell
-are on `web/src/lib/ui` and `web/src/styles/index.css`, and the remaining screens move
-off the `web/src/styles/tokens.css` aliases and `app.css` one at a time. LIB-15 and
-LIB-16 move the inspector and Storage as part of their redesigns, so neither is
-restyled twice. Web items that change the entry list depend on LIB-21.
+LIB-20 finishes the second half of decision
+[0011](../decisions/0011-web-client-follows-the-spa-template.md): the tokens, shell
+and Library list are on `web/src/lib/ui` and `web/src/styles/index.css`, and the
+remaining screens move off the `web/src/styles/tokens.css` aliases and `app.css` one
+at a time. LIB-15 and LIB-16 move the inspector and Storage as part of their
+redesigns, so neither is restyled twice.
 
 ## LIB-02 Folder tree sidebar
 
@@ -41,7 +41,7 @@ Context: LIB-01/LIB-10 added the responsive shell: tokens in `web/src/styles/ind
 
 `P2` · `M` · Build · Web
 
-Depends on: [LIB-21](#lib-21-library-list-on-the-design-system)
+Depends on: none
 
 Context: LIB-03 added `sort` (`name`, `updatedAt`, `size`), `order` (`asc`, `desc`) and `foldersFirst` to `listChildren`. Each cursor is bound to all three, so changing a header must restart paging from the first page. Kind is not a server sort: the column's label comes from the filename extension, so a Kind header can map to `foldersFirst` or stay unsortable. LIB-01/LIB-10 added the responsive shell: tokens in `web/src/styles/index.css` (raw colors anywhere else fail `tokens.test.ts`), Lucide icons, and the `web/src/routes/app-shell` layout route with sidebar, icon rail and bottom navigation. The folder list already has icon, name, kind, size and modified columns that drop and stack through container queries; this item adds sortable headers and the grid.
 
@@ -61,7 +61,7 @@ Context: LIB-03 added `sort` (`name`, `updatedAt`, `size`), `order` (`asc`, `des
 
 `P2` · `M` · Build · Web
 
-Depends on: [LIB-21](#lib-21-library-list-on-the-design-system)
+Depends on: none
 
 **Why.** Bulk move, trash and Tidy all need multi-select.
 
@@ -140,7 +140,7 @@ Depends on: none
 
 `P3` · `M` · Proof · Web, Backend
 
-Depends on: [ENG-03](foundations.md#eng-03-synthetic-demo-library-generator), [LIB-21](#lib-21-library-list-on-the-design-system)
+Depends on: [ENG-03](foundations.md#eng-03-synthetic-demo-library-generator)
 
 **Why.** A self-hosted library will have folders with 10,000 or more files.
 
@@ -216,6 +216,7 @@ Context: LIB-06 added the inspector, now in `web/src/routes/library/components/I
 - Keyboard browsing, 200% zoom, reduced motion, long localized text and a phone with the transfer tray open remain usable
 
 - The inspector (docked column, drawer and sheet) is built from `lib/ui` components and Tailwind utilities, and its rules leave `app.css`
+- Whichever of LIB-15 and LIB-16 lands last moves the remaining `app.css` users (route error pages and the root loading message) onto `lib/ui`, deletes `tokens.css`, `app.css` and their Biome exclusions, and updates decision 0011's consequences and `web/AGENTS.md`
 
 **Read:** `docs/product/design.md`, `docs/development/principles.md`
 
@@ -241,6 +242,7 @@ Depends on: none
 - Reflow long connection names and descriptions at 390px/200% zoom; status is never color-only; cards follow heading and definition-list semantics
 - The future Add connection flow belongs to TIER-13; do not show a working-looking setup button before that capability exists
 - The Storage page is built from `lib/ui` components and Tailwind utilities, and its rules leave `app.css`
+- Whichever of LIB-15 and LIB-16 lands last moves the remaining `app.css` users (route error pages and the root loading message) onto `lib/ui`, deletes `tokens.css`, `app.css` and their Biome exclusions, and updates decision 0011's consequences and `web/AGENTS.md`
 
 **Invariants:** INV-11, INV-14
 
@@ -299,27 +301,6 @@ Depends on: none
 
 - Labels, validation messages, the cleared password after a failure, the pending state and focus on load behave as before
 - Side-by-side comparison with `main` at 1440×900 and 390×844 shows no unintended difference
-- Whichever of LIB-15, LIB-16, LIB-20 and LIB-21 lands last deletes `tokens.css`, `app.css` and their Biome exclusions, and updates decision 0011's consequences and `web/AGENTS.md`
-
-**Checks:** `web`; `rendered`
-
-## LIB-21 Library list on the design system
-
-`P2` · `M` · Build · Web
-
-Depends on: none
-
-Context: The Library route is `web/src/routes/library`. Its entry list drops columns and then stacks rows through container queries (`entries` and `page` in `app.css`); a folder's name link covers its row with the row's buttons above it. The toolbar holds New folder, Upload and the inspector toggle; the new-folder form is a TanStack Form region.
-
-**Why.** The table/grid views (LIB-04) and selection (LIB-05) rebuild the list; moving it first means it is written once on the design system.
-
-**Outcome.** The page header, breadcrumbs, toolbar, new-folder form and entry list use `lib/ui` components and Tailwind utilities, with the same container-query behavior, and their rules leave `app.css`.
-
-**Acceptance**
-
-- Column dropping and row stacking follow the list's own width, beside the inspector too; long names without spaces wrap
-- Row links, per-row Download and Details buttons, keyboard focus order, empty, loading, error and not-found states, and the create-folder validation behave as before
-- Side-by-side comparison with `main` at 1440×900, 1024×768 and 390×844 with a 45-item folder shows no unintended difference
 - Whichever of LIB-15, LIB-16, LIB-20 and LIB-21 lands last deletes `tokens.css`, `app.css` and their Biome exclusions, and updates decision 0011's consequences and `web/AGENTS.md`
 
 **Checks:** `web`; `rendered`

@@ -87,7 +87,8 @@ observed results; use Git history for prior plans and completed migrations.
 - The web shell follows the design reference. `web/src/styles/index.css` is the one
   source of color, type, spacing, radius, density, and region-size tokens, mapped onto
   the shadcn roles `lib/ui` uses, with the system font stack (no Geist). The shell,
-  transfer tray, and floating upload use `lib/ui` and Tailwind utilities; the other
+  transfer tray, upload buttons, and Library list (header, breadcrumbs, toolbar,
+  new-folder form, and entries) use `lib/ui` and Tailwind utilities; the other
   screens still read `app.css` through role aliases in `tokens.css`, which holds no
   colors. `tokens.test.ts` fails on raw colors outside `index.css` and checks AA text
   and 3:1 control and focus contrast on its roles.
@@ -122,6 +123,22 @@ observed results; use Git history for prior plans and completed migrations.
   Image object URLs are revoked when the preview closes or changes.
 
 ## Latest observed checks
+
+- Library list on the design system (LIB-21): `cd web && npm test` passed (Biome,
+  typegen and `tsc`, 88 Vitest tests, build) and `npm run e2e` passed (desktop and
+  phone). Playwright pixel diffs against `main` on the shared PostgreSQL-profile
+  backend at 1440×900, 1024×768 and 390×844 (touch) were 0 for the Library root, the
+  45-item folder, `Synthetic documents` (its unbroken filename wraps), an empty folder,
+  the new-folder form open and with a duplicate-name error, the inspector beside the
+  list, a held listing (the previous folder stays) and a held first load, an injected
+  500 and not-found. At 1100 and 1180 with the inspector docked, the list stacks and
+  drops Kind as before (0 diff). The form's validation error and pending states
+  differed by at most 3 anti-aliased input-corner pixels. Tab order, focus rings on
+  row links and buttons, the form's autofocus and validation, the Details toggle's
+  focus return, the Upload file chooser and whole-row folder links matched; mouse
+  hover matched at 1440 and 1024. Intended differences: hover fills no longer stick
+  after a tap on touch-only pointers, and the list's container breakpoints are now
+  exclusive (`< 44rem`, `< 30rem`), so a list exactly that wide keeps the wider layout.
 
 - Design system tokens and shell (LIB-19): `cd web && npm test` passed (Biome,
   typegen and `tsc`, 88 Vitest tests, build), and `npm run e2e` passed after
@@ -424,9 +441,9 @@ items and required tests.
    real Cloudflare R2 bucket, repair any provider mismatch, and record bounded
    streaming/recovery evidence before claiming R2 support or adding another provider.
 2. Web: with the tokens and shell moved, move the remaining screens onto
-   `web/src/lib/ui`, the second half of decision 0011: sign-in (LIB-20) and the
-   Library list (LIB-21), then the library's table/grid views (LIB-04). The
-   inspector and Storage move within LIB-15 and LIB-16.
+   `web/src/lib/ui`, the second half of decision 0011: sign-in (LIB-20), then the
+   library's table/grid views (LIB-04). The inspector and Storage move within LIB-15
+   and LIB-16.
 3. Photo metadata: accepted decisions
    [0009](../decisions/0009-durable-jobs-in-postgresql.md) (durable jobs) and
    [0010](../decisions/0010-media-processing-isolation.md) (processing isolation and

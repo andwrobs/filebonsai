@@ -83,9 +83,9 @@ it("lists a folder's entries with their kind and size", async () => {
 		await screen.findByRole("heading", { level: 1, name: "Library" }),
 	).toBeInTheDocument();
 	expect(document.title).toBe("Library · Filebonsai");
-	const rows = screen
-		.getAllByRole("listitem")
-		.filter((row) => row.querySelector(".entry-row"));
+	const rows = within(
+		screen.getByRole("region", { name: "Items" }),
+	).getAllByRole("listitem");
 	expect(rows).toHaveLength(2);
 	expect(
 		within(rows[0] as HTMLElement).getByRole("link", { name: "Travel" }),

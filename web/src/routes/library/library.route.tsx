@@ -12,6 +12,10 @@ import { folderQuery } from "~/lib/catalog/catalog.query";
 import { pageTitle } from "~/lib/meta/title";
 import { queryClient } from "~/lib/query/client";
 import { UploadControl } from "~/lib/transfers/UploadControl";
+import { Breadcrumb } from "~/lib/ui/breadcrumb";
+import { Button, buttonVariants } from "~/lib/ui/button";
+import { Empty } from "~/lib/ui/empty";
+import { cn } from "~/lib/ui/utils";
 import type { Route } from "./+types/library.route";
 import { EntryList } from "./components/EntryList";
 import { InspectorPanel, useInspector } from "./components/Inspector";
@@ -54,63 +58,84 @@ function Folder({
 	const inspector = useInspector(folder, children);
 
 	return (
-		<div className="page">
-			<header className="page-toolbar">
-				<div className="page-location">
+		<div className="@container/page flex flex-1 flex-col gap-5 px-gutter pt-4 pb-8 max-md:pr-[max(var(--content-gutter),env(safe-area-inset-right))] max-md:pb-[calc(--spacing(8)+3.5rem)] max-md:pl-[max(var(--content-gutter),env(safe-area-inset-left))]">
+			<header className="flex min-h-[calc(var(--control-height)+--spacing(4))] flex-wrap items-center justify-between gap-x-4 gap-y-3 border-b pb-3">
+				<div className="flex min-w-0 flex-[1_1_12rem] items-center gap-1">
 					{folder.parentId ? (
 						<Link
 							aria-label="Parent folder"
-							className="icon-button"
+							className={buttonVariants({ variant: "ghost", size: "icon" })}
 							title="Parent folder"
 							to={catalogHref(folder.parentId)}
 						>
 							<ChevronLeft aria-hidden="true" />
 						</Link>
 					) : null}
-					<nav aria-label="Breadcrumb">
-						<ol className="breadcrumb">
+					<Breadcrumb aria-label="Breadcrumb">
+						<ol className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-md text-muted-foreground">
 							{folder.parentId ? (
-								<li>
-									<Link to="/">Library</Link>
+								<li className="flex min-w-0 items-center gap-2">
+									<Link
+										className="rounded-sm text-muted-foreground no-underline hover:text-foreground hover:underline pointer-coarse:inline-flex pointer-coarse:min-h-touch pointer-coarse:items-center"
+										to="/"
+									>
+										Library
+									</Link>
 								</li>
 							) : null}
-							<li aria-current="page">
-								<h1>{folder.name}</h1>
+							<li
+								aria-current="page"
+								className={cn(
+									"flex min-w-0 items-center gap-2",
+									// The separator: a chevron drawn from two borders.
+									folder.parentId &&
+										"before:mr-[0.15em] before:size-[0.4em] before:rotate-45 before:border-t-[1.5px] before:border-r-[1.5px] before:border-subtle-foreground",
+								)}
+							>
+								<h1 className="text-xl leading-tight font-semibold wrap-anywhere text-foreground">
+									{folder.name}
+								</h1>
 							</li>
 						</ol>
-					</nav>
+					</Breadcrumb>
 				</div>
-				<div className="page-actions">
-					<button
-						className="button secondary"
-						onClick={() => setIsCreating(true)}
-						type="button"
+				<div className="flex flex-wrap items-center gap-2">
+					<Button
+						className={toolbarButton}
+						onPress={() => setIsCreating(true)}
+						variant="outline"
 					>
-						<FolderPlus aria-hidden="true" className="button-icon" />
-						<span className="button-label">New folder</span>
-					</button>
+						<FolderPlus aria-hidden="true" />
+						<span className={toolbarLabel}>New folder</span>
+					</Button>
 					<UploadControl parentId={folder.id} />
-					<button
+					<Button
 						aria-controls={inspector.open ? inspectorId : undefined}
 						aria-expanded={inspector.open}
-						className="button secondary inspector-toggle"
-						onClick={(event) => inspector.toggle(event.currentTarget)}
+						className={cn(
+							toolbarButton,
+							// Open, it reads as selected; hovering still shows the hover fill.
+							"aria-expanded:border-selection-border aria-expanded:bg-selection aria-expanded:text-selection-foreground aria-expanded:not-data-disabled:hover:bg-accent",
+						)}
+						onPress={(event) => inspector.toggle(event.target as HTMLElement)}
 						ref={inspector.toggleButton}
-						type="button"
+						variant="outline"
 					>
-						<Info aria-hidden="true" className="button-icon" />
-						<span className="button-label">Details</span>
-					</button>
+						<Info aria-hidden="true" />
+						<span className={toolbarLabel}>Details</span>
+					</Button>
 				</div>
 			</header>
 
 			<div
-				className="library-body"
-				data-inspector={
-					inspector.open && inspector.docked ? "docked" : undefined
-				}
+				className={cn(
+					"grid grid-cols-[minmax(0,1fr)] gap-6",
+					inspector.open &&
+						inspector.docked &&
+						"grid-cols-[minmax(0,1fr)_var(--inspector-width)]",
+				)}
 			>
-				<div className="library-content">
+				<div className="flex min-w-0 flex-col gap-5">
 					{isCreating ? (
 						<NewFolderForm
 							// A form belongs to one folder; moving on starts a new one.
@@ -121,36 +146,32 @@ function Folder({
 					) : null}
 
 					<section
-						className="entries"
+						className="@container/entries flex min-w-0 flex-col"
 						aria-busy={refreshing}
 						aria-labelledby="items-heading"
 					>
-						<h2 className="visually-hidden" id="items-heading">
+						<h2 className="sr-only" id="items-heading">
 							Items
 						</h2>
 						{children.length === 0 ? (
-							<div className="empty-state">
+							<Empty className="flex-none gap-2 rounded-lg border border-border-strong bg-background px-6 py-12 text-wrap">
 								<FolderOpen
 									aria-hidden="true"
-									className="empty-state-icon"
+									className="size-10 text-kind-folder"
 									strokeWidth={1.5}
 								/>
-								<h3>This folder is empty</h3>
-								<p>
+								<h3 className="text-lg font-semibold">This folder is empty</h3>
+								<p className="max-w-[28rem] text-muted-foreground">
 									Upload files or create a folder to start organizing your
 									Library.
 								</p>
-								<div className="empty-state-actions">
-									<button
-										className="button secondary"
-										onClick={() => setIsCreating(true)}
-										type="button"
-									>
+								<div className="mt-3 flex flex-wrap justify-center gap-2">
+									<Button onPress={() => setIsCreating(true)} variant="outline">
 										Create folder
-									</button>
+									</Button>
 									<UploadControl parentId={folder.id} variant="inline" />
 								</div>
-							</div>
+							</Empty>
 						) : (
 							<EntryList
 								entries={children}
@@ -159,7 +180,7 @@ function Folder({
 							/>
 						)}
 						{nextCursor ? (
-							<p className="pagination-note">
+							<p className="mt-3 text-sm text-muted-foreground">
 								More items are available; loading additional pages is coming
 								next.
 							</p>
@@ -173,6 +194,10 @@ function Folder({
 		</div>
 	);
 }
+
+// On a narrow page the labelled toolbar buttons become icon buttons.
+const toolbarButton = "@max-[30rem]/page:w-control @max-[30rem]/page:px-0";
+const toolbarLabel = "@max-[30rem]/page:sr-only";
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 	const status = isRouteErrorResponse(error)
