@@ -124,7 +124,6 @@ Harnesses that make every later slice cheaper to prove.
 | Item | Kind | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- |
 | [ENG-01](foundations.md#eng-01-web-ci-and-contract-drift-checks) Web CI and contract drift checks | Build | P1 | S | none |
-| [ENG-02](foundations.md#eng-02-playwright-end-to-end-harness) Playwright end-to-end harness | Build | P1 | M | none |
 | [ENG-03](foundations.md#eng-03-synthetic-demo-library-generator) Synthetic demo library generator | Build | P2 | S | none |
 | [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer) Job runner with a first consumer | Build | P1 | L | none |
 | [ENG-06](foundations.md#eng-06-architecture-tests) Architecture tests | Build | P2 | S | none |
