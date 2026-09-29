@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.filebonsai.catalog.application.CatalogCursor;
 import com.filebonsai.catalog.application.CatalogScope;
 import com.filebonsai.catalog.application.CatalogScopeProvider;
+import com.filebonsai.catalog.application.StorageConnectionName;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -33,6 +34,11 @@ public class FixtureConfiguration {
     CatalogScopeProvider catalogScopeProvider() {
         CatalogScope scope = new CatalogScope(FixtureCatalog.PRINCIPAL, FixtureCatalog.WORKSPACE);
         return () -> scope;
+    }
+
+    @Bean
+    StorageConnectionName storageConnectionName() {
+        return () -> "Local disk";
     }
 
     private byte[] cursorKey(String cursorSecret) {

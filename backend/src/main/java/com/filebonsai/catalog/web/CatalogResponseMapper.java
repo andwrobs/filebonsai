@@ -1,11 +1,12 @@
 package com.filebonsai.catalog.web;
 
+import com.filebonsai.catalog.application.StorageConnectionName;
 import com.filebonsai.catalog.domain.Entry;
 
 final class CatalogResponseMapper {
     private CatalogResponseMapper() {}
 
-    static EntryResponse response(Entry entry) {
+    static EntryResponse response(Entry entry, StorageConnectionName storage) {
         return switch (entry) {
             case Entry.File file ->
                 new FileEntryResponse(
@@ -17,7 +18,10 @@ final class CatalogResponseMapper {
                         file.updatedAt(),
                         new CurrentVersionResponse(
                                 file.currentVersion().id().value(),
-                                file.currentVersion().sizeBytes().decimal()));
+                                file.currentVersion().sizeBytes().decimal(),
+                                file.currentVersion().sha256(),
+                                storage.displayName()),
+                        file.versionCount());
             case Entry.Folder folder -> response(folder);
         };
     }

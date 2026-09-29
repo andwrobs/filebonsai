@@ -9,8 +9,24 @@ final class CatalogContractChecks: XCTestCase {
 
         XCTAssertEqual(file.kind, .file)
         XCTAssertEqual(file.currentVersion.sizeBytes, "9007199254740993")
+        XCTAssertEqual(
+            file.currentVersion.sha256, "4f8b42c22dd3729b519ba6f68d2da7cc5b2d606d05daed5ad5128cc03e6c6358")
+        XCTAssertEqual(file.currentVersion.storageConnectionName, "Local disk")
+        XCTAssertEqual(file.versionCount, 1)
         XCTAssertEqual(root.kind, .folder)
         XCTAssertNil(root.parentId)
+    }
+
+    func testDecodesAVersionRecordedWithoutADigest() throws {
+        let json = Data(
+            """
+            {"id":"30000000-0000-4000-8000-000000000001","sizeBytes":"0","sha256":null,\
+            "storageConnectionName":"Local disk"}
+            """.utf8)
+        let version = try decoder.decode(CurrentVersionResponse.self, from: json)
+
+        XCTAssertNil(version.sha256)
+        XCTAssertEqual(version.storageConnectionName, "Local disk")
     }
 
     func testDecodesDiscriminatedAndEmptyPages() throws {

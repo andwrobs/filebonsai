@@ -306,6 +306,19 @@ class AccessHttpPostgresTest {
                         .header(LocalOwnerAccess.CSRF_HEADER, csrf.getValue()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.state").value("AVAILABLE"));
+        var published = mapper.readTree(mvc.perform(
+                        get("/api/v1/entries/" + entryId).cookie(session))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.currentVersion.sha256").value(digest))
+                .andExpect(jsonPath("$.currentVersion.storageConnectionName").value("Test disk"))
+                .andExpect(jsonPath("$.versionCount").value(1))
+                .andReturn()
+                .getResponse()
+                .getContentAsString());
+        // Integrity fields name the connection and the digest, never where or how the bytes are stored.
+        assertThat(published.path("currentVersion").fieldNames())
+                .toIterable()
+                .containsExactlyInAnyOrder("id", "sizeBytes", "sha256", "storageConnectionName");
         var download = mvc.perform(
                         get("/api/v1/entries/" + entryId + "/content").cookie(session))
                 .andExpect(status().isOk())

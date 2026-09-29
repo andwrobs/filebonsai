@@ -54,6 +54,10 @@ class CatalogHttpTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.kind").value("file"))
                 .andExpect(jsonPath("$.currentVersion.sizeBytes").value("9007199254740993"))
+                .andExpect(jsonPath("$.currentVersion.sha256")
+                        .value("4f8b42c22dd3729b519ba6f68d2da7cc5b2d606d05daed5ad5128cc03e6c6358"))
+                .andExpect(jsonPath("$.currentVersion.storageConnectionName").value("Local disk"))
+                .andExpect(jsonPath("$.versionCount").value(1))
                 .andExpect(header().string("Cache-Control", "no-store"));
         var root = mapper.readTree(mvc.perform(get("/api/v1/entries/" + ROOT))
                 .andExpect(status().isOk())
@@ -252,6 +256,19 @@ class CatalogHttpTest {
                         .path("type")
                         .asText())
                 .isEqualTo("string");
+        JsonNode version = schemas.path("CurrentVersionResponse");
+        assertThat(version.path("properties").path("sha256").path("nullable").asBoolean())
+                .isTrue();
+        assertThat(version.path("properties").path("sha256").path("pattern").asText())
+                .isEqualTo("^[0-9a-f]{64}$");
+        assertThat(version.path("required").toString()).contains("\"sha256\"", "\"storageConnectionName\"");
+        assertThat(version.path("properties").fieldNames())
+                .toIterable()
+                .containsExactlyInAnyOrder("id", "sizeBytes", "sha256", "storageConnectionName");
+        JsonNode file = schemas.path("FileEntryResponse");
+        assertThat(file.path("properties").path("versionCount").path("type").asText())
+                .isEqualTo("integer");
+        assertThat(file.path("required").toString()).contains("\"versionCount\"");
         assertThat(schemas.path("FolderEntryResponse")
                         .path("properties")
                         .path("parentId")

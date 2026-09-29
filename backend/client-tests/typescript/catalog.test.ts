@@ -6,6 +6,7 @@ import test from "node:test";
 import { CatalogApi, ListChildrenOrderEnum, ListChildrenSortEnum } from "../../clients/typescript/apis/CatalogApi";
 import { Configuration } from "../../clients/typescript/runtime";
 import { ApiErrorResponseFromJSON } from "../../clients/typescript/models/ApiErrorResponse";
+import { CurrentVersionResponseFromJSON } from "../../clients/typescript/models/CurrentVersionResponse";
 import { AccessSessionResponseFromJSON } from "../../clients/typescript/models/AccessSessionResponse";
 import { EntryPageResponseFromJSON } from "../../clients/typescript/models/EntryPageResponse";
 import { EntryResponseFromJSON } from "../../clients/typescript/models/EntryResponse";
@@ -26,11 +27,26 @@ test("decodes file precision and the exported workspace-root response", () => {
 
   assert.equal(file.kind, "file");
   assert.equal(file.currentVersion.sizeBytes, "9007199254740993");
+  assert.equal(file.currentVersion.sha256, "4f8b42c22dd3729b519ba6f68d2da7cc5b2d606d05daed5ad5128cc03e6c6358");
+  assert.equal(file.currentVersion.storageConnectionName, "Local disk");
+  assert.equal(file.versionCount, 1);
   assert.ok(file.createdAt instanceof Date);
   assert.equal(root.kind, "folder");
   assert.equal(root.parentId, null);
   assert.ok(root.createdAt instanceof Date);
   assert.ok(root.updatedAt instanceof Date);
+});
+
+test("decodes a version recorded without a digest", () => {
+  const version = CurrentVersionResponseFromJSON({
+    id: "30000000-0000-4000-8000-000000000001",
+    sizeBytes: "0",
+    sha256: null,
+    storageConnectionName: "Local disk",
+  });
+
+  assert.equal(version.sha256, null);
+  assert.equal(version.storageConnectionName, "Local disk");
 });
 
 test("decodes discriminated pages and empty pages", () => {

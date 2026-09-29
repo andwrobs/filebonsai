@@ -7,7 +7,15 @@ import {
 } from "./preview-policy";
 
 function file(name: string, sizeBytes: string) {
-	return { name, currentVersion: { id: "version", sizeBytes } };
+	return {
+		name,
+		currentVersion: {
+			id: "version",
+			sha256: null,
+			sizeBytes,
+			storageConnectionName: "Local disk",
+		},
+	};
 }
 
 it("only allowed raster formats and plain text get explicit types", () => {

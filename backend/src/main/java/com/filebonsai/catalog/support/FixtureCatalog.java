@@ -67,7 +67,9 @@ public final class FixtureCatalog implements GetEntry, GetWorkspaceRoot, ListChi
                         time,
                         new Entry.Version(
                                 new VersionId(UUID.fromString("30000000-0000-4000-8000-000000000001")),
-                                new ByteCount(9007199254740993L))));
+                                new ByteCount(9007199254740993L),
+                                "4f8b42c22dd3729b519ba6f68d2da7cc5b2d606d05daed5ad5128cc03e6c6358"),
+                        1));
         entries.put(EMPTY, new Entry.Folder(EMPTY, ROOT, new FileName("Recipes"), time, time));
         reservations.add(new Reservation(ROOT, new FileName("pending-upload.bin")));
     }

@@ -329,11 +329,15 @@ export interface components {
         CurrentVersionResponse: {
             /** Format: uuid */
             id: string;
+            /** @description Lowercase hex SHA-256 of the stored bytes, verified when the version was committed. Null only for a version recorded without a digest. */
+            sha256: string | null;
             /**
              * @description Base-10 byte count, 0 through 9223372036854775807 inclusive. Never a JSON number.
              * @example 9007199254740993
              */
             sizeBytes: string;
+            /** @description Operator-chosen name of the storage connection that serves this version's bytes. Never a bucket, endpoint, path or credential. */
+            storageConnectionName: string;
         };
         EntryPageResponse: {
             entries: components["schemas"]["EntryResponse"][];
@@ -368,6 +372,11 @@ export interface components {
             parentId: string;
             /** Format: date-time */
             updatedAt: string;
+            /**
+             * Format: int32
+             * @description Committed versions of this file, the current one included
+             */
+            versionCount: number;
         };
         FolderEntryResponse: {
             /** Format: date-time */

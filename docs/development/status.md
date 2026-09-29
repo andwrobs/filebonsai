@@ -80,6 +80,9 @@ observed results; use Git history for prior plans and completed migrations.
   credential, or path. The web `/storage` page shows it with the upload limit and has its
   own loading, error, and unavailable states. The shell links Library and Storage in
   every layout.
+- File responses carry `versionCount`, the current version's verified `sha256` (null
+  only for an object recorded without one), and `storageConnectionName`, the configured
+  connection's display name. The inspector lists them, with a copy button for the digest.
 - The web shell follows the design reference with one token file for the current
   screens (`web/src/styles/tokens.css`) for color, type, spacing, radius, density, and
   region sizes; the starter's `lib/ui` tokens in `web/src/styles/index.css` are loaded
@@ -117,8 +120,30 @@ observed results; use Git history for prior plans and completed migrations.
 
 ## Latest observed checks
 
-- Web on the SPA starter (decision 0011): `cd web && npm test` passed Biome over 152
-  files, route typegen and `tsc`, 82 Vitest tests in 23 files, and the SPA build, on
+- Inspector integrity fields (LIB-14): targeted `cd backend && ./mvnw test` runs
+  passed `CatalogHttpTest` (8), `FixtureCatalogTest` (20), `PostgresCatalogTest` (18,
+  PostgreSQL 17 Testcontainers) and `AccessHttpPostgresTest` (12). The new PostgreSQL
+  test reads a legacy null digest and a count of 1, then a second version's digest and a
+  count of 2 through both get and list. The listing index-plan tests still pass with the
+  object join and version count. Over HTTP, an upload's entry returned its computed
+  digest, the configured display name and `versionCount` 1, and `currentVersion` has
+  exactly `id`, `sizeBytes`, `sha256` and `storageConnectionName`. `./scripts/verify.sh`
+  passed with 94 backend tests (1 opt-in R2 proof skipped), export, generation and
+  both clients. The added client checks then passed (Swift 11, TypeScript 10),
+  including a null digest. `cd web && npm test` passed with 86 Vitest tests and the
+  build. A disposable PostgreSQL 17.6 container backed this branch's PostgreSQL-profile
+  backend (display name `Studio NAS`) with three synthetic uploads. Two SQL edits added
+  versions: one file had 3, and another had a current version whose object had no
+  digest. In the Claude desktop in-app browser at 1440×900, the docked inspector
+  showed Versions 3, Stored on Studio NAS, and a SHA-256 equal to `shasum -a 256` of
+  the uploaded body. The legacy file showed "Not recorded" with no copy button, and
+  the earlier copy message did not carry over. At 390×844 with touch emulated, the
+  sheet showed a 94-character name and a wrapped digest that matched its upload. Both
+  copy buttons measured 44px, and nothing overflowed horizontally. Copy SHA-256 showed
+  its fallback message because the in-app browser denies clipboard writes.
+- Web on the SPA starter (decision 0011), reached `main` at `cb62fd1` without a pull
+  request: on `main` at `642aea6`, `cd web && npm ci && npm test` passed Biome over 153
+  files, route typegen and `tsc`, 85 Vitest tests in 23 files, and the SPA build, on
   local Node 23.7/npm 10.9 (the starter targets Node 24; `node:24-alpine` builds the
   image). The ported transfer, CSRF, preview-policy, inspector-state, and formatting
   tests keep their assertions; route tests now cover Library, Library home, sign-in,
@@ -139,7 +164,19 @@ observed results; use Git history for prior plans and completed migrations.
   `/storage` and a folder, and the 900px rail worked; signed out, `/storage` went to
   sign-in. Focus moves to the new page's heading on navigation. Storage lost that
   focus when its data replaced the loading heading; one heading now spans both states,
-  with a regression test.
+  with a regression test. A fresh read-only review found no blockers; its fixes are in
+  `876ec09`. Folder creation reads a new CSRF token each time again, as before the
+  port, so a sign-in in another tab can't leave it failing with the held token. A
+  failed Storage read now wins over values cached from an earlier visit. Preview
+  loading moved into `usePreview`, sign-in keeps no password in the mutation cache once
+  an attempt settles, and the upload limit stays cached for the tab. New tests cover a
+  late create reply after moving to another folder (it refreshes its own folder and
+  leaves the new form open), cache clearing and password retention on sign-in, a fresh
+  token per creation, and a failed Storage revisit; each was confirmed to fail without
+  its fix. Against the disposable backend, `main`'s client then showed the image and
+  text previews, revoked the image's Blob URL when the selection changed, signed in
+  after a wrong password, and showed "Storage details are unavailable" on a revisit
+  after the backend stopped.
 - Server-side sort (LIB-03): `cd backend && ./mvnw test` passed 93 tests with one
   skipped, the opt-in real-R2 proof. PostgreSQL 17 Testcontainers tests covered three
   things. The copied sort keys matched their source after publication order, a name
@@ -342,8 +379,8 @@ items and required tests.
 2. Web: move the screens onto `web/src/lib/ui` and the tokens in
    `web/src/styles/index.css`, the second half of decision 0011: tokens and shell
    (LIB-19), then sign-in (LIB-20) and the Library list (LIB-21), then the library's
-   table/grid views (LIB-04) and the inspector's integrity fields (LIB-14). The
-   inspector and Storage move within LIB-15 and LIB-16.
+   table/grid views (LIB-04). The inspector and Storage move within LIB-15 and
+   LIB-16.
 3. Photo metadata: accepted decisions
    [0009](../decisions/0009-durable-jobs-in-postgresql.md) (durable jobs) and
    [0010](../decisions/0010-media-processing-isolation.md) (processing isolation and

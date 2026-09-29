@@ -164,11 +164,12 @@ function InspectorDetails({
 							</time>
 						</dd>
 					</div>
+					{entry.kind === "file" ? <IntegrityFields entry={entry} /> : null}
 					<div>
 						<dt>ID</dt>
 						<dd className="inspector-id-row">
 							<code className="inspector-id">{entry.id}</code>
-							<CopyIdButton id={entry.id} />
+							<CopyButton label="ID" value={entry.id} />
 						</dd>
 					</div>
 				</dl>
@@ -185,11 +186,39 @@ function InspectorDetails({
 	);
 }
 
-function CopyIdButton({ id }: { id: string }) {
+/** What makes a file's details trustworthy: its history, where it lives and its verified digest. */
+function IntegrityFields({ entry }: { entry: FileEntry }) {
+	const { sha256, storageConnectionName } = entry.currentVersion;
+	return (
+		<>
+			<div>
+				<dt>Versions</dt>
+				<dd>{entry.versionCount}</dd>
+			</div>
+			<div>
+				<dt>Stored on</dt>
+				<dd>{storageConnectionName}</dd>
+			</div>
+			<div>
+				<dt>SHA-256</dt>
+				{sha256 ? (
+					<dd className="inspector-id-row">
+						<code className="inspector-id">{sha256}</code>
+						<CopyButton label="SHA-256" value={sha256} />
+					</dd>
+				) : (
+					<dd>Not recorded</dd>
+				)}
+			</div>
+		</>
+	);
+}
+
+function CopyButton({ label, value }: { label: string; value: string }) {
 	const [result, setResult] = useState<"copied" | "failed">();
 	async function copy() {
 		try {
-			await navigator.clipboard.writeText(id);
+			await navigator.clipboard.writeText(value);
 			setResult("copied");
 		} catch {
 			setResult("failed");
@@ -198,10 +227,10 @@ function CopyIdButton({ id }: { id: string }) {
 	return (
 		<>
 			<button
-				aria-label="Copy ID"
+				aria-label={`Copy ${label}`}
 				className="icon-button"
 				onClick={() => void copy()}
-				title="Copy ID"
+				title={`Copy ${label}`}
 				type="button"
 			>
 				{result === "copied" ? (
@@ -214,7 +243,7 @@ function CopyIdButton({ id }: { id: string }) {
 				{result === "copied"
 					? "Copied"
 					: result === "failed"
-						? "Couldn't copy. Select the ID to copy it."
+						? `Couldn't copy. Select the ${label} to copy it.`
 						: ""}
 			</span>
 		</>
