@@ -1,6 +1,6 @@
 # Verified status and next work
 
-Updated 2026-09-26. This is the only live status and sequencing document. Record only
+Updated 2026-09-28. This is the only live status and sequencing document. Record only
 observed results; use Git history for prior plans and completed migrations.
 
 ## Current implementation
@@ -294,6 +294,18 @@ observed results; use Git history for prior plans and completed migrations.
   proof was skipped by its required opt-in property. The proof script rejected missing
   settings before Maven.
 
+## Jobs and processing decisions — 2026-09-28
+
+Decisions 0009 and 0010 are accepted through PR #18. Merge review repaired the
+same-period deduplication gap and required filesystem/process isolation for both
+parser tiers, private per-job spool mounts, and safe output consumption. ENG-04 and
+PRV-01 are retired; ENG-05 and PRV-10 implement the decisions. No processing code or
+migration was added, and resource budgets remain unmeasured starting points.
+A task-scoped documentation validator passed 470 relative links/anchors, 120 unique
+backlog items with matching index dependencies, and an acyclic dependency graph;
+`git diff --check` passed. Runtime isolation and job guarantees await their build
+items and required tests.
+
 ## Ordered work
 
 1. Cloud transfer: run the decision 0007 compatibility proof against a disposable
@@ -301,7 +313,12 @@ observed results; use Git history for prior plans and completed migrations.
    streaming/recovery evidence before claiming R2 support or adding another provider.
 2. Web library, in this order: table/grid views (LIB-04), then the inspector's
    integrity fields (LIB-14).
-3. iOS Catalog remains deferred by user preference. When resumed, implement the
+3. Photo metadata: accepted decisions
+   [0009](../decisions/0009-durable-jobs-in-postgresql.md) (durable jobs) and
+   [0010](../decisions/0010-media-processing-isolation.md) (processing isolation and
+   metadata model). Build ENG-05 and PRV-10, then PRV-04. Both metadata parsing and
+   native decoding require the per-job sandbox; an in-backend child JVM is insufficient.
+4. iOS Catalog remains deferred by user preference. When resumed, implement the
    SwiftUI/TCA slice through a generated transport and handwritten application adapter.
 
 Each item is split into a bounded task at execution time with owned paths, dependencies,

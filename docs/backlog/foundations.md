@@ -65,41 +65,22 @@ Depends on: none
 
 **Checks:** Run twice against a local deployment; the second run creates nothing new
 
-## ENG-04 Decision: durable jobs and outbox
-
-`P1` · `S` · Decision · Backend
-
-Depends on: none
-
-**Why.** Thumbnails, purge, re-tiering, scrubbing and export all need durable background work. R2 recovery is currently a one-off periodic task.
-
-**Outcome.** A decision record comparing a PostgreSQL job table with SKIP LOCKED leases, fences and a transactional outbox against a library such as db-scheduler or JobRunr. It covers retry and backoff, idempotent handlers, dead letters, per-kind budgets, restart behaviour, workspace scope and metrics.
-
-**Acceptance**
-
-- Compares at least two options against INV-07, INV-09 and INV-10
-- Names the first consumer
-- Lists migration and test obligations
-
-**Invariants:** INV-07, INV-09, INV-10  
-**Read:** `docs/architecture/backend.md`, `docs/architecture/storage-and-transfers.md`, `docs/decisions/0002-modular-monolith.md`  
-**Checks:** `decision-review`
-
 ## ENG-05 Job runner with a first consumer
 
 `P1` · `L` · Build · Backend
 
-Depends on: [ENG-04](#eng-04-decision-durable-jobs-and-outbox)
+Depends on: none
 
-**Why.** This is the build half of ENG-04 and a prerequisite for most M3 to M5 work.
+**Why.** This implements accepted decision 0009 and is a prerequisite for most M3 to M5 work.
 
-**Outcome.** Job and outbox tables, a leased and fenced worker, retry and backoff, dead letters, graceful shutdown and metrics. The first consumer cleans up expired idempotency records and name reservations, or takes over R2's periodic recovery.
+**Outcome.** The job table from decision 0009, which is also the outbox. A leased and fenced worker with retry and backoff, dead letters, per-kind budgets, periodic kinds and graceful shutdown. The first consumer discards the staged body of a cancelled or expired upload, enqueued in the transaction that makes the session terminal.
 
 **Acceptance**
 
 - PostgreSQL tests: lease-expiry takeover, stale-worker fencing, one effect under duplicate delivery, and a crash between claim and completion
 - Outbox rows are enqueued in the same transaction as the state change
 - No transaction spans handler I/O
+- Completed periodic keys remain reserved through the period; another poll or process cannot enqueue that period again
 
 **Invariants:** INV-07, INV-09, INV-10  
 **Checks:** `postgres`

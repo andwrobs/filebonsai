@@ -97,8 +97,7 @@ Harnesses that make every later slice cheaper to prove.
 | [ENG-01](foundations.md#eng-01-web-ci-and-contract-drift-checks) Web CI and contract drift checks | Build | P1 | S | none |
 | [ENG-02](foundations.md#eng-02-playwright-end-to-end-harness) Playwright end-to-end harness | Build | P1 | M | none |
 | [ENG-03](foundations.md#eng-03-synthetic-demo-library-generator) Synthetic demo library generator | Build | P2 | S | none |
-| [ENG-04](foundations.md#eng-04-decision-durable-jobs-and-outbox) Decision: durable jobs and outbox | Decision | P1 | S | none |
-| [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer) Job runner with a first consumer | Build | P1 | L | [ENG-04](foundations.md#eng-04-decision-durable-jobs-and-outbox) |
+| [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer) Job runner with a first consumer | Build | P1 | L | none |
 | [ENG-06](foundations.md#eng-06-architecture-tests) Architecture tests | Build | P2 | S | none |
 | [ENG-07](foundations.md#eng-07-property-based-tests-for-names-and-upload-states) Property-based tests for names and upload states | Build | P2 | M | none |
 | [ENG-08](foundations.md#eng-08-crash-injection-harness-for-transfers) Crash-injection harness for transfers | Build | P2 | L | none |
@@ -155,14 +154,14 @@ See a file before downloading it. Derived assets inherit authorization and never
 
 | Item | Kind | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- |
-| [PRV-01](previews-and-media.md#prv-01-decision-preview-processing-sandbox) Decision: preview processing sandbox | Decision | P2 | S | none |
-| [PRV-02](previews-and-media.md#prv-02-image-thumbnail-pipeline) Image thumbnail pipeline | Build | P2 | L | [PRV-01](previews-and-media.md#prv-01-decision-preview-processing-sandbox), [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer) |
+| [PRV-02](previews-and-media.md#prv-02-image-thumbnail-pipeline) Image thumbnail pipeline | Build | P2 | L | [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer), [PRV-10](previews-and-media.md#prv-10-processing-sandbox-container) |
 | [PRV-03](previews-and-media.md#prv-03-gallery-grid-and-lightbox) Gallery grid and lightbox | Build | P2 | M | [PRV-02](previews-and-media.md#prv-02-image-thumbnail-pipeline), [LIB-04](everyday-library.md#lib-04-table-and-grid-views) |
-| [PRV-04](previews-and-media.md#prv-04-photo-metadata-extraction) Photo metadata extraction | Build | P3 | M | [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer), [PRV-01](previews-and-media.md#prv-01-decision-preview-processing-sandbox) |
-| [PRV-05](previews-and-media.md#prv-05-text-markdown-and-pdf-previews) Text, Markdown and PDF previews | Build | P3 | M | [PRV-01](previews-and-media.md#prv-01-decision-preview-processing-sandbox) |
+| [PRV-04](previews-and-media.md#prv-04-photo-metadata-extraction) Photo metadata extraction | Build | P2 | L | [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer), [PRV-10](previews-and-media.md#prv-10-processing-sandbox-container) |
+| [PRV-05](previews-and-media.md#prv-05-text-markdown-and-pdf-previews) Text, Markdown and PDF previews | Build | P3 | M | [PRV-10](previews-and-media.md#prv-10-processing-sandbox-container) |
 | [PRV-06](previews-and-media.md#prv-06-video-posters-and-range-downloads) Video posters and range downloads | Build | P3 | L | [PRV-02](previews-and-media.md#prv-02-image-thumbnail-pipeline) |
 | [PRV-07](previews-and-media.md#prv-07-on-this-day) On this day | Build | P3 | S | [PRV-04](previews-and-media.md#prv-04-photo-metadata-extraction), [PRV-03](previews-and-media.md#prv-03-gallery-grid-and-lightbox) |
 | [PRV-08](previews-and-media.md#prv-08-spike-map-of-geotagged-photos) Spike: map of geotagged photos | Spike | P3 | S | [PRV-04](previews-and-media.md#prv-04-photo-metadata-extraction) |
+| [PRV-10](previews-and-media.md#prv-10-processing-sandbox-container) Processing sandbox container | Build | P2 | L | none |
 
 ### [Tidy mode](tidy-mode.md)
 
