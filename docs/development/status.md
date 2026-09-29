@@ -56,7 +56,8 @@ observed results; use Git history for prior plans and completed migrations.
 - `web/` is a React Router SPA built on the React Router SPA starter (decision 0011):
   code in `src/` with route folders and named `src/lib` capabilities, services built
   once in `src/services.ts`, TanStack Query for remote data, a Zustand store for
-  uploads, Biome, and Vitest. Its transport is a generated `openapi-typescript` schema
+  uploads, Biome, and Vitest. `npm run e2e` runs a Playwright journey against a
+  disposable PostgreSQL-profile stack (ENG-02). Its transport is a generated `openapi-typescript` schema
   wrapped by an `openapi-fetch` client that holds the CSRF token. It discovers
   the session workspace root, browses direct children, navigates folders, handles
   password sign-in for anonymous visitors (plus **Continue with Authentik** when
@@ -120,6 +121,24 @@ observed results; use Git history for prior plans and completed migrations.
 
 ## Latest observed checks
 
+- Playwright end-to-end harness (ENG-02): `cd web && npm run e2e` (pinned
+  `@playwright/test` 1.59.1, cached Chromium 1217) passed twice in a row, each in about
+  12 s with the backend jar already built. Each run started `postgres:17.6-alpine` on a
+  free port and this branch's PostgreSQL-profile jar with a generated owner password.
+  It served the production web build through `vite preview`. The `desktop` (1440×900)
+  and touch `phone` (390×844) projects, both with reduced motion, signed in, created
+  and opened a folder, and uploaded a 256 KiB synthetic body through the file chooser
+  (toolbar on desktop, floating button on the phone). The downloaded file's SHA-256
+  matched, and after sign-out `/api/v1/auth/me` returned 401 and `/` showed sign-in.
+  Sign-out calls the logout API because the shell has no control for it. No container,
+  process, or temporary directory remained after a pass or a Ctrl-C. Without Docker the
+  run stops with a one-line message. On the first run, with the two projects in
+  parallel, the desktop upload's `complete` returned 503 `Upload completion requires
+  reconciliation` while the phone's succeeded. Six more parallel runs and a scripted
+  concurrent pair of completions did not reproduce it, so the cause is unconfirmed; the
+  projects now run one at a time. That failure printed its screenshot and the
+  `npx playwright show-trace` command. `cd web && npm test` passed Biome over 163 files,
+  typegen and `tsc` including `e2e/`, 86 Vitest tests, and the build.
 - Local storage directory race: two first uploads into a new workspace could both find
   its `objects/` (or `attempts/`) directory missing, and the second
   `Files.createDirectory` threw `FileAlreadyExistsException`, which `complete` turned

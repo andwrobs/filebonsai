@@ -24,29 +24,6 @@ Depends on: none
 
 **Checks:** Push the task branch through the normal PR delivery path, then observe the workflow run
 
-## ENG-02 Playwright end-to-end harness
-
-`P1` · `M` · Build · Web, Ops
-
-Depends on: none
-
-**Why.** Browser evidence currently comes from manual Chrome sessions. Every UI claim needs rendered inspection, and a harness makes that repeatable.
-
-**Outcome.** web/e2e with pinned Playwright Chromium. Global setup starts a disposable PostgreSQL, boots the backend with a generated owner password, and runs sign-in → folder → upload → download (digest) → sign-out at both viewports with reduced motion and traces on failure.
-
-**Acceptance**
-
-- One local command runs it
-- No secrets committed; screenshots and traces go to a gitignored directory
-- Output stays bounded; a failure points to its trace
-
-**Settle first**
-
-- Keep it under web/ rather than adding a top-level tooling/ directory
-
-**Read:** `docs/development/testing.md`, `docs/product/design.md`  
-**Checks:** The e2e command passes twice in a row locally
-
 ## ENG-03 Synthetic demo library generator
 
 `P2` · `S` · Build · Ops, Web · Fun
