@@ -1,49 +1,26 @@
-# Documentation map
+# Docs at a glance
 
-Everything linked here is active. The repository does not keep historical handoffs,
-superseded specifications, or duplicate “canonical” copies in the working tree; use
-Git history when provenance is needed.
+Start with the question you have:
 
-## Product
+- **What is Filebonsai?** [Product overview](product/overview.md).
+- **What works, and what’s next?** [Verified status and order](development/status.md).
+- **What could we build?** [Backlog: epics and tasks](backlog/README.md). Candidates, not commitments.
+- **How do I run it?** [Local setup](development/local-setup.md).
 
-- [`product/overview.md`](product/overview.md): purpose, audience, milestones,
-  scenarios, scope, and non-goals.
-- [`product/domain.md`](product/domain.md): domain vocabulary, relationships, naming,
-  identity, and lifecycle boundaries.
-- [`product/catalog.md`](product/catalog.md): currently implemented Catalog behavior.
-- [`product/invariants.md`](product/invariants.md): stable cross-cutting guarantees and
-  their evidence oracles.
-- [`product/design.md`](product/design.md): active visual direction, required UI states,
-  accessibility, and configurable-shell requirement.
+## Find a reference
 
-## Architecture and API
+| What you need | Where to look |
+| --- | --- |
+| Product behavior | [Catalog](product/catalog.md), [domain vocabulary](product/domain.md), [invariants](product/invariants.md) |
+| Design and inspiration | [Design rules](product/design.md), [Library reference](product/design-references/library-direction.png), [shell reference](product/design-references/configurable-shell.png), [workflow research](backlog/adoption-and-parity.md#capability-coverage) |
+| System structure | [System](architecture/system.md), [backend](architecture/backend.md), [storage and transfers](architecture/storage-and-transfers.md) |
+| API and clients | [HTTP conventions](api/conventions.md), [OpenAPI and generation](api/openapi-codegen.md) |
+| Why we chose something | [Accepted decisions](decisions/) |
+| Web development | [Web setup](../web/README.md), [agent rules](../web/AGENTS.md), [code organization](../web/docs/code-organization.md), [data and forms](../web/docs/data-and-forms.md), [tests](../web/docs/testing.md) |
+| Backend development | [Backend setup](../backend/README.md), [agent rules](../backend/AGENTS.md), [Java style](development/java.md), [implementation decisions](../backend/DECISIONS.md), [verification](../backend/VERIFICATION.md) |
+| Other modules | [iOS](../ios/README.md), [infrastructure](../infra/README.md), [local stack](../infra/local/README.md), [scripts](../scripts/README.md) |
+| Delivering changes | [Principles](development/principles.md), [testing](development/testing.md), [PR review](development/pull-request-review.md) |
+| Agent workflow | [Repository rules](../AGENTS.md), [task skills](../.agents/skills/) |
 
-- [`architecture/system.md`](architecture/system.md): system shape and module ownership.
-- [`architecture/backend.md`](architecture/backend.md): Java capability boundaries.
-- [`architecture/storage-and-transfers.md`](architecture/storage-and-transfers.md):
-  storage trust model, upload states, reconciliation, processing, and recovery.
-- [`api/conventions.md`](api/conventions.md): observable HTTP and wire rules.
-- [`api/openapi-codegen.md`](api/openapi-codegen.md): code-first export and generated
-  client workflow.
-- [`decisions/`](decisions/): accepted choices whose rationale affects future work.
-
-## Development
-
-- [`development/status.md`](development/status.md): verified implementation state,
-  next sequence, and unresolved decisions.
-- [`backlog/README.md`](backlog/README.md): candidate work by epic, with outcomes,
-  acceptance criteria, dependencies, and how to pick up and retire items. Not
-  committed order.
-- [`development/principles.md`](development/principles.md): product-building,
-  collaboration, and learning goals that affect how work is presented.
-- [`development/local-setup.md`](development/local-setup.md): local prerequisites and
-  commands.
-- [`../web/AGENTS.md`](../web/AGENTS.md) and [`../web/docs/`](../web/docs/): web client
-  conventions from the React Router SPA starter (decision 0011).
-- [`development/java.md`](development/java.md): Java structure and style.
-- [`development/testing.md`](development/testing.md): checks and evidence expectations.
-- [`development/pull-request-review.md`](development/pull-request-review.md): Codex
-  GitHub review setup, maintainer workflow, PR-body integration, and troubleshooting.
-
-Root [`AGENTS.md`](../AGENTS.md) is the single execution contract. Repository skills
-under `.agents/skills/` add task-specific procedure without repeating product truth.
+Status owns observed results and ordering; the backlog owns candidate work. All docs
+are active. Use Git history for superseded material.
