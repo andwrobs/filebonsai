@@ -59,6 +59,18 @@ it("uses generated catalog paths, parameters, and cookie credentials", async () 
 	expect(requests[0]?.credentials).toBe("include");
 });
 
+it("limits a listing to one kind", async () => {
+	const { catalog, requests } = service(() =>
+		Response.json({ entries: [], nextCursor: null }),
+	);
+	await catalog.children(rootId, { kind: "folder", limit: 100 });
+	await catalog.children(rootId);
+	expect(requests[0]?.url).toBe(
+		`${baseUrl}/api/v1/entries/${rootId}/children?kind=folder&limit=100`,
+	);
+	expect(new URL(requests[1]?.url ?? "").searchParams.has("kind")).toBe(false);
+});
+
 it("decodes the workspace root, discriminators, nullable cursors, and exact byte strings", async () => {
 	const { catalog, requests } = service((request) => {
 		if (request.url.endsWith("/catalog/root")) return Response.json(folder);

@@ -1,5 +1,5 @@
 import { ApiError } from "~/lib/api/api";
-import type { components } from "~/lib/api/generated/schema";
+import type { components, paths } from "~/lib/api/generated/schema";
 
 export type Entry = components["schemas"]["EntryResponse"];
 export type EntryDetails = components["schemas"]["EntryDetailsResponse"];
@@ -7,6 +7,13 @@ export type EntryPage = components["schemas"]["EntryPageResponse"];
 export type FileEntry = components["schemas"]["FileEntryResponse"];
 export type FolderEntry = components["schemas"]["FolderEntryResponse"];
 export type FolderDetails = components["schemas"]["FolderDetailsResponse"];
+
+/** Limits a listing to folders or files. */
+export type EntryKind = NonNullable<
+	NonNullable<
+		paths["/api/v1/entries/{id}/children"]["get"]["parameters"]["query"]
+	>["kind"]
+>;
 
 /** A folder and the first page of its children. */
 export interface FolderListing {
