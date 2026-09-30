@@ -168,7 +168,7 @@ observed results; use Git history for prior plans and completed migrations.
 ## Latest observed checks
 
 - Combined Library merge verification (PRs #32/#33): `cd web && npm test`
-  passed Biome, route typegen/TypeScript, 146 Vitest tests and the production build.
+  passed Biome, route typegen/TypeScript, 147 Vitest tests and the production build.
   `cd backend && ./scripts/verify.sh` passed 102 backend tests (the opt-in live-R2
   proof skipped), including 20 PostgreSQL Catalog tests, TypeScript client checks
   11/11 and Swift checks 12/12. Exported contracts/fixtures and
@@ -182,7 +182,13 @@ observed results; use Git history for prior plans and completed migrations.
   presses. Screenshots of the desktop table/grid and phone rows/folder sheet were
   inspected at 1440×900 and 390×844. Fresh contract, persistence and web reviews found
   no remaining blockers after the reveal, resize, pending-menu and query-fixture
-  repairs. These checks used disposable PostgreSQL and synthetic local originals.
+  repairs. An additional PostgreSQL browser check passed for a folder at 503
+  levels, with its current row and label visible before and after reload; its
+  screenshot was inspected. Active ancestor expansion is now independent of the
+  500-ID persistence cap, and visual indentation is capped while ARIA depth stays
+  exact. Ten store tests cover the cap and deep-trail recovery; the final Library
+  route test run passed 21 tests, including explicit reversed menu selections.
+  These checks used disposable PostgreSQL and synthetic local originals.
 
 - Table and grid views (LIB-04): `cd web && npm test` passed (Biome, typegen and
   `tsc`, 140 Vitest tests, build). They cover header sorting with `aria-sort` and the
