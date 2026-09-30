@@ -303,6 +303,66 @@ test("a folder of 1,100 folders pages in and stays responsive", async ({
 	).toBeInViewport({ ratio: 1 });
 });
 
+test("reveals a folder deeper than the remembered expansion limit", async ({
+	page,
+	signInPage,
+	library,
+	ownerPassword,
+}, testInfo) => {
+	test.skip(
+		testInfo.project.name === "phone",
+		"Deep reveal is checked on the desktop tree.",
+	);
+	test.setTimeout(240_000);
+	await page.goto("/");
+	await signInPage.signIn(ownerPassword);
+	await library.expectFolder("Library");
+	const parentName = `Deep ${stamp()}`;
+	await library.createFolder(parentName);
+	await library.openFolder(parentName);
+	const parentId = new URL(page.url()).pathname.split("/").pop() ?? "";
+	const currentId = await page.evaluate(async (parentId) => {
+		const csrf = await (await fetch("/api/v1/auth/csrf")).json();
+		let id = parentId;
+		for (let level = 1; level <= 502; level++) {
+			const response = await fetch("/api/v1/folders", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"Idempotency-Key": crypto.randomUUID(),
+					[csrf.headerName]: csrf.token,
+				},
+				body: JSON.stringify({ name: `Level ${level}`, parentId: id }),
+			});
+			if (!response.ok)
+				throw new Error(`Folder creation failed: ${response.status}`);
+			id = (await response.json()).id;
+		}
+		return id as string;
+	}, parentId);
+	await page.goto(`/library/${currentId}`);
+	await library.expectFolder("Level 502");
+	const current = page
+		.getByRole("treegrid", { name: "Folders" })
+		.getByRole("row", { name: "Level 502, current folder" });
+	await expect(current).toBeInViewport({ ratio: 1, timeout: 120_000 });
+	await expect(current).toHaveAttribute("data-current", "true");
+	await expect(current).toHaveAttribute("aria-level", "503");
+	await expect(current.getByText("Level 502", { exact: true })).toBeInViewport({
+		ratio: 1,
+	});
+	await page.reload();
+	await library.expectFolder("Level 502");
+	await expect(current).toBeInViewport({ ratio: 1, timeout: 120_000 });
+	await expect(current.getByText("Level 502", { exact: true })).toBeInViewport({
+		ratio: 1,
+	});
+	await testInfo.attach("deep-folder-reveal", {
+		body: await page.screenshot(),
+		contentType: "image/png",
+	});
+});
+
 // Creates folders through the API from the signed-in page, eight at a time.
 // The folder's own parent is the workspace root when `parentId` is omitted.
 async function createFolders(page: Page, parentId: string, names: string[]) {
