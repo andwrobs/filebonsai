@@ -494,6 +494,10 @@ it.each([
 				screen.getByRole("menuitemradio", { name: "Size" }),
 			).toHaveAttribute("aria-checked", "true");
 			await user.click(screen.getByRole("menuitemradio", { name: "Name" }));
+			await user.click(screen.getByRole("button", { name: "Sort" }));
+			expect(
+				screen.getByRole("menuitemradio", { name: "Name" }),
+			).toHaveAttribute("aria-checked", "true");
 		} else {
 			const grouping = screen.getByRole("menuitemcheckbox", {
 				name: "Folders first",
@@ -506,6 +510,7 @@ it.each([
 			);
 			expect(grouping).toHaveAttribute("aria-checked", "true");
 			await user.click(grouping);
+			expect(grouping).toHaveAttribute("aria-checked", "false");
 		}
 		await vi.waitFor(() =>
 			expect(screen.getByLabelText("Test location")).toHaveTextContent(
