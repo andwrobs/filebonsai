@@ -2,13 +2,15 @@ import { ApiError } from "~/lib/api/api";
 import type { components } from "~/lib/api/generated/schema";
 
 export type Entry = components["schemas"]["EntryResponse"];
+export type EntryDetails = components["schemas"]["EntryDetailsResponse"];
 export type EntryPage = components["schemas"]["EntryPageResponse"];
 export type FileEntry = components["schemas"]["FileEntryResponse"];
 export type FolderEntry = components["schemas"]["FolderEntryResponse"];
+export type FolderDetails = components["schemas"]["FolderDetailsResponse"];
 
 /** A folder and the first page of its children. */
 export interface FolderListing {
-	folder: FolderEntry;
+	folder: FolderDetails;
 	children: Entry[];
 	nextCursor: string | null;
 }

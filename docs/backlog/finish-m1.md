@@ -2,7 +2,7 @@
 
 M1 promises that a clean checkout becomes a working, recoverable library. Close the gaps before stacking features on it.
 
-Most of the seven M1 scenarios are proven in backend tests. A few are proven only with synthetic browser fixtures. Two have real gaps: nothing runs from a clean checkout without a host JDK and PostgreSQL, and the breadcrumb is a fixed 'Library / folder' label rather than a path. Everything else builds on this.
+Most of the seven M1 scenarios are proven in backend tests. A few are proven only with synthetic browser fixtures. One has a real gap: nothing runs from a clean checkout without a host JDK and PostgreSQL. Everything else builds on this.
 
 See [the backlog index](README.md) for how to pick up and retire items.
 
@@ -26,31 +26,6 @@ Depends on: none
 **Invariants:** INV-14  
 **Read:** `docs/product/overview.md`, `docs/product/invariants.md`  
 **Checks:** `web`; `rendered`
-
-## M1-02 Breadcrumbs from real ancestors
-
-`P1` · `M` · Build · Backend, Web · Public API change
-
-Depends on: none
-
-**Why.** The header shows 'Library / {folder}'. M1 scenario 2 says you return through breadcrumbs, and nested folders currently lose their path.
-
-**Outcome.** Folder responses carry the ordered ancestor chain (id, name) from the root, and the web client renders a clickable breadcrumb that collapses on narrow screens.
-
-**Acceptance**
-
-- Ancestors come from one bounded recursive query, tested at depth 1, 2 and 50
-- Workspace-scoped; an inaccessible entry stays indistinguishable from a missing one
-- At 390px the middle segments collapse into a '…' menu; every segment is keyboard reachable
-- Long names truncate visually and expose the full name to assistive tech
-
-**Settle first**
-
-- Embed `ancestors` on getEntry only, or add GET /entries/{id}/ancestors. Recommendation: embed on getEntry, not on list items.
-
-**Invariants:** INV-01  
-**Read:** `docs/product/catalog.md`, `docs/api/conventions.md`  
-**Checks:** `contract`; `postgres`; `web`; `rendered`
 
 ## M1-03 Rediscover and cancel open uploads
 
@@ -203,7 +178,7 @@ Depends on: none
 
 `P1` · `M` · Proof · Ops, Web, Backend
 
-Depends on: [M1-01](#m1-01-map-m1-failure-outcomes-in-the-web-client), [M1-02](#m1-02-breadcrumbs-from-real-ancestors), [M1-03](#m1-03-rediscover-and-cancel-open-uploads), [M1-05](#m1-05-prove-interruption-and-restart-recovery-in-the-browser), [M1-06](#m1-06-prove-second-principal-isolation-over-http), [M1-07](#m1-07-container-image-and-compose-from-a-clean-checkout), [M1-13](#m1-13-folder-name-conflicts-return-500)
+Depends on: [M1-01](#m1-01-map-m1-failure-outcomes-in-the-web-client), [M1-03](#m1-03-rediscover-and-cancel-open-uploads), [M1-05](#m1-05-prove-interruption-and-restart-recovery-in-the-browser), [M1-06](#m1-06-prove-second-principal-isolation-over-http), [M1-07](#m1-07-container-image-and-compose-from-a-clean-checkout), [M1-13](#m1-13-folder-name-conflicts-return-500)
 
 **Why.** Declare M1 done with evidence, or name what's left.
 

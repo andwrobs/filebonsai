@@ -18,6 +18,7 @@ import com.filebonsai.catalog.application.CatalogScope;
 import com.filebonsai.catalog.application.CreateFolder;
 import com.filebonsai.catalog.application.GetCommittedBytes;
 import com.filebonsai.catalog.application.GetEntry;
+import com.filebonsai.catalog.application.GetFolderAncestors;
 import com.filebonsai.catalog.application.GetWorkspaceRoot;
 import com.filebonsai.catalog.application.ListChildren;
 import com.filebonsai.catalog.application.ListOrder;
@@ -47,7 +48,7 @@ import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 
 public final class PostgresCatalog
-        implements GetEntry, GetWorkspaceRoot, ListChildren, CreateFolder, GetCommittedBytes {
+        implements GetEntry, GetFolderAncestors, GetWorkspaceRoot, ListChildren, CreateFolder, GetCommittedBytes {
     private static final String ENTRY_CLAIM = "entry";
     private static final String RESERVATION_CLAIM = "reservation";
     private static final String FOLDER = "folder";
@@ -76,6 +77,43 @@ public final class PostgresCatalog
     @Override
     public Entry get(CatalogScope scope, EntryId id) {
         return getInternal(database, scope, id);
+    }
+
+    @Override
+    public List<Ancestor> list(CatalogScope scope, EntryId folderId) {
+        // Anchor authorization and every recursive step to the same workspace. The depth cap
+        // bounds a malformed hierarchy; a truncated path must never appear as a valid breadcrumb.
+        var rows = database.fetch("""
+                with recursive path (id, parent_id, name, workspace_id, depth) as (
+                    select n.entry_id, n.parent_id, n.name, n.workspace_id, 0
+                    from catalog_names n
+                    join catalog_entries e on e.id = n.entry_id and e.workspace_id = n.workspace_id
+                    where n.entry_id = ? and n.workspace_id = ? and n.claim_kind = 'entry'
+                      and e.kind = 'folder'
+                      and exists (select 1 from workspace_members m
+                                  where m.workspace_id = n.workspace_id and m.principal_id = ?)
+                    union all
+                    select n.entry_id, n.parent_id, n.name, n.workspace_id, path.depth + 1
+                    from path
+                    join catalog_names n on n.entry_id = path.parent_id
+                        and n.workspace_id = path.workspace_id and n.claim_kind = 'entry'
+                    join catalog_entries e on e.id = n.entry_id
+                        and e.workspace_id = n.workspace_id and e.kind = 'folder'
+                    where path.depth < 1024
+                )
+                select id, parent_id, name from path order by depth desc
+                """, folderId.value(), scope.workspaceId(), scope.principalId());
+        if (rows.isEmpty()) {
+            throw new CatalogFailure(ENTRY_NOT_FOUND, "Entry was not found");
+        }
+        if (rows.getFirst().get("parent_id", UUID.class) != null) {
+            throw new IllegalStateException("Folder ancestry exceeds the supported depth");
+        }
+        // The last row is the requested folder, not one of its ancestors.
+        return rows.subList(0, rows.size() - 1).stream()
+                .map(row -> new Ancestor(
+                        new EntryId(row.get("id", UUID.class)), new FileName(row.get("name", String.class))))
+                .toList();
     }
 
     @Override

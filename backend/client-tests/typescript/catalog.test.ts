@@ -10,6 +10,7 @@ import { CurrentVersionResponseFromJSON } from "../../clients/typescript/models/
 import { AccessSessionResponseFromJSON } from "../../clients/typescript/models/AccessSessionResponse";
 import { EntryPageResponseFromJSON } from "../../clients/typescript/models/EntryPageResponse";
 import { EntryResponseFromJSON } from "../../clients/typescript/models/EntryResponse";
+import { EntryDetailsResponseFromJSON } from "../../clients/typescript/models/EntryDetailsResponse";
 import { FileEntryResponseFromJSON } from "../../clients/typescript/models/FileEntryResponse";
 import { FolderEntryResponseFromJSON } from "../../clients/typescript/models/FolderEntryResponse";
 import { StorageSummaryResponseFromJSON } from "../../clients/typescript/models/StorageSummaryResponse";
@@ -35,6 +36,27 @@ test("decodes file precision and the exported workspace-root response", () => {
   assert.equal(root.parentId, null);
   assert.ok(root.createdAt instanceof Date);
   assert.ok(root.updatedAt instanceof Date);
+});
+
+test("decodes folder details with root-to-parent ancestors", () => {
+  const folder = EntryDetailsResponseFromJSON(fixture("folder"));
+  const root = EntryDetailsResponseFromJSON(fixture("root"));
+
+  assert.equal(folder.kind, "folder");
+  if (folder.kind === "folder") {
+    assert.deepEqual(folder.ancestors.map((ancestor) => ancestor.name), ["Library"]);
+    assert.equal(folder.ancestors[0].id, "00000000-0000-4000-8000-000000000001");
+  }
+  assert.equal(root.kind, "folder");
+  if (root.kind === "folder") {
+    assert.deepEqual(root.ancestors, []);
+    assert.equal(root.parentId, null);
+  }
+  const file = EntryDetailsResponseFromJSON(fixture("file"));
+  assert.equal(file.kind, "file");
+  if (file.kind === "file") {
+    assert.equal(file.versionCount, 1);
+  }
 });
 
 test("decodes a version recorded without a digest", () => {

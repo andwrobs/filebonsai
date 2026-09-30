@@ -266,7 +266,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/EntryResponse"
+                  "$ref" : "#/components/schemas/EntryDetailsResponse"
                 }
               }
             },
@@ -1468,6 +1468,21 @@
           }
         }
       },
+      "EntryDetailsResponse" : {
+        "type" : "object",
+        "discriminator" : {
+          "mapping" : {
+            "file" : "#/components/schemas/FileEntryResponse",
+            "folder" : "#/components/schemas/FolderDetailsResponse"
+          },
+          "propertyName" : "kind"
+        },
+        "oneOf" : [ {
+          "$ref" : "#/components/schemas/FileEntryResponse"
+        }, {
+          "$ref" : "#/components/schemas/FolderDetailsResponse"
+        } ]
+      },
       "EntryPageResponse" : {
         "required" : [ "entries", "nextCursor" ],
         "type" : "object",
@@ -1554,6 +1569,60 @@
             "type" : "integer",
             "description" : "Committed versions of this file, the current one included",
             "format" : "int32"
+          }
+        }
+      },
+      "FolderAncestorResponse" : {
+        "required" : [ "id", "name" ],
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "name" : {
+            "type" : "string",
+            "description" : "NFC normalized; case preserved; maximum 255 UTF-8 bytes"
+          }
+        },
+        "description" : "A folder above the requested folder"
+      },
+      "FolderDetailsResponse" : {
+        "required" : [ "ancestors", "createdAt", "id", "kind", "name", "parentId", "updatedAt" ],
+        "type" : "object",
+        "properties" : {
+          "ancestors" : {
+            "type" : "array",
+            "description" : "Root-to-parent order; empty for the workspace root",
+            "items" : {
+              "$ref" : "#/components/schemas/FolderAncestorResponse"
+            }
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "kind" : {
+            "type" : "string",
+            "enum" : [ "folder" ]
+          },
+          "name" : {
+            "type" : "string",
+            "description" : "NFC normalized; case preserved; maximum 255 UTF-8 bytes"
+          },
+          "parentId" : {
+            "type" : "string",
+            "description" : "Null only for the workspace root",
+            "format" : "uuid",
+            "nullable" : true
+          },
+          "updatedAt" : {
+            "type" : "string",
+            "format" : "date-time"
           }
         }
       },

@@ -106,7 +106,6 @@ M1 promises that a clean checkout becomes a working, recoverable library. Close 
 | Item | Kind | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- |
 | [M1-01](finish-m1.md#m1-01-map-m1-failure-outcomes-in-the-web-client) Map M1 failure outcomes in the web client | Build | P1 | M | none |
-| [M1-02](finish-m1.md#m1-02-breadcrumbs-from-real-ancestors) Breadcrumbs from real ancestors | Build | P1 | M | none |
 | [M1-03](finish-m1.md#m1-03-rediscover-and-cancel-open-uploads) Rediscover and cancel open uploads | Build | P1 | L | none |
 | [M1-05](finish-m1.md#m1-05-prove-interruption-and-restart-recovery-in-the-browser) Prove interruption and restart recovery in the browser | Proof | P1 | M | none |
 | [M1-06](finish-m1.md#m1-06-prove-second-principal-isolation-over-http) Prove second-principal isolation over HTTP | Proof | P1 | M | none |
@@ -114,7 +113,7 @@ M1 promises that a clean checkout becomes a working, recoverable library. Close 
 | [M1-08](finish-m1.md#m1-08-serve-the-web-app-from-the-backend-at-one-origin) Serve the web app from the backend at one origin | Build | P1 | M | none |
 | [M1-10](finish-m1.md#m1-10-honest-determinate-upload-progress) Honest determinate upload progress | Build | P2 | S | none |
 | [M1-11](finish-m1.md#m1-11-drag-and-drop-upload) Drag-and-drop upload | Build | P2 | S | none |
-| [M1-12](finish-m1.md#m1-12-m1-exit-review) M1 exit review | Proof | P1 | M | [M1-01](finish-m1.md#m1-01-map-m1-failure-outcomes-in-the-web-client), [M1-02](finish-m1.md#m1-02-breadcrumbs-from-real-ancestors), [M1-03](finish-m1.md#m1-03-rediscover-and-cancel-open-uploads), [M1-05](finish-m1.md#m1-05-prove-interruption-and-restart-recovery-in-the-browser), [M1-06](finish-m1.md#m1-06-prove-second-principal-isolation-over-http), [M1-07](finish-m1.md#m1-07-container-image-and-compose-from-a-clean-checkout), [M1-13](finish-m1.md#m1-13-folder-name-conflicts-return-500) |
+| [M1-12](finish-m1.md#m1-12-m1-exit-review) M1 exit review | Proof | P1 | M | [M1-01](finish-m1.md#m1-01-map-m1-failure-outcomes-in-the-web-client), [M1-03](finish-m1.md#m1-03-rediscover-and-cancel-open-uploads), [M1-05](finish-m1.md#m1-05-prove-interruption-and-restart-recovery-in-the-browser), [M1-06](finish-m1.md#m1-06-prove-second-principal-isolation-over-http), [M1-07](finish-m1.md#m1-07-container-image-and-compose-from-a-clean-checkout), [M1-13](finish-m1.md#m1-13-folder-name-conflicts-return-500) |
 | [M1-13](finish-m1.md#m1-13-folder-name-conflicts-return-500) Folder name conflicts return 500 | Build | P1 | S | none |
 | [M1-14](finish-m1.md#m1-14-sign-out-control-in-the-web-shell) Sign-out control in the web shell | Build | P2 | S | none |
 
@@ -145,7 +144,7 @@ Make the daily loop of finding, looking and acting feel like the design directio
 | [LIB-02](everyday-library.md#lib-02-folder-tree-sidebar) Folder tree sidebar | Build | P2 | M | none |
 | [LIB-04](everyday-library.md#lib-04-table-and-grid-views) Table and grid views | Build | P2 | M | none |
 | [LIB-05](everyday-library.md#lib-05-selection-model) Selection model | Build | P2 | M | none |
-| [LIB-07](everyday-library.md#lib-07-name-search) Name search | Build | P2 | M | [M1-02](finish-m1.md#m1-02-breadcrumbs-from-real-ancestors) |
+| [LIB-07](everyday-library.md#lib-07-name-search) Name search | Build | P2 | M | none |
 | [LIB-08](everyday-library.md#lib-08-command-palette-and-keyboard-shortcuts) Command palette and keyboard shortcuts | Build | P2 | M | none |
 | [LIB-09](everyday-library.md#lib-09-starred-and-recent) Starred and Recent | Build | P2 | M | none |
 | [LIB-11](everyday-library.md#lib-11-large-folder-performance) Large-folder performance | Proof | P3 | M | [ENG-03](foundations.md#eng-03-synthetic-demo-library-generator) |
@@ -178,6 +177,7 @@ Rename, move, trash, versions and tags. Every change is metadata, reversible whe
 | [ORG-12](organize.md#org-12-undo-for-reversible-actions) Undo for reversible actions | Build | P3 | S | [ORG-02](organize.md#org-02-rename), [ORG-03](organize.md#org-03-move), [ORG-04](organize.md#org-04-trash-and-restore) |
 | [ORG-13](organize.md#org-13-file-notes) File notes | Build | P3 | S | none |
 | [ORG-14](organize.md#org-14-copy-files-without-coupling-their-lifecycle) Copy files without coupling their lifecycle | Build | P2 | L | [ORG-01](organize.md#org-01-decision-how-entries-change), [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer) |
+| [ORG-15](organize.md#org-15-bound-folder-depth) Bound folder depth | Build | P2 | S | none |
 
 ### [Previews & media](previews-and-media.md)
 

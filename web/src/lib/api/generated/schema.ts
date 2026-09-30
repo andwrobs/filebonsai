@@ -339,6 +339,7 @@ export interface components {
             /** @description Operator-chosen name of the storage connection that serves this version's bytes. Never a bucket, endpoint, path or credential. */
             storageConnectionName: string;
         };
+        EntryDetailsResponse: components["schemas"]["FileEntryResponse"] | components["schemas"]["FolderDetailsResponse"];
         EntryPageResponse: {
             entries: components["schemas"]["EntryResponse"][];
             /** @description Opaque continuation token; null means end of this traversal */
@@ -377,6 +378,35 @@ export interface components {
              * @description Committed versions of this file, the current one included
              */
             versionCount: number;
+        };
+        /** @description A folder above the requested folder */
+        FolderAncestorResponse: {
+            /** Format: uuid */
+            id: string;
+            /** @description NFC normalized; case preserved; maximum 255 UTF-8 bytes */
+            name: string;
+        };
+        FolderDetailsResponse: {
+            /** @description Root-to-parent order; empty for the workspace root */
+            ancestors: components["schemas"]["FolderAncestorResponse"][];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            id: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "folder";
+            /** @description NFC normalized; case preserved; maximum 255 UTF-8 bytes */
+            name: string;
+            /**
+             * Format: uuid
+             * @description Null only for the workspace root
+             */
+            parentId: string | null;
+            /** Format: date-time */
+            updatedAt: string;
         };
         FolderEntryResponse: {
             /** Format: date-time */
@@ -679,7 +709,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EntryResponse"];
+                    "application/json": components["schemas"]["EntryDetailsResponse"];
                 };
             };
             /** @description VALIDATION_FAILED, INVALID_REQUEST, INVALID_CURSOR, or NOT_A_FOLDER */

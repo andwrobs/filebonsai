@@ -45,6 +45,14 @@ field error. Query booleans accept only `true` and `false`. An empty value, such
 without a snapshot, so changes behind the cursor may be missed and changes ahead may
 repeat an entry.
 
+## Folder details
+
+A folder read through `GET /api/v1/entries/{id}` carries `ancestors`: the `id` and
+`name` of each folder above it, ordered from the workspace root to its parent, and empty
+for the root. One bounded recursive query builds the chain within the caller's
+workspace, so an inaccessible folder stays a `404 ENTRY_NOT_FOUND`. Listing rows and
+`GET /api/v1/catalog/root` use `FolderEntryResponse`, which has no ancestors.
+
 ## File details
 
 Every file in a listing or `GET /api/v1/entries/{id}` carries `versionCount`, the number

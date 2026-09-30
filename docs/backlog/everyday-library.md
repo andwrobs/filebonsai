@@ -77,7 +77,9 @@ Depends on: none
 
 `P2` · `M` · Build · Backend, Web · Public API change
 
-Depends on: [M1-02](finish-m1.md#m1-02-breadcrumbs-from-real-ancestors)
+Depends on: none
+
+Context: M1-02 added `ancestors` (root-to-parent `id` and `name`) to folders read through `getEntry`; listing rows do not carry it. Search results that show a location can reuse that query or the web `FolderBreadcrumbs` component.
 
 **Why.** Finding a file by name is the most basic feature still missing.
 

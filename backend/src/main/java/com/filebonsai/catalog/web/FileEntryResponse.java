@@ -25,7 +25,7 @@ public record FileEntryResponse(
                 minimum = "1",
                 description = "Committed versions of this file, the current one included")
         int versionCount)
-        implements EntryResponse {
+        implements EntryResponse, EntryDetailsResponse {
     public enum Kind {
         file
     }

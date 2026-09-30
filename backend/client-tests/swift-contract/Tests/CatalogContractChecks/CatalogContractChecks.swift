@@ -17,6 +17,27 @@ final class CatalogContractChecks: XCTestCase {
         XCTAssertNil(root.parentId)
     }
 
+    func testDecodesFolderDetailsWithRootToParentAncestors() throws {
+        let folder = try decoder.decode(FolderDetailsResponse.self, from: fixture("folder"))
+        let root = try decoder.decode(FolderDetailsResponse.self, from: fixture("root"))
+
+        XCTAssertEqual(folder.kind, .folder)
+        XCTAssertEqual(folder.ancestors.count, 1)
+        XCTAssertEqual(folder.ancestors[0].name, "Library")
+        XCTAssertEqual(folder.ancestors[0].id.uuidString.lowercased(), "00000000-0000-4000-8000-000000000001")
+        XCTAssertTrue(root.ancestors.isEmpty)
+        XCTAssertNil(root.parentId)
+
+        guard case .typeFolderDetailsResponse(let details) = try decoder.decode(
+            EntryDetailsResponse.self, from: fixture("folder"))
+        else { return XCTFail("folder did not decode as FolderDetailsResponse") }
+        XCTAssertEqual(details.ancestors.map(\.name), ["Library"])
+        guard case .typeFileEntryResponse(let file) = try decoder.decode(
+            EntryDetailsResponse.self, from: fixture("file"))
+        else { return XCTFail("file did not decode as FileEntryResponse") }
+        XCTAssertEqual(file.versionCount, 1)
+    }
+
     func testDecodesAVersionRecordedWithoutADigest() throws {
         let json = Data(
             """

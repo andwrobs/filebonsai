@@ -1,7 +1,9 @@
 package com.filebonsai.catalog.web;
 
+import com.filebonsai.catalog.application.GetFolderAncestors;
 import com.filebonsai.catalog.application.StorageConnectionName;
 import com.filebonsai.catalog.domain.Entry;
+import java.util.List;
 
 final class CatalogResponseMapper {
     private CatalogResponseMapper() {}
@@ -34,5 +36,19 @@ final class CatalogResponseMapper {
                 folder.name().value(),
                 folder.createdAt(),
                 folder.updatedAt());
+    }
+
+    static FolderDetailsResponse details(Entry.Folder folder, List<GetFolderAncestors.Ancestor> ancestors) {
+        return new FolderDetailsResponse(
+                FolderDetailsResponse.Kind.folder,
+                folder.id().value(),
+                folder.parentId() == null ? null : folder.parentId().value(),
+                folder.name().value(),
+                folder.createdAt(),
+                folder.updatedAt(),
+                ancestors.stream()
+                        .map(ancestor -> new FolderAncestorResponse(
+                                ancestor.id().value(), ancestor.name().value()))
+                        .toList());
     }
 }

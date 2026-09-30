@@ -21,6 +21,7 @@ function service(respond: (request: Request) => Response | Promise<Response>) {
 }
 
 const folder = {
+	ancestors: [],
 	createdAt: "2026-09-20T12:34:56.123456Z",
 	id: rootId,
 	kind: "folder",
@@ -91,6 +92,7 @@ it("lists a folder with deduplicated children and refuses a file", async () => {
 	);
 	const listing = await catalog.folder(rootId);
 	expect(listing.folder.id).toBe(rootId);
+	expect(listing.folder.ancestors).toEqual([]);
 	expect(listing.children).toHaveLength(1);
 	expect(listing.nextCursor).toBe("more");
 
