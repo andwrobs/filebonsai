@@ -57,8 +57,8 @@ function Folder({
 
 	return (
 		<div className="@container/page flex flex-1 flex-col gap-5 px-(--content-gutter) pt-4 pb-8 max-md:pb-[calc(--spacing(8)+3.5rem)] max-md:pl-[max(var(--content-gutter),env(safe-area-inset-left))] max-md:pr-[max(var(--content-gutter),env(safe-area-inset-right))]">
-			<header className="flex min-h-[calc(var(--control-height)+1rem)] flex-wrap items-center justify-between gap-x-4 gap-y-3 border-b pb-3 @max-[30rem]/page:flex-col @max-[30rem]/page:items-stretch">
-				<div className="flex min-w-0 flex-[1_1_12rem] items-center gap-1">
+			<header className="flex min-h-[calc(var(--control-height)+1rem)] flex-wrap items-center justify-between gap-x-4 gap-y-3 border-b pb-3 @max-[30rem]/page:flex-col @max-[30rem]/page:flex-nowrap @max-[30rem]/page:items-stretch">
+				<div className="flex min-w-0 flex-[1_1_12rem] items-center gap-1 @max-[30rem]/page:flex-none">
 					{folder.parentId ? (
 						<LinkButton
 							aria-label="Parent folder"

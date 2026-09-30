@@ -57,6 +57,8 @@ Depends on: [ORG-01](#org-01-decision-how-entries-change)
 
 Depends on: [ORG-01](#org-01-decision-how-entries-change), [LIB-05](everyday-library.md#lib-05-selection-model)
 
+Context: M1-02's `getEntry` reads a folder and then its `ancestors` in two statements. Nothing moves entries yet, so they agree today. Once moves exist, read both in one snapshot or derive the folder row from the ancestor query, so `parentId` always matches the last ancestor.
+
 **Why.** Reorganizing a library means moving things, sometimes many at once.
 
 **Outcome.** Move one or more entries into a folder, rejecting cycles and reporting name conflicts per item. A 'Move to…' dialog with a folder picker. Dragging entries to move them belongs to LIB-22.
@@ -67,6 +69,7 @@ Depends on: [ORG-01](#org-01-decision-how-entries-change), [LIB-05](everyday-lib
 - Moving the root is rejected
 - Bulk results follow ORG-01
 - Physical storage untouched
+- A move that would exceed ORG-15's depth limit is rejected
 
 **Invariants:** INV-01, INV-02, INV-08  
 **Checks:** `postgres`; `contract`; `web`; `rendered`
@@ -289,3 +292,25 @@ Depends on: [ORG-01](#org-01-decision-how-entries-change), [ENG-05](foundations.
 **Read:** `docs/product/domain.md`, `docs/architecture/storage-and-transfers.md`, `docs/backlog/metadata.md`
 
 **Checks:** `postgres`; `contract`; `web`; `rendered`
+
+## ORG-15 Bound folder depth
+
+`P2` · `S` · Build · Backend · Public API change
+
+Depends on: none
+
+Context: M1-02's ancestor query stops at 1024 levels and refuses a truncated path with an internal error. Folder creation has no depth limit, so a user who nests past 1024 levels gets a `500` when reading the deepest folder. The fixture adapter has no cap.
+
+**Why.** A valid hierarchy should never read as an internal fault.
+
+**Outcome.** One documented maximum folder depth, enforced when a folder is created (and later moved) with a defined error, and matched by the ancestor query's cap.
+
+**Acceptance**
+
+- Creating a folder past the limit returns a documented `4xx` error code, concurrent creations included (PostgreSQL test)
+- A folder at the limit still returns its full `ancestors`
+- The fixture adapter applies the same limit
+
+**Invariants:** INV-01  
+**Read:** `docs/api/conventions.md`, `docs/product/catalog.md`  
+**Checks:** `postgres`; `contract`

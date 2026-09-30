@@ -1582,10 +1582,10 @@
           },
           "name" : {
             "type" : "string",
-            "description" : "NFC normalized folder name"
+            "description" : "NFC normalized; case preserved; maximum 255 UTF-8 bytes"
           }
         },
-        "description" : "Root-to-parent order; empty for the workspace root"
+        "description" : "A folder above the requested folder"
       },
       "FolderDetailsResponse" : {
         "required" : [ "ancestors", "createdAt", "id", "kind", "name", "parentId", "updatedAt" ],

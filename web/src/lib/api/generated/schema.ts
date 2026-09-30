@@ -379,11 +379,11 @@ export interface components {
              */
             versionCount: number;
         };
-        /** @description Root-to-parent order; empty for the workspace root */
+        /** @description A folder above the requested folder */
         FolderAncestorResponse: {
             /** Format: uuid */
             id: string;
-            /** @description NFC normalized folder name */
+            /** @description NFC normalized; case preserved; maximum 255 UTF-8 bytes */
             name: string;
         };
         FolderDetailsResponse: {

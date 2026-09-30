@@ -25,11 +25,10 @@ function AncestorLink({
 	return (
 		<BreadcrumbItem className={`min-w-0 ${className ?? ""}`}>
 			<BreadcrumbLink
-				aria-label={ancestor.name}
 				className="block max-w-24 truncate rounded-sm text-muted-foreground hover:underline sm:max-w-40"
 				href={catalogHref(ancestor.id)}
 			>
-				{ancestor.name}
+				<span title={ancestor.name}>{ancestor.name}</span>
 			</BreadcrumbLink>
 		</BreadcrumbItem>
 	);
@@ -46,7 +45,7 @@ export function FolderBreadcrumbs({ folder }: { folder: FolderDetails }) {
 	return (
 		<Breadcrumb aria-label="Folder path" className="min-w-0">
 			<BreadcrumbList className="min-w-0 flex-nowrap gap-x-1 text-md">
-				{root ? <AncestorLink ancestor={root} /> : null}
+				{root ? <AncestorLink ancestor={root} className="shrink-0" /> : null}
 				{otherParents.length > 0 ? (
 					<BreadcrumbItem
 						className={ancestors.length <= 3 ? "lg:hidden" : undefined}
@@ -61,10 +60,11 @@ export function FolderBreadcrumbs({ folder }: { folder: FolderDetails }) {
 							</Button>
 							<DropdownMenu
 								aria-label="Parent folders"
-								className="max-h-[min(60vh,24rem)]"
+								className="max-h-[min(60vh,24rem)] w-max max-w-[min(20rem,calc(100vw-2rem))]"
 							>
 								{otherParents.map((ancestor) => (
 									<DropdownMenuItem
+										className="wrap-anywhere"
 										href={catalogHref(ancestor.id)}
 										key={ancestor.id}
 										textValue={ancestor.name}

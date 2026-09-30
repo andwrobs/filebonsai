@@ -52,6 +52,11 @@ test("decodes folder details with root-to-parent ancestors", () => {
     assert.deepEqual(root.ancestors, []);
     assert.equal(root.parentId, null);
   }
+  const file = EntryDetailsResponseFromJSON(fixture("file"));
+  assert.equal(file.kind, "file");
+  if (file.kind === "file") {
+    assert.equal(file.versionCount, 1);
+  }
 });
 
 test("decodes a version recorded without a digest", () => {

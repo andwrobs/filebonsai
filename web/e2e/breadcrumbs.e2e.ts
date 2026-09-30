@@ -35,7 +35,19 @@ test("nested breadcrumbs navigate on desktop and phone", async ({
 		await expect(breadcrumbs.getByRole("link", { name: third })).toBeVisible();
 		await expect(breadcrumbs.getByRole("link", { name: fourth })).toBeVisible();
 		await expect(breadcrumbs.getByRole("link", { name: middle })).toBeHidden();
+	} else {
+		await expect(breadcrumbs.getByRole("link", { name: third })).toBeHidden();
+		await expect(breadcrumbs.getByRole("link", { name: fourth })).toBeHidden();
+		await expect(
+			breadcrumbs.getByRole("button", { name: "More parent folders" }),
+		).toBeVisible();
 	}
+	expect(
+		await page.evaluate(() => document.documentElement.scrollWidth),
+	).toBeLessThanOrEqual(page.viewportSize()?.width ?? 0);
+	await expect(
+		page.getByRole("button", { name: "New folder" }),
+	).toBeInViewport();
 	await expect(
 		breadcrumbs.getByRole("heading", { name: leaf }),
 	).toHaveAttribute("title", leaf);
@@ -46,8 +58,10 @@ test("nested breadcrumbs navigate on desktop and phone", async ({
 
 	await breadcrumbs
 		.getByRole("button", { name: "More parent folders" })
-		.click();
-	await page.getByRole("menuitem", { name: first }).click();
+		.focus();
+	await page.keyboard.press("Enter");
+	await expect(page.getByRole("menuitem", { name: first })).toBeFocused();
+	await page.keyboard.press("Enter");
 	await library.expectFolder(first);
 	await page.goBack();
 	await library.expectFolder(leaf);

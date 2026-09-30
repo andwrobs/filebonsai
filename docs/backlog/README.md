@@ -177,6 +177,7 @@ Rename, move, trash, versions and tags. Every change is metadata, reversible whe
 | [ORG-12](organize.md#org-12-undo-for-reversible-actions) Undo for reversible actions | Build | P3 | S | [ORG-02](organize.md#org-02-rename), [ORG-03](organize.md#org-03-move), [ORG-04](organize.md#org-04-trash-and-restore) |
 | [ORG-13](organize.md#org-13-file-notes) File notes | Build | P3 | S | none |
 | [ORG-14](organize.md#org-14-copy-files-without-coupling-their-lifecycle) Copy files without coupling their lifecycle | Build | P2 | L | [ORG-01](organize.md#org-01-decision-how-entries-change), [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer) |
+| [ORG-15](organize.md#org-15-bound-folder-depth) Bound folder depth | Build | P2 | S | none |
 
 ### [Previews & media](previews-and-media.md)
 

@@ -105,8 +105,15 @@ observed results; use Git history for prior plans and completed migrations.
   needs attention and folds away once everything settles. On phones the floating
   upload button sits above the tray at its measured height. The sidebar's
   Storage entry shows the connection name and committed bytes. The Recent, Shared,
-  and Archive placeholders are gone. Breadcrumbs still show only Library and the
-  current folder (M1-02).
+  and Archive placeholders are gone.
+- Breadcrumbs show the real folder path (M1-02). `getEntry` returns a folder's
+  root-to-parent `ancestors` from one workspace-scoped recursive query capped at 1024
+  levels; listings and `getWorkspaceRoot` omit them. The header shows the root, a '…'
+  menu, and the current folder. From 1024px it shows up to the last two parents and
+  hides the menu when they are the only middle segments. Below 30rem the toolbar drops
+  to its own row. Long names truncate and keep their full text for assistive tech.
+  Folder creation has no depth limit yet, so a folder deeper than the cap reads as a
+  `500` (ORG-15).
 - The Library has an inspector (`web/src/routes/library/components/Inspector/`). Each row has
   a Details button. The toolbar's Details toggle shows the current folder when no row
   is chosen. The inspector shows name, kind, rounded and exact size, created and
@@ -130,6 +137,16 @@ observed results; use Git history for prior plans and completed migrations.
 
 ## Latest observed checks
 
+- Breadcrumbs from real ancestors (M1-02): `cd backend && ./mvnw test` passed,
+  including `PostgresCatalogTest` 19/19 against PostgreSQL with ancestry at depths
+  1, 2 and 50 and three indistinguishable not-found cases. `./scripts/verify.sh`
+  passed (export, generation, TypeScript and Swift checks decoding both
+  `EntryDetailsResponse` variants). `cd web && npm test` passed (Biome, typegen and
+  `tsc`, 92 Vitest tests, build). `npm run e2e` passed desktop and phone, including a
+  five-level path that checks collapse per viewport, no horizontal overflow, and
+  opening the '…' menu and choosing a parent by keyboard. Rendered screenshots at
+  1440×900 and 390×844 were inspected; they caught and verified the fix for a phone
+  header that overflowed to 650px.
 - Library list on the design system (LIB-21): `cd web && npm test` passed
   (Biome, typegen and `tsc`, 91 Vitest tests, build). `npm run e2e` passed the
   desktop and phone PostgreSQL-profile journeys. A disposable PostgreSQL-backed
