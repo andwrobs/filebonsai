@@ -22,6 +22,7 @@ Context: LIB-03's V9 triggers copy each entry's kind, `updated_at` and current s
 
 - Recommends one option for each question, with its tradeoff
 - Lists the invariants each operation must prove
+- Work through selecting a folder and its descendant together, mixed-success moves, a stale entry/destination and a lost response; define normalization and replay rules so menu, dialog and drag clients cannot move an entry twice
 
 **Settle first**
 
@@ -67,8 +68,11 @@ Context: M1-02's `getEntry` reads a folder and then its `ancestors` in two state
 
 - Two concurrent opposing moves (A into B, B into A) can't create a cycle (PostgreSQL test)
 - Moving the root is rejected
-- Bulk results follow ORG-01
-- Physical storage untouched
+- Bulk results and parent/descendant selection normalization follow ORG-01; the same command supports the dialog and LIB-22's grid/sidebar/breadcrumb targets
+- Source and destination are authorized in the same workspace; a stale revision, missing/inaccessible target, current-parent no-op and name reservation conflict have explicit safe results
+- Idempotent replay after a lost response never performs a second move; partial results identify exactly which entries moved and which remain at their source
+- Physical storage, immutable versions and stored object keys are untouched; dragging a file into a folder does not upload it or change its storage connection
+- After moving a folder, entry parent and ancestor reads agree in one snapshot and affected tree/listing paths refresh
 - A move that would exceed ORG-15's depth limit is rejected
 
 **Invariants:** INV-01, INV-02, INV-08  

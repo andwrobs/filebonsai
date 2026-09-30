@@ -59,17 +59,21 @@ Context: LIB-03 added `sort` (`name`, `updatedAt`, `size`), `order` (`asc`, `des
 
 `P2` · `M` · Build · Web
 
-Depends on: none
+Depends on: [LIB-04](#lib-04-table-and-grid-views)
 
 **Why.** Bulk move, trash and Tidy all need multi-select.
 
-**Outcome.** Single, toggle (Cmd/Ctrl) and range (Shift) selection, select all on the page, focus kept separate from selection, long-press to start selecting on touch, and a toolbar with the selection count.
+**Outcome.** One entry-ID selection model shared by table, grid and phone rows in the current folder: single, toggle (Cmd/Ctrl), range (Shift), select all loaded entries and a toolbar with the selection count. Keep keyboard focus, selection and inspected entry distinct. On desktop, plain click selects one entry; double-click or Enter opens a folder. On touch, a normal tap opens a folder; long-press or a visible Select action starts selection mode, where taps toggle selection.
 
 **Acceptance**
 
-- ARIA multiselect semantics
-- Selection survives loading more results
-- Escape clears the selection
+- ARIA multiselect semantics, visible selected and focused states using existing tokens, and an announced selection count; arrows move focus without unintentionally replacing the selection
+- Cmd/Ctrl toggles without opening a folder; Shift uses a stable anchor and the displayed order; Select all is scoped to loaded entries and never fires inside an input
+- Selection survives loading more results, sorting and switching table/grid for the same folder; a refresh prunes removed/inaccessible IDs. Folder, workspace and session changes clear selection and its anchor
+- Download, Details and overflow controls act without unintended selection or navigation; the inspector never makes an entry selected merely by displaying it
+- Expose LIB-22 targeting rules as selection intents: right-click on a selected entry retains the selection; on an unselected entry it selects only that entry. Tree-node and background actions have their own folder scope without replacing the listing selection; menu rendering ships in LIB-22
+- With no active overlay/drag, Escape clears selection. While another interaction owns Escape, selection does not consume it; LIB-22 proves menu/drag dismissal and focus restoration
+- Render and exercise single/toggle/range and view-switch states at desktop/phone sizes, including long names, keyboard-only interaction and touch selection; test targeting intents without requiring LIB-22 menus first
 
 **Checks:** `web`; `rendered`
 
@@ -289,29 +293,36 @@ Depends on: [ENG-02](foundations.md#eng-02-playwright-end-to-end-harness), [LIB-
 
 `P2` · `L` · Build · Web
 
-Depends on: [LIB-02](#lib-02-folder-tree-sidebar), [LIB-05](#lib-05-selection-model), [M1-11](finish-m1.md#m1-11-drag-and-drop-upload), [ORG-02](organize.md#org-02-rename), [ORG-03](organize.md#org-03-move)
+Depends on: [LIB-02](#lib-02-folder-tree-sidebar), [LIB-04](#lib-04-table-and-grid-views), [LIB-05](#lib-05-selection-model), [M1-11](finish-m1.md#m1-11-drag-and-drop-upload), [ORG-02](organize.md#org-02-rename), [ORG-03](organize.md#org-03-move)
 
 Context: `web/src/lib/ui` already has `context-menu`, `dropdown-menu` and `command` components. ORG-02 adds an overflow menu for touch rows, ORG-03 the move API and 'Move to…' dialog, and LIB-08 the command palette. Without one action list, each of these grows its own menu.
 
 **Why.** People expect to right-click a file or folder, drag entries between folders, and act on folders from the tree, as they do in Finder, Explorer, Drive and Dropbox.
 
-**Outcome.** One list of entry actions: each action has a label, an icon, a shortcut, whether it applies to the selection, and a check that it is available. The context menu, the touch overflow menu, the inspector and the command palette all read from it. Right-click or Shift+F10 on a list row or tree node opens a context menu for that entry, or for the selection when the entry is part of it. The menu offers only actions that exist: Open, Rename, Move to…, New folder here, Upload here, Download, and, when they ship, Trash, Star and Tags. Entries can be dragged, singly or as a selection, onto folder rows, tree nodes and breadcrumbs to move them. Collapsed tree nodes expand when a drag hovers over them. Files dropped from the computer onto a tree node upload into that folder. From the tree you can also create a folder inside a node and rename a node in place.
+**Outcome.** One list of implemented entry actions, shared by the context menu, touch overflow, inspector and command palette when present. Actions declare their label, icon, shortcut, selection scope and availability. Right-click, Menu or Shift+F10 on a table row, grid tile or tree node opens the correctly scoped menu under LIB-05; background menus target the current folder. Offer Open, Rename, Move to…, New folder here, Upload here, Download and Details where supported; add Trash, Star and Tags only when they ship.
+
+One shell-scoped catalog drag owner connects table/grid sources with folder rows/tiles, left-sidebar tree nodes and folder breadcrumbs, including the Library root. Files can move into folders and folders into folders without navigating first. Selection stays owned by the listing; a drag snapshots its source entry IDs and workspace for the shared owner. Hovering a collapsed tree folder expands it without opening its route. External computer-file drops use M1-11's upload path. Tree menus also support creating a child folder and renaming the targeted folder. Split shared actions/menu work and cross-panel dragging into bounded slices at pickup; do not require the command palette to ship first.
 
 **Acceptance**
 
-- Every menu and drag action has a keyboard and touch path that doesn't need right-click or dragging
-- The context menu follows the WAI-ARIA menu pattern, opens with the Menu key and Shift+F10, and returns focus to the entry when it closes
-- Invalid drop targets (the entry itself, its own descendant, its current parent) are refused before any request is made, and the reason is shown with more than color
-- A multi-item drag shows the item count, and per-item name conflicts are reported following ORG-01
-- Escape cancels a drag without moving anything
-- An action the viewer can't perform is hidden or disabled with a reason, never offered and then rejected
+- Every menu and drag action has a keyboard and touch path through overflow/actions and ORG-03's Move to… dialog; single-item and mixed file/folder selections expose only applicable implemented actions
+- Menus follow the WAI-ARIA pattern, stay within the viewport near its edges and do not steal a grid's ordinary click/double-click gestures. Escape restores entry focus; navigation or a removed target closes the menu before an action can run against a stale scope
+- Dragging a selected entry carries the selection; dragging an unselected entry carries only it. The preview shows the item count and destination feedback names the folder, with an affordance beyond color
+- Prove file → grid folder, folder → grid folder, selected files/folders → sidebar folder, and entry → breadcrumb/root in the real backend journey; the same move command and result handling serve every target
+- Invalid targets (a file, the entry itself, its descendant, its current parent or another workspace) cannot issue a move. The server independently enforces scope/cycles; unavailable ancestry is fetched or the target stays pending, never guessed safe
+- Hover expansion and scrolling work in the virtualized tree; recycling/unmounting a row cannot change the destination ID. Leaving a target cancels pending hover expansion; hovering does not navigate or lose the drag
+- Each accepted drop issues one move operation. Pending, success, name conflict, stale revision, permission loss and uncertain completion have explicit feedback following ORG-01; retain failed entries for retry, remove confirmed successes from source selection, and refresh affected listings/tree/inspector ancestry
+- Escape, an outside drop, workspace/session change and teardown cancel an unsubmitted drag without a mutation. Clear drag feedback after completion/cancellation; external files/text cannot impersonate trusted in-app entry IDs
+- An action the viewer can't perform is hidden or disabled with a reason. UI affordances do not replace server authorization; a permission change while the menu/drag is open is handled safely
 
 **Settle first**
 
 - Whether hidden or disabled is the default for unavailable actions
-- Whether to adopt a drag-and-drop library or use native HTML drag events with keyboard alternatives
+- Prefer the existing React Aria collection drag/drop hooks where they support cross-collection targets; validate grid/tree interoperability and virtualization before choosing a different library or native events
+- Hover delay, scroll behavior and focus recovery after a source disappears; use one shared policy rather than separate handlers per surface
 
-**Invariants:** INV-01, INV-14  
+**Invariants:** INV-01, INV-14
+**Checks:** `web`; `rendered`; PostgreSQL-profile browser move/menu journey
 
 ## LIB-23 Letter-spacing defaults that yield to tracking utilities
 

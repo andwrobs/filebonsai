@@ -473,14 +473,26 @@ items and required tests.
 1. Cloud transfer: run the decision 0007 compatibility proof against a disposable
    real Cloudflare R2 bucket, repair any provider mismatch, and record bounded
    streaming/recovery evidence before claiming R2 support or adding another provider.
-2. Web: build the Library's table/grid views (LIB-04) on the migrated list.
-   The inspector and Storage move onto `web/src/lib/ui` within LIB-15 and LIB-16.
-3. Photo metadata: accepted decisions
+2. Web interaction polish: finish table/grid (LIB-04) and the folder tree (LIB-02),
+   then LIB-05 selection, M1-11 computer-file drops, ORG-01/02/03 mutation rules and
+   commands, and LIB-22 shared menus and catalog dragging. Cover grid-folder and
+   left-sidebar destinations through one drag owner, with keyboard/touch alternatives.
+   These interactions remain backlog work; unmerged view/tree work is not completion
+   evidence. The inspector and Storage move onto `web/src/lib/ui` within LIB-15/16.
+3. App-managed storage is near-term work after interaction polish: settle
+   [TIER-10](../backlog/storage-tiers.md#tier-10-decision-secure-app-managed-connections),
+   build the TIER-03 registry and TIER-11 encrypted credential custody, then TIER-12/14
+   setup/routing, TIER-13 onboarding and TIER-15 security/recovery proof. Include CFG-09
+   discovery and LIB-16's Storage surface. The decision and fixture-backed work can
+   proceed before the live R2 proof; live enablement retains TIER-00's gate.
+   The target is adding supported cloud connections in the app without per-connection
+   configuration or restart. This is planned behavior; Storage remains read-only.
+4. Photo metadata: accepted decisions
    [0009](../decisions/0009-durable-jobs-in-postgresql.md) (durable jobs) and
    [0010](../decisions/0010-media-processing-isolation.md) (processing isolation and
    metadata model). Build ENG-05 and PRV-10, then PRV-04. Both metadata parsing and
    native decoding require the per-job sandbox; an in-backend child JVM is insufficient.
-4. iOS Catalog remains deferred by user preference. When resumed, implement the
+5. iOS Catalog remains deferred by user preference. When resumed, implement the
    SwiftUI/TCA slice through a generated transport and handwritten application adapter.
 
 Each item is split into a bounded task at execution time with owned paths, dependencies,
@@ -490,8 +502,10 @@ acceptance criteria, checks, and a handoff. The ordered list is not blanket auth
 ## Unresolved decisions
 
 - Native authentication/session behavior for foreground and background transfers.
-- R2 credential delivery/rotation and operational bucket provisioning; decision 0007
-  selects the first provider and its initial server-mediated transfer contract.
+- TIER-10's secure app-managed connection decision: owner authority, credential
+  submission/custody, encryption-root recovery and config-to-app migration. Decision
+  0007 retains R2 as the first provider and the server-mediated transfer boundary;
+  dynamic setup does not yet exist, and bucket provisioning remains operator-owned.
 - Configurable-shell schema, precedence, persistence, and delivery milestone.
 - JavaScript workspace manager, generated-client packaging, and Swift generator path.
 - License, contribution/release conventions, supported deployment matrix, backup/

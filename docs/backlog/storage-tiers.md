@@ -9,7 +9,11 @@ See [the backlog index](README.md) for how to pick up and retire items.
 ## Proposed connection setup direction
 
 Support both configuration-managed and app-managed connections, with one explicit
-owner per record. Keep Spring properties for deployment bootstrap and guardrails;
+owner per record. The product target is dynamic setup: add multiple connections for
+a supported provider through the app, persist them locally on the Filebonsai server,
+and use them without per-connection environment variables or a restart. Provider
+adapters still ship as server code; dynamic connection setup does not promise arbitrary
+new providers without implementation and compatibility proof. Keep Spring properties for deployment bootstrap and guardrails;
 make the app the ordinary owner workflow for adding an already provisioned R2 bucket.
 This is a recommendation for TIER-10, not an accepted change to the M1 read-only
 Storage page or decision 0007's transfer boundary.
@@ -43,6 +47,15 @@ recovery. These are design proposals informed by
 TIER-10 can settle custody and ownership before the live R2 proof. The registry and
 local tests can follow that decision; enabling app-managed R2 still depends on
 TIER-00. Tiering and a second provider retain their existing proof gates.
+
+The near-term sequence is TIER-10, TIER-03/11, TIER-12/14, TIER-13 and TIER-15,
+with CFG-09 discovery and LIB-16's Storage surface supplying the UI dependencies.
+TIER-15 owns the complete browser → server → provider → restart/download acceptance
+journey. Here, secure end-to-end setup means protected submission, encrypted credential
+custody and verified recovery across that workflow. The trusted server decrypts the
+credential to contact the provider; this is not a claim of client-only/zero-knowledge
+file encryption. An independently delivered encryption root is deployment bootstrap,
+not a separate configuration file for every cloud connection.
 
 ## TIER-00 Real R2 compatibility proof (M2)
 
@@ -327,6 +340,7 @@ Depends on: [TIER-12](#tier-12-owner-connection-drafts-and-safe-probes), [TIER-1
 - Recent reauthentication completes before secret entry; configuration-managed connections show their source and restricted actions; non-owners receive safe summaries and cannot invoke management APIs
 - Loading, validation, testing, credential rejection, rate limit, timeout, uncertain cleanup, stale revision and save/activation failure each give a specific next step; Save is never represented as activation
 - Review states the destination effect: existing files stay on their current connections; a new default applies only to new uploads. Setting a default is explicit, not a side effect of adding a connection
+- Add a second connection for the same supported provider entirely in the app; saved metadata/status survives refresh and server restart, without new per-connection properties or secret files. An unsupported provider is unavailable with an explanation
 - Render the full flow with synthetic values at desktop/phone sizes, keyboard-only, 200% zoom and reduced motion; exclude secret fields from screenshots and traces
 
 **Invariants:** INV-01, INV-11, INV-14
@@ -372,6 +386,8 @@ Depends on: [TIER-13](#tier-13-add-storage-from-the-app), [TIER-14](#tier-14-act
 - Deny anonymous, member/non-owner, cross-workspace, stale-reauth and invalid-CSRF mutations; test direct APIs as well as hidden/disabled UI controls
 - Inspect responses, generated fixtures, logs, traces, audit records, request capture and browser persistence for canary key leakage; inject hostile display names and provider errors
 - Prove malformed destination/redirect/private-address rejection, bounded probes, revision races, interrupted cleanup and rate limits without contacting real internal targets
+- Run the actual Add connection browser flow against PostgreSQL and a controlled provider fixture: reauthenticate, submit synthetic credentials, test, activate, explicitly choose the upload default, upload, restart the backend process and download with the same SHA-256. Add a second connection without editing properties/restarting for setup; verify old downloads and accepted uploads retain their original destination. Fixture evidence does not establish live provider compatibility
+- Inspect local database/backup records to confirm credentials are ciphertext and the encryption root is independently supplied; browser persistence contains neither. No per-connection config edit is part of the app-managed journey
 - Restore encrypted configuration plus separately backed-up keys into a disposable installation; verify existing file downloads and nonterminal recovery; wrong/missing keys fail safely
 - Exercise default switching, credential replacement/revocation and blocked retirement while work is in flight; record exactly which cases use fixtures and which use a real provider
 - Fresh read-only contract and persistence/security reviews have no blocking findings; enablement documentation states server/browser trust limits and key-loss recovery rather than promising absolute security

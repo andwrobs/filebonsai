@@ -158,19 +158,22 @@ Depends on: none
 
 ## M1-11 Drag-and-drop upload
 
-`P2` · `S` · Build · Web
+`P2` · `M` · Build · Web
 
-Depends on: none
+Depends on: [LIB-02](everyday-library.md#lib-02-folder-tree-sidebar), [LIB-04](everyday-library.md#lib-04-table-and-grid-views)
 
 **Why.** The design direction assumes you can drop files onto the library.
 
-**Outcome.** Drop files onto the folder view, or onto a folder row to upload into that folder. The button path stays.
+**Outcome.** Drop computer files onto the current folder view, a folder row/grid tile, a sidebar tree folder or a breadcrumb/root to upload into that destination. One upload-drop owner feeds the existing tab-owned transfer store; LIB-22 adds catalog moves to the same target surfaces.
 
 **Acceptance**
 
-- The drop target is indicated by more than color
-- Dropping a directory explains that folder upload comes later (IMP-02)
-- Keyboard and touch users keep the upload button
+- Destination name and drop feedback indicate the target with more than color; hovering a file is not a valid folder target
+- The deepest valid folder target handles the drop exactly once; bubbling cannot also upload into the current folder, and accepted file drops cannot navigate the browser away
+- Uploads pin the chosen folder before submission and continue through navigation; existing limits, cancellation, retry and partial-failure feedback remain authoritative
+- External files start uploads; internal catalog drags start only LIB-22 moves and never become uploads. Unrelated text/URLs do not start either operation
+- Dropping a directory explains that folder upload comes later (IMP-02); do not silently upload an incomplete directory
+- Keyboard and touch users keep the upload button and a destination-specific Upload here action; Escape or leaving the drop area clears transient feedback
 
 **Checks:** `web`; `rendered`
 
