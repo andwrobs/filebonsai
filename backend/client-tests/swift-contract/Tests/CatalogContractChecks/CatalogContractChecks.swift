@@ -17,6 +17,18 @@ final class CatalogContractChecks: XCTestCase {
         XCTAssertNil(root.parentId)
     }
 
+    func testDecodesFolderDetailsWithRootToParentAncestors() throws {
+        let folder = try decoder.decode(FolderDetailsResponse.self, from: fixture("folder"))
+        let root = try decoder.decode(FolderDetailsResponse.self, from: fixture("root"))
+
+        XCTAssertEqual(folder.kind, .folder)
+        XCTAssertEqual(folder.ancestors.count, 1)
+        XCTAssertEqual(folder.ancestors[0].name, "Library")
+        XCTAssertEqual(folder.ancestors[0].id.uuidString.lowercased(), "00000000-0000-4000-8000-000000000001")
+        XCTAssertTrue(root.ancestors.isEmpty)
+        XCTAssertNil(root.parentId)
+    }
+
     func testDecodesAVersionRecordedWithoutADigest() throws {
         let json = Data(
             """

@@ -1,6 +1,6 @@
 import { type ApiClient, unwrap } from "~/lib/api/api";
 import {
-	type Entry,
+	type EntryDetails,
 	type EntryPage,
 	type FolderEntry,
 	type FolderListing,
@@ -19,7 +19,7 @@ export interface CreateFolderInput {
 
 export interface CatalogService {
 	workspaceRoot(options?: Options): Promise<FolderEntry>;
-	entry(id: string, options?: Options): Promise<Entry>;
+	entry(id: string, options?: Options): Promise<EntryDetails>;
 	children(
 		id: string,
 		options?: Options & { cursor?: string; limit?: number },

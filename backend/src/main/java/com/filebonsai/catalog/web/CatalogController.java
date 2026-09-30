@@ -3,10 +3,12 @@ package com.filebonsai.catalog.web;
 import com.filebonsai.catalog.application.CatalogScopeProvider;
 import com.filebonsai.catalog.application.CreateFolder;
 import com.filebonsai.catalog.application.GetEntry;
+import com.filebonsai.catalog.application.GetFolderAncestors;
 import com.filebonsai.catalog.application.GetWorkspaceRoot;
 import com.filebonsai.catalog.application.ListChildren;
 import com.filebonsai.catalog.application.ListOrder;
 import com.filebonsai.catalog.application.StorageConnectionName;
+import com.filebonsai.catalog.domain.Entry;
 import com.filebonsai.catalog.domain.EntryId;
 import com.filebonsai.catalog.domain.FileName;
 import com.filebonsai.platform.web.ApiErrorResponse;
@@ -60,6 +62,7 @@ import org.springframework.web.bind.annotation.RestController;
 })
 public class CatalogController {
     private final GetEntry getEntry;
+    private final GetFolderAncestors getFolderAncestors;
     private final GetWorkspaceRoot getWorkspaceRoot;
     private final ListChildren listChildren;
     private final CreateFolder createFolder;
@@ -68,12 +71,14 @@ public class CatalogController {
 
     public CatalogController(
             GetEntry getEntry,
+            GetFolderAncestors getFolderAncestors,
             GetWorkspaceRoot getWorkspaceRoot,
             ListChildren listChildren,
             CreateFolder createFolder,
             CatalogScopeProvider scopes,
             StorageConnectionName storage) {
         this.getEntry = getEntry;
+        this.getFolderAncestors = getFolderAncestors;
         this.getWorkspaceRoot = getWorkspaceRoot;
         this.listChildren = listChildren;
         this.createFolder = createFolder;
@@ -96,9 +101,15 @@ public class CatalogController {
     @ApiResponse(
             responseCode = "200",
             description = "Entry",
-            content = @Content(schema = @Schema(implementation = EntryResponse.class)))
-    public EntryResponse getEntry(@PathVariable UUID id) {
-        return CatalogResponseMapper.response(getEntry.get(scopes.current(), new EntryId(id)), storage);
+            content = @Content(schema = @Schema(implementation = EntryDetailsResponse.class)))
+    public EntryDetailsResponse getEntry(@PathVariable UUID id) {
+        var scope = scopes.current();
+        var entryId = new EntryId(id);
+        Entry entry = getEntry.get(scope, entryId);
+        return switch (entry) {
+            case Entry.Folder folder -> CatalogResponseMapper.details(folder, getFolderAncestors.list(scope, entryId));
+            case Entry.File file -> (FileEntryResponse) CatalogResponseMapper.response(file, storage);
+        };
     }
 
     @GetMapping(value = "/entries/{id}/children", produces = MediaType.APPLICATION_JSON_VALUE)

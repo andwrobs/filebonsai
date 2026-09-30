@@ -66,12 +66,52 @@ class CatalogHttpTest {
                 .getContentAsString());
         assertThat(root.has("parentId")).isTrue();
         assertThat(root.get("parentId").isNull()).isTrue();
+        assertThat(root.get("ancestors").isArray()).isTrue();
+        assertThat(root.get("ancestors")).isEmpty();
         assertThat(root.has("currentVersion")).isFalse();
         mvc.perform(get("/api/v1/catalog/root"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(ROOT))
                 .andExpect(jsonPath("$.parentId").isEmpty())
                 .andExpect(header().string("Cache-Control", "no-store"));
+    }
+
+    @Test
+    void folderDetailsIncludeOrderedAncestorsWithoutAddingThemToListings() throws Exception {
+        String parent = mapper.readTree(mvc.perform(post("/api/v1/folders")
+                                .header("Idempotency-Key", UUID.randomUUID())
+                                .contentType("application/json")
+                                .content(mapper.writeValueAsString(Map.of("parentId", ROOT, "name", "Travel"))))
+                        .andExpect(status().isCreated())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString())
+                .get("id")
+                .asText();
+        String child = mapper.readTree(mvc.perform(post("/api/v1/folders")
+                                .header("Idempotency-Key", UUID.randomUUID())
+                                .contentType("application/json")
+                                .content(mapper.writeValueAsString(Map.of("parentId", parent, "name", "Photos"))))
+                        .andExpect(status().isCreated())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString())
+                .get("id")
+                .asText();
+
+        mvc.perform(get("/api/v1/entries/" + parent))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ancestors[*].name").value(contains("Library")));
+        mvc.perform(get("/api/v1/entries/" + child))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ancestors[*].id").value(contains(ROOT, parent)))
+                .andExpect(jsonPath("$.ancestors[*].name").value(contains("Library", "Travel")));
+        var page = mapper.readTree(mvc.perform(get("/api/v1/entries/" + parent + "/children"))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString());
+        assertThat(page.get("entries").get(0).has("ancestors")).isFalse();
     }
 
     @Test
@@ -245,6 +285,9 @@ class CatalogHttpTest {
                         .asText())
                 .isEqualTo("getWorkspaceRoot");
         assertThat(schemas.path("EntryResponse").path("oneOf").size()).isEqualTo(2);
+        assertThat(schemas.path("EntryDetailsResponse").path("oneOf").size()).isEqualTo(2);
+        assertThat(schemas.path("FolderDetailsResponse").path("required").toString())
+                .contains("\"ancestors\"");
         assertThat(schemas.path("EntryResponse")
                         .path("discriminator")
                         .path("propertyName")

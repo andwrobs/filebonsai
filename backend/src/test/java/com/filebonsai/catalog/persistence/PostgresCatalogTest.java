@@ -168,6 +168,34 @@ class PostgresCatalogTest {
     }
 
     @Test
+    void readsRootToParentAncestryAtDepthsOneTwoAndFiftyWithinTheWorkspace() {
+        assertThat(catalog.list(scope, ROOT)).isEmpty();
+        Entry.Folder current = create(ROOT, "Level 1");
+        assertThat(catalog.list(scope, current.id()))
+                .extracting(ancestor -> ancestor.name().value())
+                .containsExactly("Library");
+        current = create(current.id(), "Level 2");
+        assertThat(catalog.list(scope, current.id()))
+                .extracting(ancestor -> ancestor.name().value())
+                .containsExactly("Library", "Level 1");
+        for (int depth = 3; depth <= 50; depth++) {
+            current = create(current.id(), "Level " + depth);
+        }
+        var ancestors = catalog.list(scope, current.id());
+        assertThat(ancestors).hasSize(50);
+        assertThat(ancestors.getFirst().name().value()).isEqualTo("Library");
+        assertThat(ancestors.getLast().name().value()).isEqualTo("Level 49");
+        EntryId target = current.id();
+        assertReason(
+                () -> catalog.list(new CatalogScope(UUID.randomUUID(), WORKSPACE), target),
+                CatalogFailure.Reason.ENTRY_NOT_FOUND);
+        assertReason(
+                () -> catalog.list(new CatalogScope(PRINCIPAL, UUID.randomUUID()), target),
+                CatalogFailure.Reason.ENTRY_NOT_FOUND);
+        assertReason(() -> catalog.list(scope, new EntryId(UUID.randomUUID())), CatalogFailure.Reason.ENTRY_NOT_FOUND);
+    }
+
+    @Test
     void pagesInPostgresqlUtf8Order() {
         Entry.Folder parent = create(ROOT, "Paging");
         create(parent.id(), "A");

@@ -12,15 +12,10 @@ import { folderQuery } from "~/lib/catalog/catalog.query";
 import { pageTitle } from "~/lib/meta/title";
 import { queryClient } from "~/lib/query/client";
 import { UploadControl } from "~/lib/transfers/UploadControl";
-import {
-	Breadcrumb,
-	BreadcrumbItem,
-	BreadcrumbLink,
-	BreadcrumbList,
-} from "~/lib/ui/breadcrumb";
 import { Button, LinkButton } from "~/lib/ui/button";
 import type { Route } from "./+types/library.route";
 import { EntryList } from "./components/EntryList";
+import { FolderBreadcrumbs } from "./components/FolderBreadcrumbs";
 import { InspectorPanel, useInspector } from "./components/Inspector";
 import { NewFolderForm } from "./components/NewFolderForm";
 
@@ -62,7 +57,7 @@ function Folder({
 
 	return (
 		<div className="@container/page flex flex-1 flex-col gap-5 px-(--content-gutter) pt-4 pb-8 max-md:pb-[calc(--spacing(8)+3.5rem)] max-md:pl-[max(var(--content-gutter),env(safe-area-inset-left))] max-md:pr-[max(var(--content-gutter),env(safe-area-inset-right))]">
-			<header className="flex min-h-[calc(var(--control-height)+1rem)] flex-wrap items-center justify-between gap-x-4 gap-y-3 border-b pb-3">
+			<header className="flex min-h-[calc(var(--control-height)+1rem)] flex-wrap items-center justify-between gap-x-4 gap-y-3 border-b pb-3 @max-[30rem]/page:flex-col @max-[30rem]/page:items-stretch">
 				<div className="flex min-w-0 flex-[1_1_12rem] items-center gap-1">
 					{folder.parentId ? (
 						<LinkButton
@@ -74,39 +69,9 @@ function Folder({
 							<ChevronLeft aria-hidden="true" />
 						</LinkButton>
 					) : null}
-					<Breadcrumb aria-label="Breadcrumb" className="min-w-0">
-						<BreadcrumbList className="gap-x-2 gap-y-1 text-md">
-							{folder.parentId ? (
-								<BreadcrumbItem separatorClassName="hidden">
-									<BreadcrumbLink
-										className="rounded-sm text-muted-foreground hover:underline"
-										href="/"
-									>
-										Library
-									</BreadcrumbLink>
-								</BreadcrumbItem>
-							) : null}
-							<BreadcrumbItem
-								className="min-w-0 gap-2"
-								separatorClassName="hidden"
-							>
-								{folder.parentId ? (
-									<span
-										aria-hidden="true"
-										className="mr-[0.15em] size-[0.4em] shrink-0 rotate-45 border-t-[1.5px] border-r-[1.5px] border-subtle-foreground"
-									/>
-								) : null}
-								<h1
-									aria-current="page"
-									className="min-w-0 text-xl leading-tight font-semibold text-foreground wrap-anywhere"
-								>
-									{folder.name}
-								</h1>
-							</BreadcrumbItem>
-						</BreadcrumbList>
-					</Breadcrumb>
+					<FolderBreadcrumbs folder={folder} />
 				</div>
-				<div className="flex flex-wrap items-center gap-2">
+				<div className="flex flex-wrap items-center gap-2 @max-[30rem]/page:justify-end">
 					<Button
 						className="@max-[30rem]/page:size-control @max-[30rem]/page:px-0"
 						onPress={() => setIsCreating(true)}

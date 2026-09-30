@@ -4,13 +4,15 @@ import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
-public record FileEntryResponse(
+/** A folder read directly by ID. Listing rows use FolderEntryResponse without an ancestor chain. */
+public record FolderDetailsResponse(
         @Schema(requiredMode = REQUIRED) Kind kind,
         @Schema(requiredMode = REQUIRED) UUID id,
 
-        @Schema(requiredMode = REQUIRED, description = "Containing folder identity")
+        @Schema(requiredMode = REQUIRED, nullable = true, description = "Null only for the workspace root")
         UUID parentId,
 
         @Schema(requiredMode = REQUIRED, description = "NFC normalized; case preserved; maximum 255 UTF-8 bytes")
@@ -18,15 +20,11 @@ public record FileEntryResponse(
 
         @Schema(requiredMode = REQUIRED) Instant createdAt,
         @Schema(requiredMode = REQUIRED) Instant updatedAt,
-        @Schema(requiredMode = REQUIRED) CurrentVersionResponse currentVersion,
 
-        @Schema(
-                requiredMode = REQUIRED,
-                minimum = "1",
-                description = "Committed versions of this file, the current one included")
-        int versionCount)
-        implements EntryResponse, EntryDetailsResponse {
+        @Schema(requiredMode = REQUIRED, description = "Root-to-parent order; empty for the workspace root")
+        List<FolderAncestorResponse> ancestors)
+        implements EntryDetailsResponse {
     public enum Kind {
-        file
+        folder
     }
 }

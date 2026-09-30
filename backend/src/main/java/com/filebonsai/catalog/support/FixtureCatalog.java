@@ -11,6 +11,7 @@ import com.filebonsai.catalog.application.CatalogFailure;
 import com.filebonsai.catalog.application.CatalogScope;
 import com.filebonsai.catalog.application.CreateFolder;
 import com.filebonsai.catalog.application.GetEntry;
+import com.filebonsai.catalog.application.GetFolderAncestors;
 import com.filebonsai.catalog.application.GetWorkspaceRoot;
 import com.filebonsai.catalog.application.ListChildren;
 import com.filebonsai.catalog.application.ListOrder;
@@ -21,6 +22,7 @@ import com.filebonsai.catalog.domain.FileName;
 import com.filebonsai.catalog.domain.VersionId;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,7 +33,8 @@ import java.util.Set;
 import java.util.UUID;
 
 /** Demo adapter: synchronized atomic operations, process-local data. No durability or real authentication. */
-public final class FixtureCatalog implements GetEntry, GetWorkspaceRoot, ListChildren, CreateFolder {
+public final class FixtureCatalog
+        implements GetEntry, GetFolderAncestors, GetWorkspaceRoot, ListChildren, CreateFolder {
     public static final UUID WORKSPACE = UUID.fromString("10000000-0000-4000-8000-000000000001");
     public static final UUID PRINCIPAL = UUID.fromString("20000000-0000-4000-8000-000000000001");
     public static final EntryId ROOT = new EntryId(UUID.fromString("00000000-0000-4000-8000-000000000001"));
@@ -82,6 +85,17 @@ public final class FixtureCatalog implements GetEntry, GetWorkspaceRoot, ListChi
             throw new CatalogFailure(ENTRY_NOT_FOUND, "Entry was not found");
         }
         return entry;
+    }
+
+    @Override
+    public synchronized List<Ancestor> list(CatalogScope scope, EntryId folderId) {
+        Entry.Folder current = folder(scope, folderId);
+        var ancestors = new ArrayList<Ancestor>();
+        while (current.parentId() != null) {
+            current = folder(scope, current.parentId());
+            ancestors.add(new Ancestor(current.id(), current.name()));
+        }
+        return ancestors.reversed();
     }
 
     @Override

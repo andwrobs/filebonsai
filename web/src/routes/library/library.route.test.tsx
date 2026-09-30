@@ -13,6 +13,7 @@ import LibraryRoute, {
 } from "./library.route";
 
 const root = {
+	ancestors: [],
 	createdAt: "2026-09-21T00:00:00Z",
 	id: "root",
 	kind: "folder",
@@ -20,7 +21,13 @@ const root = {
 	parentId: null,
 	updatedAt: "2026-09-21T00:00:00Z",
 };
-const travel = { ...root, id: "travel", name: "Travel", parentId: "root" };
+const travel = {
+	...root,
+	ancestors: [{ id: "root", name: "Library" }],
+	id: "travel",
+	name: "Travel",
+	parentId: "root",
+};
 const photo = {
 	...root,
 	id: "photo",
@@ -105,6 +112,60 @@ it("offers ways to fill an empty folder", async () => {
 	expect(await screen.findByText("This folder is empty")).toBeInTheDocument();
 	expect(
 		screen.getByRole("button", { name: "Create folder" }),
+	).toBeInTheDocument();
+});
+
+it("navigates a nested folder through its ancestors and collapsed parent menu", async () => {
+	const albums = {
+		...travel,
+		ancestors: [
+			{ id: "root", name: "Library" },
+			{ id: "travel", name: "Travel" },
+		],
+		id: "albums",
+		name: "Albums",
+		parentId: "travel",
+	};
+	const summer = {
+		...albums,
+		ancestors: [...albums.ancestors, { id: "albums", name: "Albums" }],
+		id: "summer",
+		name: "Summer photographs with a very long folder name",
+		parentId: "albums",
+	};
+	stubApi((path) => {
+		const folders = { root, travel, albums, summer };
+		const id = path.replace("/api/v1/entries/", "");
+		if (id in folders)
+			return Response.json(folders[id as keyof typeof folders]);
+		if (id.endsWith("/children")) {
+			return Response.json({ entries: [], nextCursor: null });
+		}
+		return apiError(404, "ENTRY_NOT_FOUND");
+	});
+	const { user } = renderLibrary("summer");
+	const path = await screen.findByRole("navigation", { name: "Folder path" });
+	expect(within(path).getByRole("link", { name: "Library" })).toHaveAttribute(
+		"href",
+		"/library/root",
+	);
+	expect(within(path).getByRole("link", { name: "Albums" })).toHaveAttribute(
+		"href",
+		"/library/albums",
+	);
+	expect(
+		within(path).getByRole("heading", { name: summer.name }),
+	).toHaveAttribute("title", summer.name);
+	await user.click(
+		within(path).getByRole("button", { name: "More parent folders" }),
+	);
+	await user.click(await screen.findByRole("menuitem", { name: "Travel" }));
+	expect(
+		await screen.findByRole("heading", { level: 1, name: "Travel" }),
+	).toBeInTheDocument();
+	await user.click(screen.getByRole("link", { name: "Library" }));
+	expect(
+		await screen.findByRole("heading", { level: 1, name: "Library" }),
 	).toBeInTheDocument();
 });
 
