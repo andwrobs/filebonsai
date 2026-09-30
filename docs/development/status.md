@@ -167,6 +167,23 @@ observed results; use Git history for prior plans and completed migrations.
 
 ## Latest observed checks
 
+- Combined Library merge verification (PRs #32/#33): `cd web && npm test`
+  passed Biome, route typegen/TypeScript, 146 Vitest tests and the production build.
+  `cd backend && ./scripts/verify.sh` passed 102 backend tests (the opt-in live-R2
+  proof skipped), including 20 PostgreSQL Catalog tests, TypeScript client checks
+  11/11 and Swift checks 12/12. Exported contracts/fixtures and
+  `cd web && npm run generate:schema` reproduced the committed files without drift.
+  `npm run e2e` with an output/reporting-only config override passed 12 desktop/phone
+  tests, with two desktop-only scenarios skipped on phone. Regression scenarios
+  exercised revealing sibling folder 1,050, closing the rail's folder sheet on
+  1024px → 1440px → 1024px resize, and consecutive sort choices while the preceding
+  listing request was held. The 1,100-folder tree kept 21 rows in the DOM; its longest
+  browser task was 77 ms at boot, with no long task during paging or 30 ArrowDown
+  presses. Screenshots of the desktop table/grid and phone rows/folder sheet were
+  inspected at 1440×900 and 390×844. Fresh contract, persistence and web reviews found
+  no remaining blockers after the reveal, resize, pending-menu and query-fixture
+  repairs. These checks used disposable PostgreSQL and synthetic local originals.
+
 - Table and grid views (LIB-04): `cd web && npm test` passed (Biome, typegen and
   `tsc`, 140 Vitest tests, build). They cover header sorting with `aria-sort` and the
   URL, loading an order from the URL and ignoring unknown values, the Sort menu with
