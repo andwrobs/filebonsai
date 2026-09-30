@@ -7,6 +7,8 @@ import { orderFromSearch, searchWithOrder, sortBy } from "./listing-order";
 export interface LibraryView {
 	/** The order the listing on screen was loaded in. */
 	order: ListingOrder;
+	/** The pending URL choice, used by controls while the listing loads. */
+	requestedOrder: ListingOrder;
 	/** A column header: the same field flips, another starts at its natural direction. */
 	sortBy(field: SortField): void;
 	setOrder(update: (current: ListingOrder) => ListingOrder): void;
@@ -42,6 +44,7 @@ export function useLibraryView(order: ListingOrder): LibraryView {
 		});
 	return {
 		order,
+		requestedOrder: orderFromSearch(search),
 		sortBy: (field) => setOrder((current) => sortBy(current, field)),
 		setOrder,
 		view,
