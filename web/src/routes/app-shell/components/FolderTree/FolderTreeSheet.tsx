@@ -5,6 +5,7 @@ import { Button } from "~/lib/ui/button";
 import { Sheet, SheetHeader, SheetTitle } from "~/lib/ui/sheet";
 import { cn } from "~/lib/ui/utils";
 import { FolderTree } from "./FolderTree";
+import { useIsWideShell } from "./useIsWideShell";
 
 /**
  * A "Folders" button that opens the tree in a left sheet, for the icon rail
@@ -18,9 +19,13 @@ export function FolderTreeSheet({
 	currentId?: string;
 }) {
 	const [isOpen, setIsOpen] = useState(false);
+	const wide = useIsWideShell();
 	const { pathname } = useLocation();
 	// biome-ignore lint/correctness/useExhaustiveDependencies: closing on every path change is the point.
 	useEffect(() => setIsOpen(false), [pathname]);
+	useEffect(() => {
+		if (wide) setIsOpen(false);
+	}, [wide]);
 	return (
 		<>
 			<Button
@@ -37,7 +42,7 @@ export function FolderTreeSheet({
 			</Button>
 			<Sheet
 				className="pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)]"
-				isOpen={isOpen}
+				isOpen={isOpen && !wide}
 				onOpenChange={setIsOpen}
 				side="left"
 			>

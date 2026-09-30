@@ -7,10 +7,6 @@ import {
 } from "~/lib/catalog/catalog";
 import { subfoldersQuery } from "~/lib/catalog/catalog.query";
 
-// Paging toward the current folder stops here (10 pages of 100); a folder
-// further down a larger parent simply isn't revealed.
-const maxRevealPages = 10;
-
 // The server filters by kind; keep only folders anyway in case an older server
 // ignores it. Pages carry no snapshot, so an entry can repeat.
 export function foldersIn(data: InfiniteData<EntryPage> | undefined) {
@@ -57,7 +53,6 @@ export function useSubfolders(
 		revealId !== undefined &&
 		!isError &&
 		pages > 0 &&
-		pages < maxRevealPages &&
 		!folders.some((folder) => folder.id === revealId);
 	// biome-ignore lint/correctness/useExhaustiveDependencies: loadMore is derived from the values listed.
 	useEffect(() => {

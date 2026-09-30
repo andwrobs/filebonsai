@@ -43,6 +43,16 @@ test("the folder tree reveals the current folder, navigates, and opens in a shee
 			"aria-expanded",
 			"true",
 		);
+		await page.setViewportSize({ width: 1024, height: 768 });
+		await page.getByRole("button", { name: "Folders", exact: true }).click();
+		const sheet = page.getByRole("dialog", { name: "Folders" });
+		await expect(sheet).toBeVisible();
+		await page.setViewportSize({ width: 1440, height: 900 });
+		await expect(sheet).toBeHidden();
+		await expect(tree).toBeVisible();
+		await page.setViewportSize({ width: 1024, height: 768 });
+		await expect(sheet).toBeHidden();
+		await page.setViewportSize({ width: 1440, height: 900 });
 		const current = tree.getByRole("row", { name: `${c}, current folder` });
 		await expect(current).toBeInViewport({ ratio: 1 });
 		await expect(current).toHaveAttribute("data-current", "true");
@@ -172,7 +182,7 @@ test("the current folder is revealed below a large open sibling with more pages"
 	);
 });
 
-test("a folder of 1,000 folders pages in and stays responsive", async ({
+test("a folder of 1,100 folders pages in and stays responsive", async ({
 	page,
 	signInPage,
 	library,
@@ -183,7 +193,7 @@ test("a folder of 1,000 folders pages in and stays responsive", async ({
 		"Measured once, on the desktop tree.",
 	);
 	test.setTimeout(240_000);
-	const count = 1000;
+	const count = 1100;
 	const parentName = `Bulk ${stamp()}`;
 	await page.addInitScript(() => {
 		window.__longTasks = [];
@@ -284,7 +294,7 @@ test("a folder of 1,000 folders pages in and stays responsive", async ({
 	expect(longest).toBeLessThan(200);
 
 	// Revealing a folder deep in a large parent pages to it and scrolls there.
-	const deepName = "Bulk 0900";
+	const deepName = "Bulk 1050";
 	const deepId = await findChildId(page, parentId, deepName);
 	await page.goto(`/library/${deepId}`);
 	await library.expectFolder(deepName);
