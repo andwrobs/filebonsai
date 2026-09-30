@@ -15,6 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.filebonsai.catalog.application.CatalogCursor;
 import com.filebonsai.catalog.application.CatalogFailure;
 import com.filebonsai.catalog.application.CatalogScope;
+import com.filebonsai.catalog.application.ListChildren;
 import com.filebonsai.catalog.application.ListOrder;
 import com.filebonsai.catalog.domain.Entry;
 import com.filebonsai.catalog.domain.EntryId;
@@ -308,6 +309,55 @@ class PostgresCatalogTest {
     }
 
     @Test
+    void kindFilterPagesOneGroupInEveryOrderWhileEntriesAreInserted() {
+        var random = new Random(20260930);
+        int folderNumber = 0;
+        for (ListOrder order : allOrders()) {
+            for (ListChildren.Kind kind : ListChildren.Kind.values()) {
+                boolean folders = kind == ListChildren.Kind.FOLDER;
+                Entry.Folder parent = create(ROOT, "Kind " + folderNumber++);
+                Set<UUID> expected = new HashSet<>();
+                for (int index = 0; index < 18; index++) {
+                    Entry child = insertChild(parent.id(), random);
+                    if ((child instanceof Entry.Folder) == folders) {
+                        expected.add(child.id().value());
+                    }
+                }
+                var comparator = order.comparator();
+                var seen = new ArrayList<ListOrder.Position>();
+                String cursor = null;
+                do {
+                    var page = catalog.list(scope, parent.id(), order, kind, 3, cursor);
+                    page.entries().forEach(entry -> seen.add(order.position(entry)));
+                    cursor = page.nextCursor();
+                    if (cursor != null) {
+                        // Inserts ahead of the cursor must appear once; inserts behind it are skipped.
+                        for (int index = 0; index < 2; index++) {
+                            Entry child = insertChild(parent.id(), random);
+                            if ((child instanceof Entry.Folder) == folders
+                                    && comparator.compare(order.position(child), seen.getLast()) > 0) {
+                                expected.add(child.id().value());
+                            }
+                        }
+                    }
+                } while (cursor != null);
+                String description = order + " " + kind;
+                assertThat(seen).as(description).allMatch(position -> position.folder() == folders);
+                for (int index = 1; index < seen.size(); index++) {
+                    assertThat(comparator.compare(seen.get(index - 1), seen.get(index)))
+                            .as("%s at %d", description, index)
+                            .isNegative();
+                }
+                assertThat(seen).extracting(ListOrder.Position::id).doesNotHaveDuplicates();
+                assertThat(seen)
+                        .as(description)
+                        .extracting(ListOrder.Position::id)
+                        .containsExactlyInAnyOrderElementsOf(expected);
+            }
+        }
+    }
+
+    @Test
     void everyOrderReadsOnlyItsPageFromItsIndexAtTenThousandChildren() throws Exception {
         Entry.Folder parent = create(ROOT, "Large");
         OffsetDateTime now = OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC);
@@ -342,7 +392,7 @@ class PostgresCatalogTest {
         var mapper = new ObjectMapper();
         for (ListOrder order : allOrders()) {
             List<Boolean> groups =
-                    order.foldersFirst() ? List.of(true, false) : java.util.Collections.singletonList(null);
+                    order.foldersFirst() ? List.of(true, false) : java.util.Arrays.asList(null, true, false);
             for (Boolean folders : groups) {
                 var first = catalog.pageQuery(database, scope, parent.id(), order, folders, null, 51)
                         .fetch();

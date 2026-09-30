@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { HardDrive, Library, type LucideIcon } from "lucide-react";
+import { useId } from "react";
 import { Link } from "react-router";
 import { formatBytes } from "~/lib/format/bytes";
 import { storageSummaryQuery } from "~/lib/storage/storage.query";
 import { cn } from "~/lib/ui/utils";
+import { FolderTree, FolderTreeSheet, useIsWideShell } from "./FolderTree";
 
 export type Destination = "library" | "storage";
 
@@ -93,14 +95,23 @@ export function Wordmark() {
 	);
 }
 
-export function AppSidebar({ current }: { current: Destination }) {
+export function AppSidebar({
+	current,
+	currentFolderId,
+}: {
+	current: Destination;
+	/** The folder the Library is showing, if any. */
+	currentFolderId?: string;
+}) {
 	const storageDetail = useStorageDetail();
+	const foldersId = useId();
+	const showsTree = useIsWideShell();
 	return (
 		<aside className="sticky top-0 flex h-dvh flex-col items-center gap-5 overflow-y-auto border-r bg-muted px-2 py-3 max-md:hidden wide:items-stretch wide:px-3 wide:py-4">
 			<Wordmark />
 			<nav
 				aria-label="Main"
-				className="flex w-full flex-1 flex-col items-center gap-1 wide:items-stretch"
+				className="flex min-h-0 w-full flex-1 flex-col items-center gap-1 wide:items-stretch"
 			>
 				<NavItem
 					current={current === "library"}
@@ -109,6 +120,28 @@ export function AppSidebar({ current }: { current: Destination }) {
 					placement="sidebar"
 					to="/"
 				/>
+				<FolderTreeSheet
+					buttonClassName="max-md:hidden wide:hidden"
+					currentId={currentFolderId}
+				/>
+				{showsTree ? (
+					<section
+						aria-labelledby={foldersId}
+						className="hidden min-h-0 flex-1 flex-col wide:flex"
+					>
+						<h2
+							className="px-3 pt-3 pb-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+							id={foldersId}
+						>
+							Folders
+						</h2>
+						<FolderTree
+							className="flex-1"
+							currentId={currentFolderId}
+							labelledBy={foldersId}
+						/>
+					</section>
+				) : null}
 				<div className="mt-auto flex w-full justify-center border-t pt-3 wide:block">
 					<NavItem
 						current={current === "storage"}

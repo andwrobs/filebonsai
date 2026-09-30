@@ -26,13 +26,14 @@ public final class CatalogCursor {
         this.secret = secret.clone();
     }
 
-    public String encode(UUID workspace, EntryId folder, ListOrder order, ListOrder.Position last) {
+    public String encode(
+            UUID workspace, EntryId folder, ListOrder order, ListChildren.Kind kind, ListOrder.Position last) {
         try {
             byte[] payload = mapper.writeValueAsBytes(new Position(
                     VERSION,
                     workspace,
                     folder.value(),
-                    order.token(),
+                    listing(order, kind),
                     last.name(),
                     last.id(),
                     last.folder() ? "folder" : "file",
@@ -44,7 +45,8 @@ public final class CatalogCursor {
         }
     }
 
-    public ListOrder.Position decode(String token, UUID workspace, EntryId folder, ListOrder order) {
+    public ListOrder.Position decode(
+            String token, UUID workspace, EntryId folder, ListOrder order, ListChildren.Kind kind) {
         try {
             if (token.length() > 2048) {
                 throw new IllegalArgumentException();
@@ -62,7 +64,7 @@ public final class CatalogCursor {
             if (position.version() != VERSION
                     || !workspace.equals(position.workspaceId())
                     || !folder.value().equals(position.folderId())
-                    || !order.token().equals(position.sort())
+                    || !listing(order, kind).equals(position.sort())
                     || position.name() == null
                     || position.id() == null
                     || (order.key() != ListOrder.Key.NAME && position.key() == null)
@@ -74,6 +76,14 @@ public final class CatalogCursor {
         } catch (Exception exception) {
             throw new CatalogFailure(INVALID_CURSOR, "Cursor is invalid for this folder or server session");
         }
+    }
+
+    /** The order token, prefixed when a kind filter narrows the listing so a cursor never crosses filters. */
+    private static String listing(ListOrder order, ListChildren.Kind kind) {
+        if (kind == null) {
+            return order.token();
+        }
+        return (kind == ListChildren.Kind.FOLDER ? "folders-only-" : "files-only-") + order.token();
     }
 
     private byte[] sign(byte[] payload) throws Exception {

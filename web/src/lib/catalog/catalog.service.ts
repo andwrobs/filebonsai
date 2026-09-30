@@ -1,6 +1,7 @@
 import { type ApiClient, unwrap } from "~/lib/api/api";
 import {
 	type EntryDetails,
+	type EntryKind,
 	type EntryPage,
 	type FolderEntry,
 	type FolderListing,
@@ -22,7 +23,7 @@ export interface CatalogService {
 	entry(id: string, options?: Options): Promise<EntryDetails>;
 	children(
 		id: string,
-		options?: Options & { cursor?: string; limit?: number },
+		options?: Options & { cursor?: string; kind?: EntryKind; limit?: number },
 	): Promise<EntryPage>;
 	/** A folder with its first page of children; a file throws NotAFolderError. */
 	folder(id: string, options?: Options): Promise<FolderListing>;
@@ -50,13 +51,14 @@ export function createCatalogService({ api }: Deps): CatalogService {
 		id: string,
 		{
 			cursor,
+			kind,
 			limit,
 			signal,
-		}: Options & { cursor?: string; limit?: number } = {},
+		}: Options & { cursor?: string; kind?: EntryKind; limit?: number } = {},
 	) {
 		return unwrap(
 			http.GET("/api/v1/entries/{id}/children", {
-				params: { path: { id }, query: { cursor, limit } },
+				params: { path: { id }, query: { cursor, kind, limit } },
 				signal,
 			}),
 		);

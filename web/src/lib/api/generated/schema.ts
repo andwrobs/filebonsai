@@ -115,7 +115,7 @@ export interface paths {
         };
         /**
          * List direct children
-         * @description Ordered by `sort`, then NFC name in UTF-8 byte order, then ID; `desc` reverses all three. `foldersFirst` keeps folders ahead of files in either direction. `updatedAt` is the entry's `updatedAt`. `size` is the current version's `sizeBytes`, and a folder sorts below any file. No snapshot: inserts or changes behind the cursor may be missed, and changes ahead may repeat an entry. Deduplicate by ID or refresh when needed. Tokens are opaque, scoped to the workspace/folder/sort/order/foldersFirst, and invalid after cursor-key rotation; fixture restart rotates its key.
+         * @description Ordered by `sort`, then NFC name in UTF-8 byte order, then ID; `desc` reverses all three. `foldersFirst` keeps folders ahead of files in either direction. `kind` limits the page to folders or files; the order is unchanged. `updatedAt` is the entry's `updatedAt`. `size` is the current version's `sizeBytes`, and a folder sorts below any file. No snapshot: inserts or changes behind the cursor may be missed, and changes ahead may repeat an entry. Deduplicate by ID or refresh when needed. Tokens are opaque, scoped to the workspace/folder/sort/order/foldersFirst/kind, and invalid after cursor-key rotation; fixture restart rotates its key.
          */
         get: operations["listChildren"];
         put?: never;
@@ -758,6 +758,7 @@ export interface operations {
                 sort?: "name" | "updatedAt" | "size";
                 order?: "asc" | "desc";
                 foldersFirst?: boolean;
+                kind?: "folder" | "file";
             };
             header?: never;
             path: {

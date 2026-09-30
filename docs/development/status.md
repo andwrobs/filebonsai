@@ -1,6 +1,6 @@
 # Verified status and next work
 
-Updated 2026-09-29. This is the only live status and sequencing document. Record only
+Updated 2026-09-30. This is the only live status and sequencing document. Record only
 observed results; use Git history for prior plans and completed migrations.
 
 ## Current implementation
@@ -38,8 +38,11 @@ observed results; use Git history for prior plans and completed migrations.
   then UUID; a folder sizes below any file. Cursors are bound to all three, and
   default-order cursors issued before they existed still work. Flyway V9 copies each
   entry's kind, `updated_at`, and current size onto its name row through triggers, and
-  four partial indexes page every order without a sort. The web client does not use the
-  new parameters yet (LIB-04).
+  four partial indexes page every order without a sort. Optional `kind` (`folder` or
+  `file`) limits a page to one group in the same order; a filtered cursor is bound to
+  the kind as well, unfiltered cursors keep their tokens, and no migration was needed
+  (the existing indexes serve both groups in every order). The folder tree uses
+  `kind=folder`; the web client does not use the sort parameters yet (LIB-04).
 - The PostgreSQL profile exposes authenticated Catalog HTTP through session-derived
   membership scope. Local-owner access includes secret-file bootstrap/reset,
   PostgreSQL-backed sessions, rotation/logout/reset invalidation, CSRF, persisted
@@ -129,6 +132,21 @@ observed results; use Git history for prior plans and completed migrations.
   drops Kind at 44rem and stacks rows at 30rem, including beside the docked inspector.
   The Library rules have left `app.css`; its remaining rules style the inspector,
   Storage, and shared legacy page controls.
+- The shell shows a folder tree: in the sidebar from 1100px under the Library item,
+  and in a left sheet opened from a Folders button on the icon rail and in the phone
+  top bar (the sheet closes on navigation). It is React Aria's `Tree` inside a
+  `Virtualizer` with fixed row heights taken from the control and touch tokens, so only
+  the rows in view are mounted. Subfolders load 100 at a time with `kind=folder`, and
+  only for opened folders. Rows are links and the tree selects nothing. The keyboard
+  model is the tree's: arrows, Right to open or enter, Left to close or go to the
+  parent, Home, End, type-ahead. Opened folders persist in `localStorage` (500 most
+  recent). Opening a folder reveals its ancestors, pages to it, and scrolls it into
+  view from the query cache without moving focus; the current row is marked. Later
+  pages of a listing load once the user has scrolled or typed, so revealing never
+  pushes the current folder back out. The inline tree mounts only at the wide
+  breakpoint; the sheet's tree only while it is open. At 1,000
+  subfolders the tree held 21 rows in the DOM, and the browser reported no long task
+  (max 0 ms) while paging in or during 30 ArrowDown presses.
 - The inspector previews authorized originals for JPEG, PNG, GIF, WebP, AVIF, and
   `.txt`/`.log` files. It selects a Blob type from the allowed extension, caps images
   at 5 MiB and text at 256 KiB before requesting content, and checks the returned
@@ -136,6 +154,22 @@ observed results; use Git history for prior plans and completed migrations.
   Image object URLs are revoked when the preview closes or changes.
 
 ## Latest observed checks
+
+- Folder tree (LIB-02): `cd web && npm test` passed (Biome, typegen and `tsc`, 130
+  Vitest tests, build). `npm run e2e` passed 8 tests on desktop and phone (two are
+  skipped on phone by design). They cover a three-level path revealed after reload,
+  with both ancestors open and the current row in view, arrow-key movement and Enter,
+  expansion surviving a reload, and the phone sheet closing on navigation with no
+  horizontal overflow. Another desktop test put the current folder below a large open
+  sibling that still has a next page, and checked that it lands at the bottom edge of
+  the tree. A last test made 1,000 subfolders through the API: all reached by
+  scrolling, 21 rows in the DOM, the current folder 900 revealed and in view after a
+  reload, and a `PerformanceObserver`
+  reported no long task above 50 ms (the un-virtualized tree had peaked at 291 ms).
+  Screenshots at 1440×900 (sidebar, with keyboard focus), 1024×768 (rail and open sheet)
+  and 390×844 (top bar and open sheet) against the disposable PostgreSQL-profile stack
+  were inspected for truncation, the current row, Storage staying in view, and no
+  overflow.
 
 - Breadcrumbs from real ancestors (M1-02): `cd backend && ./mvnw test` passed,
   including `PostgresCatalogTest` 19/19 against PostgreSQL with ancestry at depths
@@ -473,7 +507,8 @@ items and required tests.
 1. Cloud transfer: run the decision 0007 compatibility proof against a disposable
    real Cloudflare R2 bucket, repair any provider mismatch, and record bounded
    streaming/recovery evidence before claiming R2 support or adding another provider.
-2. Web: build the Library's table/grid views (LIB-04) on the migrated list.
+2. Web: LIB-04 table/grid views on the migrated list, then LIB-05 selection, M1-11
+   file drops, ORG-01/02/03 mutations, and LIB-22 shared menus and in-app dragging.
    The inspector and Storage move onto `web/src/lib/ui` within LIB-15 and LIB-16.
 3. Photo metadata: accepted decisions
    [0009](../decisions/0009-durable-jobs-in-postgresql.md) (durable jobs) and

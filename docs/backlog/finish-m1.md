@@ -227,6 +227,7 @@ Depends on: none
 
 - Reachable by keyboard and touch at 1440×900 and 390×844, with a pending state and no duplicate submit
 - Afterwards the Query cache and the transfer store hold nothing from the old session, Back shows no private data, and `/api/v1/auth/me` returns 401
+- Sign-out also removes the folder tree's remembered folders (the `filebonsai:folder-tree:v1` key in `localStorage`)
 - A failed logout says so and leaves the person signed in
 - The e2e `Session.signOut` helper uses the control
 
