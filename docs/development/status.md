@@ -87,10 +87,11 @@ observed results; use Git history for prior plans and completed migrations.
 - The web shell follows the design reference. `web/src/styles/index.css` is the one
   source of color, type, spacing, radius, density, and region-size tokens, mapped onto
   the shadcn roles `lib/ui` uses, with the system font stack (no Geist). The shell,
-  transfer tray, floating upload, sign-in, and not-found page use `lib/ui` and Tailwind
-  utilities (sign-in's password field through the `lib/form` TanStack Form bindings);
-  the other screens still read `app.css` through role aliases in `tokens.css`, which
-  holds no colors. `tokens.test.ts` fails on raw colors outside `index.css` and checks AA text
+  transfer tray, floating upload, sign-in, not-found page, and Library list use
+  `lib/ui` and Tailwind utilities (sign-in's password field through the `lib/form`
+  TanStack Form bindings). The inspector and Storage still read `app.css` through
+  role aliases in `tokens.css`, which holds no colors. `tokens.test.ts` fails on raw
+  colors outside `index.css` and checks AA text
   and 3:1 control and focus contrast on its roles.
   Icons are Lucide (ISC); the identity uses supplied SVG artwork for the shell,
   sign-in, favicon, and touch icon. A
@@ -116,6 +117,11 @@ observed results; use Git history for prior plans and completed migrations.
   and Close return focus to the button that opened it. Folder names are links that
   cover their row, so rows can also hold buttons. The list's column container queries
   now measure the list, not the page.
+- The Library header, breadcrumbs, toolbar, new-folder form, empty state, and entry
+  list use `lib/ui` controls and Tailwind utilities. The list's own width still
+  drops Kind at 44rem and stacks rows at 30rem, including beside the docked inspector.
+  The Library rules have left `app.css`; its remaining rules style the inspector,
+  Storage, and shared legacy page controls.
 - The inspector previews authorized originals for JPEG, PNG, GIF, WebP, AVIF, and
   `.txt`/`.log` files. It selects a Blob type from the allowed extension, caps images
   at 5 MiB and text at 256 KiB before requesting content, and checks the returned
@@ -124,6 +130,16 @@ observed results; use Git history for prior plans and completed migrations.
 
 ## Latest observed checks
 
+- Library list on the design system (LIB-21): `cd web && npm test` passed
+  (Biome, typegen and `tsc`, 91 Vitest tests, build). `npm run e2e` passed the
+  desktop and phone PostgreSQL-profile journeys. A disposable PostgreSQL-backed
+  Playwright comparison rendered the same 45 synthetic folders on current `main`
+  and this change at 1440×900, 1100×900, 1024×768, and 390×844; it checked the
+  docked inspector, Kind-column drop, and unbroken long-name wrapping. A second
+  comparison covered empty, focused and invalid new-folder forms, and a real
+  not-found response at desktop and phone widths; closing the phone inspector
+  restored focus. The Library form test checked labelled validation and blocked
+  submission.
 - Sign-in and not-found on the design system (LIB-20): `cd web && npm test` passed
   (Biome, typegen and `tsc`, 90 Vitest tests, build) and `npm run e2e` passed (phone
   and desktop). Playwright pixel diffs against LIB-19 on the shared PostgreSQL-profile
@@ -440,10 +456,8 @@ items and required tests.
 1. Cloud transfer: run the decision 0007 compatibility proof against a disposable
    real Cloudflare R2 bucket, repair any provider mismatch, and record bounded
    streaming/recovery evidence before claiming R2 support or adding another provider.
-2. Web: with the tokens and shell moved, move the remaining screens onto
-   `web/src/lib/ui`, the second half of decision 0011: the Library list (LIB-21), then
-   the library's table/grid views (LIB-04). The inspector and Storage move within
-   LIB-15 and LIB-16.
+2. Web: build the Library's table/grid views (LIB-04) on the migrated list.
+   The inspector and Storage move onto `web/src/lib/ui` within LIB-15 and LIB-16.
 3. Photo metadata: accepted decisions
    [0009](../decisions/0009-durable-jobs-in-postgresql.md) (durable jobs) and
    [0010](../decisions/0010-media-processing-isolation.md) (processing isolation and

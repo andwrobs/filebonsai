@@ -150,6 +150,24 @@ it("keeps the form open and names a duplicate", async () => {
 	expect(screen.getByLabelText("Folder name")).toHaveValue("Travel");
 });
 
+it("keeps an invalid folder name in the labelled field and blocks submission", async () => {
+	const { requests } = stubApi(serveFolder(() => []));
+	const { user } = renderLibrary();
+	await user.click(await screen.findByRole("button", { name: "New folder" }));
+	const name = screen.getByRole("textbox", { name: "Folder name" });
+	await user.type(name, "Draft");
+	await user.clear(name);
+	expect(name).toHaveAttribute("aria-invalid", "true");
+	expect(name).toHaveAccessibleDescription("Enter a folder name.");
+	expect(
+		within(screen.getByRole("region", { name: "Create folder" })).getByRole(
+			"button",
+			{ name: "Create folder" },
+		),
+	).toBeDisabled();
+	expect(requests.some((request) => request.method === "POST")).toBe(false);
+});
+
 it("sends a signed-out visitor to sign in", async () => {
 	stubApi(() => apiError(401, "AUTH_REQUIRED"));
 	renderLibrary();
