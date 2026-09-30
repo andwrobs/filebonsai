@@ -15,26 +15,6 @@ moves screens onto `web/src/lib/ui` and `web/src/styles/index.css`. The shell,
 sign-in, not-found page, and Library list are there. LIB-15 and LIB-16 move the
 inspector and Storage as part of their redesigns, so neither is restyled twice.
 
-## LIB-04 Table and grid views
-
-`P2` · `M` · Build · Web
-
-Depends on: none
-
-Context: LIB-03 added `sort` (`name`, `updatedAt`, `size`), `order` (`asc`, `desc`) and `foldersFirst` to `listChildren`. Each cursor is bound to all three, so changing a header must restart paging from the first page. Kind is not a server sort: the column's label comes from the filename extension, so a Kind header can map to `foldersFirst` or stay unsortable. LIB-01/LIB-10 added the responsive shell: tokens in `web/src/styles/index.css` (raw colors anywhere else fail `tokens.test.ts`), Lucide icons, and the `web/src/routes/app-shell` layout route with sidebar, icon rail and bottom navigation. The folder list already has icon, name, kind, size and modified columns that drop and stack through container queries; this item adds sortable headers and the grid.
-
-**Why.** The design reference shows a dense table and a calm grid over the same data.
-
-**Outcome.** A table (name, kind, size, modified) with sortable headers backed by the server-side sort, a grid with type icons (thumbnails later), and a view toggle remembered per viewer.
-
-**Acceptance**
-
-- Many-item, long-name and empty states
-- Keyboard row navigation
-- At 390px it falls back to the list layout
-
-**Checks:** `web`; `rendered`
-
 ## LIB-05 Selection model
 
 `P2` · `M` · Build · Web

@@ -29,7 +29,9 @@ Depends on: [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer), [P
 
 `P2` · `M` · Build · Web · Fun
 
-Depends on: [PRV-02](#prv-02-image-thumbnail-pipeline), [LIB-04](everyday-library.md#lib-04-table-and-grid-views)
+Depends on: [PRV-02](#prv-02-image-thumbnail-pipeline)
+
+Context: LIB-04 added the Library's grid view (`web/src/routes/library/components/Entries/EntryGrid.tsx`), a React Aria `GridList` of tiles whose type icon sits where a thumbnail goes. Phones show rows instead of the grid.
 
 **Why.** This is the Quiet Library direction: big, calm thumbnails.
 

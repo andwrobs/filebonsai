@@ -321,17 +321,13 @@ it("opens every ancestor of the current folder and marks its row", async () => {
 		defaultOptions: { queries: { retry: false } },
 	});
 	queryClient.setQueryData(folderQuery("italy").queryKey, {
-		folder: {
-			...italy,
-			kind: "folder" as const,
-			ancestors: [
-				{ id: "root", name: "Library" },
-				{ id: "travel", name: "Travel" },
-				{ id: "europe", name: "Europe" },
-			],
-		},
-		children: [],
-		nextCursor: null,
+		...italy,
+		kind: "folder" as const,
+		ancestors: [
+			{ id: "root", name: "Library" },
+			{ id: "travel", name: "Travel" },
+			{ id: "europe", name: "Europe" },
+		],
 	});
 	renderTree(topLevel, { at: "/library/italy", queryClient });
 	const current = await screen.findByRole("row", {
@@ -357,13 +353,9 @@ it("pages toward the current folder and scrolls it into view without moving focu
 		defaultOptions: { queries: { retry: false } },
 	});
 	queryClient.setQueryData(folderQuery("z-0").queryKey, {
-		folder: {
-			...entry("z-0", "Zeta", "root"),
-			kind: "folder" as const,
-			ancestors: [{ id: "root", name: "Library" }],
-		},
-		children: [],
-		nextCursor: null,
+		...entry("z-0", "Zeta", "root"),
+		kind: "folder" as const,
+		ancestors: [{ id: "root", name: "Library" }],
 	});
 	renderTree(
 		{ root: [first, [entry("z-0", "Zeta", "root")]], "z-0": [[]] },
@@ -384,13 +376,9 @@ it("reveals a current folder after more than ten sibling pages", async () => {
 		defaultOptions: { queries: { retry: false } },
 	});
 	queryClient.setQueryData(folderQuery("travel").queryKey, {
-		folder: {
-			...travel,
-			kind: "folder" as const,
-			ancestors: [{ id: "root", name: "Library" }],
-		},
-		children: [],
-		nextCursor: null,
+		...travel,
+		kind: "folder" as const,
+		ancestors: [{ id: "root", name: "Library" }],
 	});
 	const pages = Array.from({ length: 11 }, (_, index) => [
 		entry(`sibling-${index}`, `Sibling ${index}`, "root"),
@@ -466,13 +454,9 @@ function deepFolder() {
 		defaultOptions: { queries: { retry: false } },
 	});
 	queryClient.setQueryData(folderQuery("z-0").queryKey, {
-		folder: {
-			...entry("z-0", "Zeta", "root"),
-			kind: "folder" as const,
-			ancestors: [{ id: "root", name: "Library" }],
-		},
-		children: [],
-		nextCursor: null,
+		...entry("z-0", "Zeta", "root"),
+		kind: "folder" as const,
+		ancestors: [{ id: "root", name: "Library" }],
 	});
 	const pages = { root: [first, [entry("z-0", "Zeta", "root")]], "z-0": [[]] };
 	return { pages, queryClient, at: "/library/z-0" };
@@ -538,20 +522,16 @@ it("leaves an ancestor the user closed closed when the folder is refetched", asy
 	const queryClient = new QueryClient({
 		defaultOptions: { queries: { retry: false } },
 	});
-	const listing = {
-		folder: {
-			...italy,
-			kind: "folder" as const,
-			ancestors: [
-				{ id: "root", name: "Library" },
-				{ id: "travel", name: "Travel" },
-				{ id: "europe", name: "Europe" },
-			],
-		},
-		children: [],
-		nextCursor: null,
+	const folder = {
+		...italy,
+		kind: "folder" as const,
+		ancestors: [
+			{ id: "root", name: "Library" },
+			{ id: "travel", name: "Travel" },
+			{ id: "europe", name: "Europe" },
+		],
 	};
-	queryClient.setQueryData(folderQuery("italy").queryKey, listing);
+	queryClient.setQueryData(folderQuery("italy").queryKey, folder);
 	const { user } = renderTree(topLevel, { at: "/library/italy", queryClient });
 	await screen.findByRole("row", { name: "Italy, current folder" });
 	await user.click(
@@ -562,8 +542,8 @@ it("leaves an ancestor the user closed closed when the folder is refetched", asy
 	// A refetch hands back the folder as a new object (it was renamed or touched).
 	act(() => {
 		queryClient.setQueryData(folderQuery("italy").queryKey, {
-			...listing,
-			folder: { ...listing.folder, updatedAt: "2026-09-22T00:00:00Z" },
+			...folder,
+			updatedAt: "2026-09-22T00:00:00Z",
 		});
 	});
 	await settle();

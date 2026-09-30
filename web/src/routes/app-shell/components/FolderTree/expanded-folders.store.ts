@@ -1,38 +1,9 @@
 import type { Key } from "react-aria-components";
 import { create } from "zustand";
-import {
-	createJSONStorage,
-	persist,
-	type StateStorage,
-} from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
+import { viewerStorage } from "~/lib/preferences/viewer-storage";
 
 const maxExpanded = 500;
-
-// Storage can be missing or throw (private windows, blocked site data); the
-// tree then just forgets what was expanded.
-const safeLocalStorage: StateStorage = {
-	getItem: (name) => {
-		try {
-			return localStorage.getItem(name);
-		} catch {
-			return null;
-		}
-	},
-	setItem: (name, value) => {
-		try {
-			localStorage.setItem(name, value);
-		} catch {
-			// Not remembering is acceptable.
-		}
-	},
-	removeItem: (name) => {
-		try {
-			localStorage.removeItem(name);
-		} catch {
-			// Nothing to remove.
-		}
-	},
-};
 
 export interface ExpandedFolders {
 	/** Active folder IDs; only the newest 500 are remembered across reloads. */
@@ -64,7 +35,7 @@ export const useExpandedFolders = create<ExpandedFolders>()(
 		{
 			name: "filebonsai:folder-tree:v1",
 			version: 1,
-			storage: createJSONStorage(() => safeLocalStorage),
+			storage: createJSONStorage(() => viewerStorage),
 			partialize: ({ expanded }) => ({ expanded: newest(expanded) }),
 			// Stored text can be stale or edited; anything but a list of strings
 			// falls back to nothing expanded.

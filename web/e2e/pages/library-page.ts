@@ -59,8 +59,13 @@ export class LibraryPage extends Screen {
 		};
 	}
 
+	/** The folder's entries, whichever view shows them. */
+	get items() {
+		return this.page.getByRole("grid", { name: "Items", exact: true });
+	}
+
 	private folderLink(name: string) {
-		return this.page.getByRole("link", { name, exact: true });
+		return this.items.getByRole("row", { name, exact: true });
 	}
 
 	private downloadButton(name: string) {
