@@ -23,7 +23,7 @@ const only = (keys: Selection) =>
 
 /** Sort for every layout (grid and rows have no headers), and table or grid. */
 export function ViewControls({ library }: { library: LibraryView }) {
-	const { order } = library;
+	const order = library.requestedOrder;
 	return (
 		<>
 			<DropdownMenuTrigger>

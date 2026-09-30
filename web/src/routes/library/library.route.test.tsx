@@ -459,6 +459,67 @@ it("preserves pending grouping when a sort field is chosen", async () => {
 	}
 });
 
+it.each([
+	"field",
+	"grouping",
+] as const)("can reverse a pending menu %s choice", async (choice) => {
+	let release = () => {};
+	const delayed = new Promise<void>((resolve) => {
+		release = resolve;
+	});
+	const serve = serveFolder(() => [travel, photo]);
+	const { requests } = stubApi(async (path, request) => {
+		const search = new URL(request.url).searchParams;
+		if (
+			path.endsWith("/children") &&
+			(choice === "field"
+				? search.get("sort") === "size"
+				: search.get("foldersFirst") === "true")
+		)
+			await delayed;
+		return serve(path);
+	});
+	const { user } = renderLibrary();
+	await user.click(await screen.findByRole("button", { name: "Sort" }));
+	try {
+		if (choice === "field") {
+			await user.click(screen.getByRole("menuitemradio", { name: "Size" }));
+			await vi.waitFor(() =>
+				expect(childrenSearches(requests)).toContain(
+					"?sort=size&order=desc&foldersFirst=false",
+				),
+			);
+			await user.click(screen.getByRole("button", { name: "Sort" }));
+			expect(
+				screen.getByRole("menuitemradio", { name: "Size" }),
+			).toHaveAttribute("aria-checked", "true");
+			await user.click(screen.getByRole("menuitemradio", { name: "Name" }));
+		} else {
+			const grouping = screen.getByRole("menuitemcheckbox", {
+				name: "Folders first",
+			});
+			await user.click(grouping);
+			await vi.waitFor(() =>
+				expect(childrenSearches(requests)).toContain(
+					"?sort=name&order=asc&foldersFirst=true",
+				),
+			);
+			expect(grouping).toHaveAttribute("aria-checked", "true");
+			await user.click(grouping);
+		}
+		await vi.waitFor(() =>
+			expect(screen.getByLabelText("Test location")).toHaveTextContent(
+				/^\/library\/root$/,
+			),
+		);
+	} finally {
+		await act(async () => {
+			release();
+			await delayed;
+		});
+	}
+});
+
 it("loads the order in the URL and ignores values it doesn't know", async () => {
 	const { requests } = stubApi(serveFolder(() => [travel, photo]));
 	renderLibrary("root?sort=size&order=desc&folders=first");

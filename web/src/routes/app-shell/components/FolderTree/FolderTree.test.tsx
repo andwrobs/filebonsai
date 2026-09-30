@@ -376,13 +376,9 @@ it("reveals a current folder after more than ten sibling pages", async () => {
 		defaultOptions: { queries: { retry: false } },
 	});
 	queryClient.setQueryData(folderQuery("travel").queryKey, {
-		folder: {
-			...travel,
-			kind: "folder" as const,
-			ancestors: [{ id: "root", name: "Library" }],
-		},
-		children: [],
-		nextCursor: null,
+		...travel,
+		kind: "folder" as const,
+		ancestors: [{ id: "root", name: "Library" }],
 	});
 	const pages = Array.from({ length: 11 }, (_, index) => [
 		entry(`sibling-${index}`, `Sibling ${index}`, "root"),
