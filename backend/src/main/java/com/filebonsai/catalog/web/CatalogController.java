@@ -117,7 +117,7 @@ public class CatalogController {
             operationId = "listChildren",
             summary = "List direct children",
             description =
-                    "Ordered by `sort`, then NFC name in UTF-8 byte order, then ID; `desc` reverses all three. `foldersFirst` keeps folders ahead of files in either direction. `updatedAt` is the entry's `updatedAt`. `size` is the current version's `sizeBytes`, and a folder sorts below any file. No snapshot: inserts or changes behind the cursor may be missed, and changes ahead may repeat an entry. Deduplicate by ID or refresh when needed. Tokens are opaque, scoped to the workspace/folder/sort/order/foldersFirst, and invalid after cursor-key rotation; fixture restart rotates its key.")
+                    "Ordered by `sort`, then NFC name in UTF-8 byte order, then ID; `desc` reverses all three. `foldersFirst` keeps folders ahead of files in either direction. `kind` limits the page to folders or files; the order is unchanged. `updatedAt` is the entry's `updatedAt`. `size` is the current version's `sizeBytes`, and a folder sorts below any file. No snapshot: inserts or changes behind the cursor may be missed, and changes ahead may repeat an entry. Deduplicate by ID or refresh when needed. Tokens are opaque, scoped to the workspace/folder/sort/order/foldersFirst/kind, and invalid after cursor-key rotation; fixture restart rotates its key.")
     @ApiResponse(
             responseCode = "200",
             description = "Page",
@@ -140,9 +140,11 @@ public class CatalogController {
                                             defaultValue = "asc"))
                     @RequestParam(defaultValue = "asc")
                     String order,
-            @RequestParam(defaultValue = "false") boolean foldersFirst) {
+            @RequestParam(defaultValue = "false") boolean foldersFirst,
+            @Parameter(schema = @Schema(allowableValues = {"folder", "file"})) @RequestParam(required = false)
+                    String kind) {
         var page = listChildren.list(
-                scopes.current(), new EntryId(id), listOrder(sort, order, foldersFirst), limit, cursor);
+                scopes.current(), new EntryId(id), listOrder(sort, order, foldersFirst), kind(kind), limit, cursor);
         return new EntryPageResponse(
                 page.entries().stream()
                         .map(entry -> CatalogResponseMapper.response(entry, storage))
@@ -203,5 +205,16 @@ public class CatalogController {
                     default -> throw new InvalidField("order", "UNSUPPORTED_VALUE", "Order must be asc or desc");
                 };
         return new ListOrder(key, descending, foldersFirst);
+    }
+
+    private static ListChildren.Kind kind(String kind) {
+        if (kind == null || kind.isEmpty()) {
+            return null;
+        }
+        return switch (kind) {
+            case "folder" -> ListChildren.Kind.FOLDER;
+            case "file" -> ListChildren.Kind.FILE;
+            default -> throw new InvalidField("kind", "UNSUPPORTED_VALUE", "Kind must be folder or file");
+        };
     }
 }

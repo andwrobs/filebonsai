@@ -473,7 +473,8 @@ items and required tests.
 1. Cloud transfer: run the decision 0007 compatibility proof against a disposable
    real Cloudflare R2 bucket, repair any provider mismatch, and record bounded
    streaming/recovery evidence before claiming R2 support or adding another provider.
-2. Web: build the Library's table/grid views (LIB-04) on the migrated list.
+2. Web: LIB-02 (folder tree sidebar) is in progress; then build the Library's
+   table/grid views (LIB-04) on the migrated list.
    The inspector and Storage move onto `web/src/lib/ui` within LIB-15 and LIB-16.
 3. Photo metadata: accepted decisions
    [0009](../decisions/0009-durable-jobs-in-postgresql.md) (durable jobs) and

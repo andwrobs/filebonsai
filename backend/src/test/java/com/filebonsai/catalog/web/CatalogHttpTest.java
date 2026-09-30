@@ -241,6 +241,69 @@ class CatalogHttpTest {
     }
 
     @Test
+    void kindLimitsChildrenToFoldersOrFilesAndBindsCursorsToIt() throws Exception {
+        String children = "/api/v1/entries/" + ROOT + "/children";
+        mvc.perform(post("/api/v1/folders")
+                        .header("Idempotency-Key", UUID.randomUUID())
+                        .contentType("application/json")
+                        .content(mapper.writeValueAsString(Map.of("parentId", ROOT, "name", "Travel"))))
+                .andExpect(status().isCreated());
+        mvc.perform(get(children).param("kind", "folder"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.entries[*].name").value(contains("Recipes", "Travel")))
+                .andExpect(jsonPath("$.entries[*].kind").value(contains("folder", "folder")));
+        mvc.perform(get(children).param("kind", "file"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.entries[*].name").value(contains("Italy.pdf")));
+        mvc.perform(get(children).param("kind", ""))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.entries[*].name").value(contains("Italy.pdf", "Recipes", "Travel")));
+        for (String invalid : List.of("Folder", "folders", "FILE")) {
+            mvc.perform(get(children).param("kind", invalid))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+                    .andExpect(jsonPath("$.fieldErrors[0].field").value("kind"))
+                    .andExpect(jsonPath("$.fieldErrors[0].code").value("UNSUPPORTED_VALUE"));
+        }
+        var first =
+                mapper.readTree(mvc.perform(get(children).param("limit", "1").param("kind", "folder"))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.entries[*].name").value(contains("Recipes")))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString());
+        String cursor = first.get("nextCursor").asText();
+        mvc.perform(get(children).param("cursor", cursor).param("kind", "folder"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.entries[*].name").value(contains("Travel")))
+                .andExpect(jsonPath("$.nextCursor").doesNotExist());
+        for (var mismatch : List.of(Map.<String, String>of(), Map.of("kind", "file"), Map.of("kind", ""))) {
+            var request = get(children).param("cursor", cursor);
+            mismatch.forEach(request::param);
+            mvc.perform(request)
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("INVALID_CURSOR"));
+        }
+        // An unfiltered cursor is not valid under a filter, and the pre-sort token still works unfiltered.
+        String unfiltered = mapper.readTree(mvc.perform(get(children).param("limit", "1"))
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString())
+                .get("nextCursor")
+                .asText();
+        mvc.perform(get(children).param("cursor", unfiltered).param("kind", "folder"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_CURSOR"));
+        mvc.perform(get(children).param("cursor", PRE_SORT_CURSOR))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.entries[*].name").value(contains("Recipes", "Travel")));
+        mvc.perform(get(children).param("cursor", PRE_SORT_CURSOR).param("kind", "folder"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_CURSOR"));
+    }
+
+    @Test
     void missingEntriesAndWrongFolderKindReturnStableErrors() throws Exception {
         mvc.perform(get("/api/v1/entries/" + UUID.randomUUID()))
                 .andExpect(status().isNotFound())

@@ -161,12 +161,14 @@ final class CatalogContractChecks: XCTestCase {
             limit: 1,
             sort: .updatedat,
             order: .desc,
-            foldersFirst: true)
+            foldersFirst: true,
+            kind: .folder)
         let query = URLComponents(string: builder.URLString)?.queryItems ?? []
 
         XCTAssertEqual(query.first { $0.name == "sort" }?.value, "updatedAt")
         XCTAssertEqual(query.first { $0.name == "order" }?.value, "desc")
         XCTAssertEqual(query.first { $0.name == "foldersFirst" }?.value, "true")
+        XCTAssertEqual(query.first { $0.name == "kind" }?.value, "folder")
     }
 
     private var decoder: JSONDecoder {
