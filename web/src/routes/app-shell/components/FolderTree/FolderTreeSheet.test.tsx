@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { act, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { renderRoute } from "../../../../../test-utils/render-route";
 import { stubApi } from "../../../../../test-utils/stub-api";
@@ -35,6 +35,41 @@ beforeEach(() => {
 afterEach(() => {
 	vi.unstubAllGlobals();
 	restoreLayout();
+	document.documentElement.style.removeProperty("--breakpoint-wide");
+});
+
+it("closes when the viewport enters the wide shell and stays closed on return", async () => {
+	document.documentElement.style.setProperty("--breakpoint-wide", "68.75rem");
+	const listeners = new Set<() => void>();
+	let wide = false;
+	vi.stubGlobal("matchMedia", () => ({
+		get matches() {
+			return wide;
+		},
+		addEventListener: (_: string, listener: () => void) =>
+			listeners.add(listener),
+		removeEventListener: (_: string, listener: () => void) =>
+			listeners.delete(listener),
+	}));
+	const { user } = renderRoute([
+		{ path: "/", Component: () => <FolderTreeSheet /> },
+	]);
+	await user.click(screen.getByRole("button", { name: "Folders" }));
+	await screen.findByRole("dialog", { name: "Folders" });
+	act(() => {
+		wide = true;
+		for (const listener of listeners) listener();
+	});
+	expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+	act(() => {
+		wide = false;
+		for (const listener of listeners) listener();
+	});
+	expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+	await user.click(screen.getByRole("button", { name: "Folders" }));
+	expect(
+		await screen.findByRole("dialog", { name: "Folders" }),
+	).toBeInTheDocument();
 });
 
 it("opens the tree on request and closes it when a folder is chosen", async () => {

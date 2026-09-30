@@ -371,6 +371,37 @@ it("pages toward the current folder and scrolls it into view without moving focu
 	expect(document.body).toHaveFocus();
 });
 
+it("reveals a current folder after more than ten sibling pages", async () => {
+	const queryClient = new QueryClient({
+		defaultOptions: { queries: { retry: false } },
+	});
+	queryClient.setQueryData(folderQuery("travel").queryKey, {
+		folder: {
+			...travel,
+			kind: "folder" as const,
+			ancestors: [{ id: "root", name: "Library" }],
+		},
+		children: [],
+		nextCursor: null,
+	});
+	const pages = Array.from({ length: 11 }, (_, index) => [
+		entry(`sibling-${index}`, `Sibling ${index}`, "root"),
+	]);
+	pages.push([travel]);
+	const { requests } = renderTree(
+		{ root: pages },
+		{
+			at: "/library/travel",
+			queryClient,
+		},
+	);
+	expect(
+		await screen.findByRole("row", { name: "Travel, current folder" }),
+	).toBeInTheDocument();
+	expect(treeListings(requests, "root")).toHaveLength(12);
+	expect(document.body).toHaveFocus();
+});
+
 it("remembers which folders are open across a remount", async () => {
 	const first = renderTree(topLevel);
 	await screen.findByRole("row", { name: "Travel" });
