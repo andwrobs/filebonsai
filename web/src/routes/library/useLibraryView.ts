@@ -1,15 +1,15 @@
 import { useSyncExternalStore } from "react";
-import { useSearchParams } from "react-router";
+import { useLocation, useNavigation, useSearchParams } from "react-router";
 import type { ListingOrder, SortField } from "~/lib/catalog/catalog";
 import { type EntryView, useEntryView } from "./entry-view.store";
-import { searchWithOrder, sortBy } from "./listing-order";
+import { orderFromSearch, searchWithOrder, sortBy } from "./listing-order";
 
 export interface LibraryView {
 	/** The order the listing on screen was loaded in. */
 	order: ListingOrder;
 	/** A column header: the same field flips, another starts at its natural direction. */
 	sortBy(field: SortField): void;
-	setOrder(order: ListingOrder): void;
+	setOrder(update: (current: ListingOrder) => ListingOrder): void;
 	view: EntryView;
 	setView(view: EntryView): void;
 	/** Phones always get rows, so they have no view choice. */
@@ -22,18 +22,27 @@ export interface LibraryView {
  */
 export function useLibraryView(order: ListingOrder): LibraryView {
 	const [, setSearch] = useSearchParams();
+	const location = useLocation();
+	const navigation = useNavigation();
+	// A loader may still be fetching the preceding choice. Compose the next
+	// intent with Router's pending destination rather than its old loader data.
+	const search = new URLSearchParams(
+		navigation.location?.pathname === location.pathname
+			? navigation.location.search
+			: location.search,
+	);
 	const view = useEntryView((state) => state.view);
 	const setView = useEntryView((state) => state.setView);
 	const phone = useIsPhone();
 	// Replace: a new order isn't a new place, so Back leaves the folder.
-	const setOrder = (next: ListingOrder) =>
-		setSearch((current) => searchWithOrder(current, next), {
+	const setOrder = (update: (current: ListingOrder) => ListingOrder) =>
+		setSearch(searchWithOrder(search, update(orderFromSearch(search))), {
 			preventScrollReset: true,
 			replace: true,
 		});
 	return {
 		order,
-		sortBy: (field) => setOrder(sortBy(order, field)),
+		sortBy: (field) => setOrder((current) => sortBy(current, field)),
 		setOrder,
 		view,
 		setView,

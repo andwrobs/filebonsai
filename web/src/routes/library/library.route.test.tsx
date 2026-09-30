@@ -384,6 +384,81 @@ it("sorts from the table headers through the server and the URL", async () => {
 	]);
 });
 
+it("composes header clicks while the first sort request is still pending", async () => {
+	let release = () => {};
+	const delayed = new Promise<void>((resolve) => {
+		release = resolve;
+	});
+	const serve = serveFolder(() => [travel, photo]);
+	const { requests } = stubApi(async (path, request) => {
+		const search = new URL(request.url).searchParams;
+		if (
+			path.endsWith("/children") &&
+			search.get("sort") === "size" &&
+			search.get("order") === "desc"
+		)
+			await delayed;
+		return serve(path);
+	});
+	const { user } = renderLibrary();
+	const size = await screen.findByRole("columnheader", { name: "Size" });
+	await user.click(size);
+	await vi.waitFor(() =>
+		expect(childrenSearches(requests)).toContain(
+			"?sort=size&order=desc&foldersFirst=false",
+		),
+	);
+	await user.click(size);
+	try {
+		await vi.waitFor(() =>
+			expect(size).toHaveAttribute("aria-sort", "ascending"),
+		);
+		expect(screen.getByLabelText("Test location")).toHaveTextContent(
+			"/library/root?sort=size",
+		);
+	} finally {
+		release();
+	}
+});
+
+it("preserves pending grouping when a sort field is chosen", async () => {
+	let release = () => {};
+	const delayed = new Promise<void>((resolve) => {
+		release = resolve;
+	});
+	const serve = serveFolder(() => [travel, photo]);
+	const { requests } = stubApi(async (path, request) => {
+		const search = new URL(request.url).searchParams;
+		if (
+			path.endsWith("/children") &&
+			search.get("sort") === "name" &&
+			search.get("foldersFirst") === "true"
+		)
+			await delayed;
+		return serve(path);
+	});
+	const { user } = renderLibrary();
+	await user.click(await screen.findByRole("button", { name: "Sort" }));
+	await user.click(
+		screen.getByRole("menuitemcheckbox", { name: "Folders first" }),
+	);
+	await vi.waitFor(() =>
+		expect(childrenSearches(requests)).toContain(
+			"?sort=name&order=asc&foldersFirst=true",
+		),
+	);
+	await user.click(screen.getByRole("menuitemradio", { name: "Size" }));
+	try {
+		await vi.waitFor(() =>
+			expect(screen.getByLabelText("Test location")).toHaveTextContent(
+				"/library/root?sort=size&order=desc&folders=first",
+			),
+		);
+	} finally {
+		release();
+	}
+});
+
 it("loads the order in the URL and ignores values it doesn't know", async () => {
 	const { requests } = stubApi(serveFolder(() => [travel, photo]));
 	renderLibrary("root?sort=size&order=desc&folders=first");

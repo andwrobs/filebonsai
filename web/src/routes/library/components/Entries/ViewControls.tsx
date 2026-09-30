@@ -55,7 +55,11 @@ export function ViewControls({ library }: { library: LibraryView }) {
 						disallowEmptySelection
 						onSelectionChange={(keys) => {
 							const direction = only(keys) as SortOrder | undefined;
-							if (direction) library.setOrder({ ...order, order: direction });
+							if (direction)
+								library.setOrder((current) => ({
+									...current,
+									order: direction,
+								}));
 						}}
 						selectedKeys={[order.order]}
 						selectionMode="single"
@@ -70,10 +74,10 @@ export function ViewControls({ library }: { library: LibraryView }) {
 					<DropdownMenuGroup
 						aria-label="Grouping"
 						onSelectionChange={(keys) =>
-							library.setOrder({
-								...order,
+							library.setOrder((current) => ({
+								...current,
 								foldersFirst: keys === "all" || keys.has("folders-first"),
-							})
+							}))
 						}
 						selectedKeys={order.foldersFirst ? ["folders-first"] : []}
 						selectionMode="multiple"
