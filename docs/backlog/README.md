@@ -113,7 +113,7 @@ M1 promises that a clean checkout becomes a working, recoverable library. Close 
 | [M1-07](finish-m1.md#m1-07-container-image-and-compose-from-a-clean-checkout) Container image and Compose from a clean checkout | Build | P1 | L | [M1-08](finish-m1.md#m1-08-serve-the-web-app-from-the-backend-at-one-origin) |
 | [M1-08](finish-m1.md#m1-08-serve-the-web-app-from-the-backend-at-one-origin) Serve the web app from the backend at one origin | Build | P1 | M | none |
 | [M1-10](finish-m1.md#m1-10-honest-determinate-upload-progress) Honest determinate upload progress | Build | P2 | S | none |
-| [M1-11](finish-m1.md#m1-11-drag-and-drop-upload) Drag-and-drop upload | Build | P2 | M | [LIB-02](everyday-library.md#lib-02-folder-tree-sidebar), [LIB-04](everyday-library.md#lib-04-table-and-grid-views) |
+| [M1-11](finish-m1.md#m1-11-drag-and-drop-upload) Drag-and-drop upload | Build | P2 | M | none |
 | [M1-12](finish-m1.md#m1-12-m1-exit-review) M1 exit review | Proof | P1 | M | [M1-01](finish-m1.md#m1-01-map-m1-failure-outcomes-in-the-web-client), [M1-03](finish-m1.md#m1-03-rediscover-and-cancel-open-uploads), [M1-05](finish-m1.md#m1-05-prove-interruption-and-restart-recovery-in-the-browser), [M1-06](finish-m1.md#m1-06-prove-second-principal-isolation-over-http), [M1-07](finish-m1.md#m1-07-container-image-and-compose-from-a-clean-checkout), [M1-13](finish-m1.md#m1-13-folder-name-conflicts-return-500) |
 | [M1-13](finish-m1.md#m1-13-folder-name-conflicts-return-500) Folder name conflicts return 500 | Build | P1 | S | none |
 | [M1-14](finish-m1.md#m1-14-sign-out-control-in-the-web-shell) Sign-out control in the web shell | Build | P2 | S | none |
@@ -142,9 +142,7 @@ Make the daily loop of finding, looking and acting feel like the design directio
 
 | Item | Kind | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- |
-| [LIB-02](everyday-library.md#lib-02-folder-tree-sidebar) Folder tree sidebar | Build | P2 | M | none |
-| [LIB-04](everyday-library.md#lib-04-table-and-grid-views) Table and grid views | Build | P2 | M | none |
-| [LIB-05](everyday-library.md#lib-05-selection-model) Selection model | Build | P2 | M | [LIB-04](everyday-library.md#lib-04-table-and-grid-views) |
+| [LIB-05](everyday-library.md#lib-05-selection-model) Selection model | Build | P2 | M | none |
 | [LIB-07](everyday-library.md#lib-07-name-search) Name search | Build | P2 | M | none |
 | [LIB-08](everyday-library.md#lib-08-command-palette-and-keyboard-shortcuts) Command palette and keyboard shortcuts | Build | P2 | M | none |
 | [LIB-09](everyday-library.md#lib-09-starred-and-recent) Starred and Recent | Build | P2 | M | none |
@@ -155,7 +153,7 @@ Make the daily loop of finding, looking and acting feel like the design directio
 | [LIB-16](everyday-library.md#lib-16-storage-summary-and-explanatory-panels) Storage summary and explanatory panels | Build | P2 | M | none |
 | [LIB-17](everyday-library.md#lib-17-panel-interaction-and-feedback-polish) Panel interaction and feedback polish | Build | P2 | M | [LIB-15](everyday-library.md#lib-15-inspector-hierarchy-and-description-polish), [LIB-16](everyday-library.md#lib-16-storage-summary-and-explanatory-panels) |
 | [LIB-18](everyday-library.md#lib-18-panel-visual-regression-coverage) Panel visual regression coverage | Proof | P2 | M | [ENG-02](foundations.md#eng-02-playwright-end-to-end-harness), [LIB-15](everyday-library.md#lib-15-inspector-hierarchy-and-description-polish), [LIB-16](everyday-library.md#lib-16-storage-summary-and-explanatory-panels) |
-| [LIB-22](everyday-library.md#lib-22-entry-actions-context-menu-and-in-app-drag) Entry actions: context menu and in-app drag | Build | P2 | L | [LIB-02](everyday-library.md#lib-02-folder-tree-sidebar), [LIB-04](everyday-library.md#lib-04-table-and-grid-views), [LIB-05](everyday-library.md#lib-05-selection-model), [M1-11](finish-m1.md#m1-11-drag-and-drop-upload), [ORG-02](organize.md#org-02-rename), [ORG-03](organize.md#org-03-move) |
+| [LIB-22](everyday-library.md#lib-22-entry-actions-context-menu-and-in-app-drag) Entry actions: context menu and in-app drag | Build | P2 | L | [LIB-05](everyday-library.md#lib-05-selection-model), [M1-11](finish-m1.md#m1-11-drag-and-drop-upload), [ORG-02](organize.md#org-02-rename), [ORG-03](organize.md#org-03-move) |
 | [LIB-23](everyday-library.md#lib-23-letter-spacing-defaults-that-yield-to-tracking-utilities) Letter-spacing defaults that yield to tracking utilities | Build | P3 | S | none |
 
 ### [Organize](organize.md)
@@ -187,7 +185,7 @@ See a file before downloading it. Derived assets inherit authorization and never
 | Item | Kind | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- |
 | [PRV-02](previews-and-media.md#prv-02-image-thumbnail-pipeline) Image thumbnail pipeline | Build | P2 | L | [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer), [PRV-10](previews-and-media.md#prv-10-processing-sandbox-container) |
-| [PRV-03](previews-and-media.md#prv-03-gallery-grid-and-lightbox) Gallery grid and lightbox | Build | P2 | M | [PRV-02](previews-and-media.md#prv-02-image-thumbnail-pipeline), [LIB-04](everyday-library.md#lib-04-table-and-grid-views) |
+| [PRV-03](previews-and-media.md#prv-03-gallery-grid-and-lightbox) Gallery grid and lightbox | Build | P2 | M | [PRV-02](previews-and-media.md#prv-02-image-thumbnail-pipeline) |
 | [PRV-04](previews-and-media.md#prv-04-photo-metadata-extraction) Photo metadata extraction | Build | P2 | L | [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer), [PRV-10](previews-and-media.md#prv-10-processing-sandbox-container) |
 | [PRV-05](previews-and-media.md#prv-05-text-markdown-and-pdf-previews) Text, Markdown and PDF previews | Build | P3 | M | [PRV-10](previews-and-media.md#prv-10-processing-sandbox-container) |
 | [PRV-06](previews-and-media.md#prv-06-video-posters-and-range-downloads) Video posters and range downloads | Build | P3 | L | [PRV-02](previews-and-media.md#prv-02-image-thumbnail-pipeline) |
@@ -286,7 +284,7 @@ Runtime UI capabilities, synced preferences and owner settings have separate bou
 | [CFG-02](configurable-shell.md#cfg-02-module-registry-and-layout-engine) Module registry and layout engine | Build | P2 | L | [CFG-01](configurable-shell.md#cfg-01-decision-configurable-shell-model) |
 | [CFG-03](configurable-shell.md#cfg-03-customize-layout-panel) Customize Layout panel | Build | P3 | M | [CFG-02](configurable-shell.md#cfg-02-module-registry-and-layout-engine) |
 | [CFG-04](configurable-shell.md#cfg-04-preferences-api) Preferences API | Build | P2 | M | [CFG-01](configurable-shell.md#cfg-01-decision-configurable-shell-model) |
-| [CFG-05](configurable-shell.md#cfg-05-per-folder-view-settings) Per-folder view settings | Build | P3 | M | [CFG-04](configurable-shell.md#cfg-04-preferences-api), [LIB-04](everyday-library.md#lib-04-table-and-grid-views) |
+| [CFG-05](configurable-shell.md#cfg-05-per-folder-view-settings) Per-folder view settings | Build | P3 | M | [CFG-04](configurable-shell.md#cfg-04-preferences-api) |
 | [CFG-06](configurable-shell.md#cfg-06-layout-import-and-export) Layout import and export | Build | P3 | S | [CFG-02](configurable-shell.md#cfg-02-module-registry-and-layout-engine) |
 | [CFG-07](configurable-shell.md#cfg-07-saved-views-smart-folders) Saved views (smart folders) | Build | P3 | M | [LIB-07](everyday-library.md#lib-07-name-search), [ORG-08](organize.md#org-08-tags) |
 | [CFG-08](configurable-shell.md#cfg-08-operator-configuration-reference) Operator configuration reference | Build | P3 | S | none |

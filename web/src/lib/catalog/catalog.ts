@@ -1,5 +1,5 @@
 import { ApiError } from "~/lib/api/api";
-import type { components } from "~/lib/api/generated/schema";
+import type { components, paths } from "~/lib/api/generated/schema";
 
 export type Entry = components["schemas"]["EntryResponse"];
 export type EntryDetails = components["schemas"]["EntryDetailsResponse"];
@@ -8,9 +8,31 @@ export type FileEntry = components["schemas"]["FileEntryResponse"];
 export type FolderEntry = components["schemas"]["FolderEntryResponse"];
 export type FolderDetails = components["schemas"]["FolderDetailsResponse"];
 
-/** A folder and the first page of its children. */
-export interface FolderListing {
-	folder: FolderDetails;
+type ChildrenParameters = NonNullable<
+	paths["/api/v1/entries/{id}/children"]["get"]["parameters"]["query"]
+>;
+
+/** Limits a listing to folders or files. */
+export type EntryKind = NonNullable<ChildrenParameters["kind"]>;
+export type SortField = NonNullable<ChildrenParameters["sort"]>;
+export type SortOrder = NonNullable<ChildrenParameters["order"]>;
+
+/** How the server orders a listing. A cursor belongs to one ordering. */
+export interface ListingOrder {
+	sort: SortField;
+	order: SortOrder;
+	foldersFirst: boolean;
+}
+
+/** The server's own default, so omitting every parameter means the same thing. */
+export const defaultListingOrder: ListingOrder = {
+	sort: "name",
+	order: "asc",
+	foldersFirst: false,
+};
+
+/** One page of a folder's children, without repeats. */
+export interface ChildrenPage {
 	children: Entry[];
 	nextCursor: string | null;
 }

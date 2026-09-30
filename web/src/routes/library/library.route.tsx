@@ -1,59 +1,98 @@
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, FolderOpen, FolderPlus, Info } from "lucide-react";
 import { useId, useState } from "react";
-import { data, isRouteErrorResponse, redirect } from "react-router";
+import {
+	data,
+	isRouteErrorResponse,
+	redirect,
+	useNavigation,
+} from "react-router";
 import { ApiError, isUnauthorized } from "~/lib/api/api";
 import {
+	type ChildrenPage,
 	catalogHref,
-	type FolderListing,
+	type FolderDetails,
 	NotAFolderError,
 } from "~/lib/catalog/catalog";
-import { folderQuery } from "~/lib/catalog/catalog.query";
+import { firstPageQuery, folderQuery } from "~/lib/catalog/catalog.query";
 import { pageTitle } from "~/lib/meta/title";
 import { queryClient } from "~/lib/query/client";
 import { UploadControl } from "~/lib/transfers/UploadControl";
 import { Button, LinkButton } from "~/lib/ui/button";
 import type { Route } from "./+types/library.route";
-import { EntryList } from "./components/EntryList";
+import { Entries, ViewControls } from "./components/Entries";
 import { FolderBreadcrumbs } from "./components/FolderBreadcrumbs";
 import { InspectorPanel, useInspector } from "./components/Inspector";
 import { NewFolderForm } from "./components/NewFolderForm";
+import { orderFromSearch } from "./listing-order";
+import { useLibraryView } from "./useLibraryView";
 
 export const meta: Route.MetaFunction = () => [
 	{ title: pageTitle("Library") },
 	{ name: "description", content: "Browse your Filebonsai Library." },
 ];
 
-export async function clientLoader({ params }: Route.ClientLoaderArgs) {
-	try {
-		await queryClient.fetchQuery(folderQuery(params.entryId));
-	} catch (error) {
-		if (isUnauthorized(error)) throw redirect("/sign-in");
-		if (error instanceof NotAFolderError) throw data(null, { status: 404 });
-		throw error;
+export async function clientLoader({
+	params,
+	request,
+}: Route.ClientLoaderArgs) {
+	const order = orderFromSearch(new URL(request.url).searchParams);
+	// Both at once; the folder's own failure explains the page best.
+	const [folder, page] = await Promise.allSettled([
+		queryClient.fetchQuery(folderQuery(params.entryId)),
+		queryClient.fetchQuery(firstPageQuery(params.entryId, order)),
+	]);
+	const failure =
+		folder.status === "rejected"
+			? folder.reason
+			: page.status === "rejected"
+				? page.reason
+				: undefined;
+	if (failure !== undefined) {
+		if (isUnauthorized(failure)) throw redirect("/sign-in");
+		if (failure instanceof NotAFolderError) throw data(null, { status: 404 });
+		throw failure;
 	}
-	return { entryId: params.entryId };
+	return { entryId: params.entryId, order };
 }
 
 export default function LibraryRoute({ loaderData }: Route.ComponentProps) {
-	const { data: listing, isFetching } = useQuery(
-		folderQuery(loaderData.entryId),
-	);
+	const { entryId, order } = loaderData;
+	const { data: folder } = useQuery(folderQuery(entryId));
+	const { data: page, isFetching } = useQuery(firstPageQuery(entryId, order));
+	const navigation = useNavigation();
 	// The loader filled the cache; a failed refresh keeps the last listing.
-	if (!listing) return null;
-	return <Folder listing={listing} refreshing={isFetching} />;
+	if (!folder || !page) return null;
+	return (
+		<Folder
+			folder={folder}
+			order={order}
+			page={page}
+			// A new order loads on this same page before the table changes.
+			refreshing={
+				isFetching ||
+				(navigation.state === "loading" &&
+					navigation.location.pathname === catalogHref(entryId))
+			}
+		/>
+	);
 }
 
 function Folder({
-	listing: { children, folder, nextCursor },
+	folder,
+	order,
+	page: { children, nextCursor },
 	refreshing,
 }: {
-	listing: FolderListing;
+	folder: FolderDetails;
+	order: Route.ComponentProps["loaderData"]["order"];
+	page: ChildrenPage;
 	refreshing: boolean;
 }) {
 	const [isCreating, setIsCreating] = useState(false);
 	const inspectorId = useId();
 	const inspector = useInspector(folder, children);
+	const library = useLibraryView(order);
 
 	return (
 		<div className="@container/page flex flex-1 flex-col gap-5 px-(--content-gutter) pt-4 pb-8 max-md:pb-[calc(--spacing(8)+3.5rem)] max-md:pl-[max(var(--content-gutter),env(safe-area-inset-left))] max-md:pr-[max(var(--content-gutter),env(safe-area-inset-right))]">
@@ -81,6 +120,7 @@ function Folder({
 						<span className="@max-[30rem]/page:sr-only">New folder</span>
 					</Button>
 					<UploadControl parentId={folder.id} />
+					<ViewControls library={library} />
 					<Button
 						aria-controls={inspector.open ? inspectorId : undefined}
 						aria-expanded={inspector.open}
@@ -141,10 +181,12 @@ function Folder({
 								</div>
 							</div>
 						) : (
-							<EntryList
+							<Entries
 								entries={children}
 								inspector={inspector}
 								inspectorId={inspectorId}
+								labelledBy="items-heading"
+								library={library}
 							/>
 						)}
 						{nextCursor ? (

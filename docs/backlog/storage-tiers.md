@@ -48,8 +48,8 @@ TIER-10 can settle custody and ownership before the live R2 proof. The registry 
 local tests can follow that decision; enabling app-managed R2 still depends on
 TIER-00. Tiering and a second provider retain their existing proof gates.
 
-The near-term sequence is TIER-10, TIER-03/11, TIER-12/14, TIER-13 and TIER-15,
-with CFG-09 discovery and LIB-16's Storage surface supplying the UI dependencies.
+See [Ordered work](../development/status.md#ordered-work) for current sequencing.
+CFG-09 discovery and LIB-16's Storage surface supply the UI dependencies.
 TIER-15 owns the complete browser → server → provider → restart/download acceptance
 journey. Here, secure end-to-end setup means protected submission, encrypted credential
 custody and verified recovery across that workflow. The trusted server decrypts the

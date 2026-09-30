@@ -15,51 +15,13 @@ moves screens onto `web/src/lib/ui` and `web/src/styles/index.css`. The shell,
 sign-in, not-found page, and Library list are there. LIB-15 and LIB-16 move the
 inspector and Storage as part of their redesigns, so neither is restyled twice.
 
-## LIB-02 Folder tree sidebar
-
-`P2` · `M` · Build · Web, Backend · Public API change
-
-Depends on: none
-
-Context: LIB-01/LIB-10 added the responsive shell: tokens in `web/src/styles/index.css` (raw colors anywhere else fail `tokens.test.ts`), Lucide icons, and the `web/src/routes/app-shell` layout route with sidebar, icon rail and bottom navigation. The tree goes in the sidebar's existing navigation; the rail and phone layouts need the sheet this item describes.
-
-**Why.** The design reference relies on a visible folder tree for orientation.
-
-**Outcome.** A lazily loaded tree following the WAI-ARIA tree pattern that remembers expanded folders, reveals the current folder, and paginates large folders. listChildren gets a kind=FOLDER filter so the tree doesn't page through files.
-
-**Acceptance**
-
-- Arrow-key navigation per the ARIA tree pattern
-- A parent with 1,000 folders stays responsive
-- Collapses into a sheet on mobile
-
-**Checks:** `contract`; `web`; `rendered`
-
-## LIB-04 Table and grid views
-
-`P2` · `M` · Build · Web
-
-Depends on: none
-
-Context: LIB-03 added `sort` (`name`, `updatedAt`, `size`), `order` (`asc`, `desc`) and `foldersFirst` to `listChildren`. Each cursor is bound to all three, so changing a header must restart paging from the first page. Kind is not a server sort: the column's label comes from the filename extension, so a Kind header can map to `foldersFirst` or stay unsortable. LIB-01/LIB-10 added the responsive shell: tokens in `web/src/styles/index.css` (raw colors anywhere else fail `tokens.test.ts`), Lucide icons, and the `web/src/routes/app-shell` layout route with sidebar, icon rail and bottom navigation. The folder list already has icon, name, kind, size and modified columns that drop and stack through container queries; this item adds sortable headers and the grid.
-
-**Why.** The design reference shows a dense table and a calm grid over the same data.
-
-**Outcome.** A table (name, kind, size, modified) with sortable headers backed by the server-side sort, a grid with type icons (thumbnails later), and a view toggle remembered per viewer.
-
-**Acceptance**
-
-- Many-item, long-name and empty states
-- Keyboard row navigation
-- At 390px it falls back to the list layout
-
-**Checks:** `web`; `rendered`
-
 ## LIB-05 Selection model
 
 `P2` · `M` · Build · Web
 
-Depends on: [LIB-04](#lib-04-table-and-grid-views)
+Depends on: none
+
+Context: LIB-04 added the sortable table/grid and phone rows; LIB-02 added the virtualized folder tree.
 
 **Why.** Bulk move, trash and Tidy all need multi-select.
 
@@ -293,7 +255,7 @@ Depends on: [ENG-02](foundations.md#eng-02-playwright-end-to-end-harness), [LIB-
 
 `P2` · `L` · Build · Web
 
-Depends on: [LIB-02](#lib-02-folder-tree-sidebar), [LIB-04](#lib-04-table-and-grid-views), [LIB-05](#lib-05-selection-model), [M1-11](finish-m1.md#m1-11-drag-and-drop-upload), [ORG-02](organize.md#org-02-rename), [ORG-03](organize.md#org-03-move)
+Depends on: [LIB-05](#lib-05-selection-model), [M1-11](finish-m1.md#m1-11-drag-and-drop-upload), [ORG-02](organize.md#org-02-rename), [ORG-03](organize.md#org-03-move)
 
 Context: `web/src/lib/ui` already has `context-menu`, `dropdown-menu` and `command` components. ORG-02 adds an overflow menu for touch rows, ORG-03 the move API and 'Move to…' dialog, and LIB-08 the command palette. Without one action list, each of these grows its own menu.
 

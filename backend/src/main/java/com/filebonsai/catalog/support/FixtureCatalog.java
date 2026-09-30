@@ -104,15 +104,17 @@ public final class FixtureCatalog
     }
 
     @Override
-    public synchronized Page list(CatalogScope scope, EntryId folderId, ListOrder order, int limit, String cursor) {
+    public synchronized Page list(
+            CatalogScope scope, EntryId folderId, ListOrder order, Kind kind, int limit, String cursor) {
         folder(scope, folderId);
         if (limit < 1 || limit > 100) {
             throw new CatalogFailure(VALIDATION_FAILED, "Limit must be between 1 and 100");
         }
-        var after = cursor == null ? null : cursors.decode(cursor, scope.workspaceId(), folderId, order);
+        var after = cursor == null ? null : cursors.decode(cursor, scope.workspaceId(), folderId, order, kind);
         var comparator = order.comparator();
         List<Entry> eligible = entries.values().stream()
                 .filter(entry -> folderId.equals(entry.parentId()))
+                .filter(entry -> kind == null || (kind == Kind.FOLDER) == (entry instanceof Entry.Folder))
                 .filter(entry -> after == null || comparator.compare(order.position(entry), after) > 0)
                 .sorted(Comparator.comparing(order::position, comparator))
                 .limit(limit + 1L)
@@ -120,7 +122,7 @@ public final class FixtureCatalog
         List<Entry> page = eligible.subList(0, Math.min(limit, eligible.size()));
         String next = null;
         if (eligible.size() > limit) {
-            next = cursors.encode(scope.workspaceId(), folderId, order, order.position(page.getLast()));
+            next = cursors.encode(scope.workspaceId(), folderId, order, kind, order.position(page.getLast()));
         }
         return new Page(page, next);
     }

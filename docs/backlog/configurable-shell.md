@@ -99,7 +99,9 @@ Depends on: [CFG-01](#cfg-01-decision-configurable-shell-model)
 
 `P3` · `M` · Build · Web, Backend
 
-Depends on: [CFG-04](#cfg-04-preferences-api), [LIB-04](everyday-library.md#lib-04-table-and-grid-views)
+Depends on: [CFG-04](#cfg-04-preferences-api)
+
+Context: LIB-04 keeps table or grid as one per-viewer preference in this browser (`web/src/routes/library/entry-view.store.ts`) and the order (`sort`, `order`, `folders=first`) in the URL, so a folder link without them opens in the default order.
 
 **Why.** /Photos wants a gallery and /Taxes wants a table.
 

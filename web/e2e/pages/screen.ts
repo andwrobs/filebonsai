@@ -14,7 +14,7 @@ export abstract class Screen {
 		return (this.page.viewportSize()?.width ?? Number.POSITIVE_INFINITY) < 768;
 	}
 
-	protected async press(target: Locator) {
+	async press(target: Locator) {
 		await (this.touch ? target.tap() : target.click());
 	}
 }

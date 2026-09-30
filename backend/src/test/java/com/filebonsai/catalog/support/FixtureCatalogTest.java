@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.filebonsai.catalog.application.CatalogCursor;
 import com.filebonsai.catalog.application.CatalogFailure;
 import com.filebonsai.catalog.application.CatalogScope;
+import com.filebonsai.catalog.application.ListChildren;
 import com.filebonsai.catalog.application.ListOrder;
 import com.filebonsai.catalog.domain.ByteCount;
 import com.filebonsai.catalog.domain.Entry;
@@ -209,6 +210,66 @@ class FixtureCatalogTest {
                 CatalogFailure.Reason.INVALID_CURSOR);
     }
 
+    @Test
+    void limitsPagesToOneKindInEveryOrderAndBindsCursorsToTheKind() {
+        // Root holds one file (Italy.pdf) and the Recipes folder; add more folders so both groups span pages.
+        create(ROOT, "Alpha");
+        create(ROOT, "Zulu");
+        create(ROOT, "Mike");
+        var everyOrder = new ArrayList<ListOrder>();
+        for (var key : ListOrder.Key.values()) {
+            for (boolean descending : List.of(false, true)) {
+                for (boolean foldersFirst : List.of(false, true)) {
+                    everyOrder.add(new ListOrder(key, descending, foldersFirst));
+                }
+            }
+        }
+        for (var order : everyOrder) {
+            for (var kind : ListChildren.Kind.values()) {
+                boolean folders = kind == ListChildren.Kind.FOLDER;
+                for (int limit : List.of(1, 2)) {
+                    var seen = new ArrayList<Entry>();
+                    String cursor = null;
+                    do {
+                        var page = catalog.list(scope, ROOT, order, kind, limit, cursor);
+                        seen.addAll(page.entries());
+                        cursor = page.nextCursor();
+                    } while (cursor != null);
+                    var context = order + " " + kind + " limit " + limit;
+                    assertThat(seen).as(context).allMatch(entry -> (entry instanceof Entry.Folder) == folders);
+                    assertThat(seen)
+                            .as(context)
+                            .extracting(entry -> entry.name().value())
+                            .containsExactlyInAnyOrderElementsOf(
+                                    folders ? List.of("Alpha", "Mike", "Recipes", "Zulu") : List.of("Italy.pdf"));
+                    for (int index = 1; index < seen.size(); index++) {
+                        assertThat(order.comparator()
+                                        .compare(order.position(seen.get(index - 1)), order.position(seen.get(index))))
+                                .as(context)
+                                .isNegative();
+                    }
+                }
+            }
+        }
+        // A filtered cursor is valid only under the same filter; an unfiltered cursor is invalid under any filter.
+        var order = new ListOrder(ListOrder.Key.NAME, false, true);
+        String foldersOnly = catalog.list(scope, ROOT, order, ListChildren.Kind.FOLDER, 1, null)
+                .nextCursor();
+        String unfiltered = catalog.list(scope, ROOT, order, 1, null).nextCursor();
+        assertThat(foldersOnly).isNotNull();
+        assertThat(unfiltered).isNotNull();
+        assertReason(() -> catalog.list(scope, ROOT, order, 1, foldersOnly), CatalogFailure.Reason.INVALID_CURSOR);
+        assertReason(
+                () -> catalog.list(scope, ROOT, order, ListChildren.Kind.FILE, 1, foldersOnly),
+                CatalogFailure.Reason.INVALID_CURSOR);
+        assertReason(
+                () -> catalog.list(scope, ROOT, order, ListChildren.Kind.FOLDER, 1, unfiltered),
+                CatalogFailure.Reason.INVALID_CURSOR);
+        assertReason(
+                () -> catalog.list(scope, ROOT, order, ListChildren.Kind.FILE, 1, unfiltered),
+                CatalogFailure.Reason.INVALID_CURSOR);
+    }
+
     /** Pages one entry at a time so every step crosses a cursor. */
     private List<String> names(ListOrder order) {
         var names = new ArrayList<String>();
@@ -232,7 +293,7 @@ class FixtureCatalogTest {
                 () -> catalog.list(scope, ROOT, ListOrder.DEFAULT, 1, tampered), CatalogFailure.Reason.INVALID_CURSOR);
         var codec = new CatalogCursor(new ObjectMapper(), new byte[32]);
         assertReason(
-                () -> codec.decode(cursor, UUID.randomUUID(), ROOT, ListOrder.DEFAULT),
+                () -> codec.decode(cursor, UUID.randomUUID(), ROOT, ListOrder.DEFAULT, null),
                 CatalogFailure.Reason.INVALID_CURSOR);
         for (var other : List.of(
                 new ListOrder(ListOrder.Key.NAME, true, false),

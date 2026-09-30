@@ -3,7 +3,12 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 
-import { CatalogApi, ListChildrenOrderEnum, ListChildrenSortEnum } from "../../clients/typescript/apis/CatalogApi";
+import {
+  CatalogApi,
+  ListChildrenKindEnum,
+  ListChildrenOrderEnum,
+  ListChildrenSortEnum,
+} from "../../clients/typescript/apis/CatalogApi";
 import { Configuration } from "../../clients/typescript/runtime";
 import { ApiErrorResponseFromJSON } from "../../clients/typescript/models/ApiErrorResponse";
 import { CurrentVersionResponseFromJSON } from "../../clients/typescript/models/CurrentVersionResponse";
@@ -168,12 +173,14 @@ test("sends the list order as query parameters and decodes the page", async () =
     sort: ListChildrenSortEnum.UpdatedAt,
     order: ListChildrenOrderEnum.Desc,
     foldersFirst: true,
+    kind: ListChildrenKindEnum.Folder,
   });
 
   const query = new URL(requested).searchParams;
   assert.equal(query.get("sort"), "updatedAt");
   assert.equal(query.get("order"), "desc");
   assert.equal(query.get("foldersFirst"), "true");
+  assert.equal(query.get("kind"), "folder");
   assert.equal(page.entries.length, 1);
   assert.equal(typeof page.nextCursor, "string");
 });

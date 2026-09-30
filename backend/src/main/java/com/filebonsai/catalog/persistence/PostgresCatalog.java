@@ -146,14 +146,19 @@ public final class PostgresCatalog
     }
 
     @Override
-    public Page list(CatalogScope scope, EntryId folderId, ListOrder order, int limit, String cursor) {
+    public Page list(CatalogScope scope, EntryId folderId, ListOrder order, Kind kind, int limit, String cursor) {
         if (limit < 1 || limit > 100) {
             throw new CatalogFailure(VALIDATION_FAILED, "Limit must be between 1 and 100");
         }
         folder(database, scope, folderId);
-        ListOrder.Position after = cursor == null ? null : cursors.decode(cursor, scope.workspaceId(), folderId, order);
+        ListOrder.Position after =
+                cursor == null ? null : cursors.decode(cursor, scope.workspaceId(), folderId, order, kind);
         var rows = new ArrayList<Record>(limit + 1);
-        if (!order.foldersFirst()) {
+        if (kind != null) {
+            // One group is one index range in the order's sequence, whatever the order's folder placement.
+            rows.addAll(pageQuery(database, scope, folderId, order, kind == Kind.FOLDER, after, limit + 1)
+                    .fetch());
+        } else if (!order.foldersFirst()) {
             rows.addAll(pageQuery(database, scope, folderId, order, null, after, limit + 1)
                     .fetch());
         } else {
@@ -174,7 +179,7 @@ public final class PostgresCatalog
         }
         String next = null;
         if (rows.size() > limit) {
-            next = cursors.encode(scope.workspaceId(), folderId, order, position(order, rows.get(limit - 1)));
+            next = cursors.encode(scope.workspaceId(), folderId, order, kind, position(order, rows.get(limit - 1)));
         }
         return new Page(entries, next);
     }
