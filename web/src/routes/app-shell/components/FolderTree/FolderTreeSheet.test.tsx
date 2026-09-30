@@ -56,3 +56,25 @@ it("opens the tree on request and closes it when a folder is chosen", async () =
 	);
 	expect(dialog).not.toBeInTheDocument();
 });
+
+it("closes when the current folder's row is pressed, though the path doesn't change", async () => {
+	const { user } = renderRoute(
+		[
+			{
+				path: "/library/:entryId",
+				Component: () => <FolderTreeSheet currentId="travel" />,
+			},
+		],
+		{ initialEntries: ["/library/travel"] },
+	);
+	await user.click(screen.getByRole("button", { name: "Folders" }));
+	await screen.findByRole("dialog", { name: "Folders" });
+	await user.click(
+		await screen.findByRole("row", { name: "Travel, current folder" }),
+	);
+
+	expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+	expect(screen.getByLabelText("Test location")).toHaveTextContent(
+		"/library/travel",
+	);
+});

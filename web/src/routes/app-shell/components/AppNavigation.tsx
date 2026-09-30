@@ -5,7 +5,7 @@ import { Link } from "react-router";
 import { formatBytes } from "~/lib/format/bytes";
 import { storageSummaryQuery } from "~/lib/storage/storage.query";
 import { cn } from "~/lib/ui/utils";
-import { FolderTree, FolderTreeSheet } from "./FolderTree";
+import { FolderTree, FolderTreeSheet, useIsWideShell } from "./FolderTree";
 
 export type Destination = "library" | "storage";
 
@@ -105,6 +105,7 @@ export function AppSidebar({
 }) {
 	const storageDetail = useStorageDetail();
 	const foldersId = useId();
+	const showsTree = useIsWideShell();
 	return (
 		<aside className="sticky top-0 flex h-dvh flex-col items-center gap-5 overflow-y-auto border-r bg-muted px-2 py-3 max-md:hidden wide:items-stretch wide:px-3 wide:py-4">
 			<Wordmark />
@@ -123,22 +124,24 @@ export function AppSidebar({
 					buttonClassName="max-md:hidden wide:hidden"
 					currentId={currentFolderId}
 				/>
-				<section
-					aria-labelledby={foldersId}
-					className="hidden min-h-0 flex-1 flex-col wide:flex"
-				>
-					<h2
-						className="px-3 pt-3 pb-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase"
-						id={foldersId}
+				{showsTree ? (
+					<section
+						aria-labelledby={foldersId}
+						className="hidden min-h-0 flex-1 flex-col wide:flex"
 					>
-						Folders
-					</h2>
-					<FolderTree
-						className="flex-1"
-						currentId={currentFolderId}
-						labelledBy={foldersId}
-					/>
-				</section>
+						<h2
+							className="px-3 pt-3 pb-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+							id={foldersId}
+						>
+							Folders
+						</h2>
+						<FolderTree
+							className="flex-1"
+							currentId={currentFolderId}
+							labelledBy={foldersId}
+						/>
+					</section>
+				) : null}
 				<div className="mt-auto flex w-full justify-center border-t pt-3 wide:block">
 					<NavItem
 						current={current === "storage"}

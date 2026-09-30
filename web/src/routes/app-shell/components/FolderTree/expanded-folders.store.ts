@@ -66,6 +66,15 @@ export const useExpandedFolders = create<ExpandedFolders>()(
 			version: 1,
 			storage: createJSONStorage(() => safeLocalStorage),
 			partialize: ({ expanded }) => ({ expanded }),
+			// Stored text can be stale or edited; anything but a list of strings
+			// falls back to nothing expanded.
+			merge: (persisted, current) => {
+				const stored = (persisted as { expanded?: unknown } | null)?.expanded;
+				const valid =
+					Array.isArray(stored) &&
+					stored.every((id): id is string => typeof id === "string");
+				return { ...current, expanded: valid ? newest(stored) : [] };
+			},
 		},
 	),
 );

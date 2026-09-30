@@ -44,7 +44,7 @@ test("the folder tree reveals the current folder, navigates, and opens in a shee
 			"true",
 		);
 		const current = tree.getByRole("row", { name: `${c}, current folder` });
-		await expect(current).toBeInViewport();
+		await expect(current).toBeInViewport({ ratio: 1 });
 		await expect(current).toHaveAttribute("data-current", "true");
 		// The sidebar keeps Storage in view beneath the tree.
 		await expect(page.getByRole("link", { name: "Storage" })).toBeInViewport();
@@ -97,6 +97,81 @@ test("the folder tree reveals the current folder, navigates, and opens in a shee
 	).toBeLessThanOrEqual(page.viewportSize()?.width ?? 0);
 });
 
+test("the current folder is revealed below a large open sibling with more pages", async ({
+	page,
+	signInPage,
+	library,
+	ownerPassword,
+}, testInfo) => {
+	test.skip(testInfo.project.name === "phone", "Checked on the desktop tree.");
+	test.setTimeout(120_000);
+	const run = stamp();
+	const [a, b, c] = ["A", "B", "C"].map(
+		(letter) => `Reveal ${letter} ${run}`,
+	) as [string, string, string];
+	await page.goto("/");
+	await signInPage.signIn(ownerPassword);
+	await library.expectFolder("Library");
+	for (const name of [a, b, c]) {
+		await library.createFolder(name);
+		await library.openFolder(name);
+	}
+
+	// Put C below the sidebar's fold, under a large open sibling whose listing
+	// still has a next page. Only the rows in view are mounted, and an idle
+	// "load more" row takes no height, so counting it would land one row off.
+	const big = `0 Big ${run}`;
+	const rootId = await workspaceRootId(page);
+	await createFolders(
+		page,
+		rootId,
+		Array.from(
+			{ length: 15 },
+			(_, i) => `0 Filler ${run} ${String(i).padStart(2, "0")}`,
+		),
+	);
+	await createFolders(page, rootId, [big]);
+	await createFolders(
+		page,
+		await findChildId(page, rootId, big),
+		Array.from({ length: 150 }, (_, i) => `Kid ${String(i).padStart(3, "0")}`),
+	);
+	await page.reload();
+	await library.expectFolder(c);
+	const tree = page.getByRole("treegrid", { name: "Folders" });
+	await tree
+		.getByRole("row", { name: big, exact: true })
+		.getByRole("button", { name: /expand/i })
+		.click();
+	await expect(
+		tree.getByRole("row", { name: "Kid 000", exact: true }),
+	).toBeVisible();
+
+	await page.reload();
+	await library.expectFolder(c);
+	const current = tree.getByRole("row", { name: `${c}, current folder` });
+	await expect(current).toBeInViewport({ ratio: 1 });
+	// Brought in with the least scrolling, so it sits at the bottom edge; a row
+	// counted too many would leave a gap of a row or more below it.
+	const treeBox = await tree.boundingBox();
+	const rowBox = await current.boundingBox();
+	const gap =
+		(treeBox?.y ?? 0) +
+		(treeBox?.height ?? 0) -
+		((rowBox?.y ?? 0) + (rowBox?.height ?? 0));
+	expect(gap, "space below the current row").toBeLessThan(
+		(rowBox?.height ?? 0) / 2,
+	);
+	await expect(tree.getByRole("row", { name: b })).toHaveAttribute(
+		"aria-expanded",
+		"true",
+	);
+	await expect(tree.getByRole("row", { name: a })).toHaveAttribute(
+		"aria-expanded",
+		"true",
+	);
+});
+
 test("a folder of 1,000 folders pages in and stays responsive", async ({
 	page,
 	signInPage,
@@ -131,7 +206,14 @@ test("a folder of 1,000 folders pages in and stays responsive", async ({
 		new URL(parentUrl).pathname.split("/").pop() ?? "",
 	);
 
-	await createFolders(page, parentId, count);
+	await createFolders(
+		page,
+		parentId,
+		Array.from(
+			{ length: count },
+			(_, index) => `Bulk ${String(index + 1).padStart(4, "0")}`,
+		),
+	);
 
 	await page.reload();
 	await library.expectFolder(parentName);
@@ -150,13 +232,13 @@ test("a folder of 1,000 folders pages in and stays responsive", async ({
 		exact: true,
 	});
 	// Only the rows in view exist, so reaching the last folder by scrolling
-	// proves every page loaded, in order.
+	// proves every page loaded, in order. A real mouse wheel, because paging
+	// starts once the user has scrolled.
+	await tree.hover();
 	await expect
 		.poll(
 			async () => {
-				await tree.evaluate((element) => {
-					element.scrollTop = element.scrollHeight;
-				});
+				await page.mouse.wheel(0, 100_000);
 				return last.isVisible();
 			},
 			{ timeout: 120_000, intervals: [100] },
@@ -208,13 +290,14 @@ test("a folder of 1,000 folders pages in and stays responsive", async ({
 	await library.expectFolder(deepName);
 	await expect(
 		tree.getByRole("row", { name: `${deepName}, current folder` }),
-	).toBeInViewport();
+	).toBeInViewport({ ratio: 1 });
 });
 
 // Creates folders through the API from the signed-in page, eight at a time.
-async function createFolders(page: Page, parentId: string, count: number) {
+// The folder's own parent is the workspace root when `parentId` is omitted.
+async function createFolders(page: Page, parentId: string, names: string[]) {
 	const failures = await page.evaluate(
-		async ({ parentId, count }) => {
+		async ({ parentId, names }) => {
 			const csrf = (await (
 				await fetch("/api/v1/auth/csrf", { credentials: "include" })
 			).json()) as {
@@ -224,7 +307,7 @@ async function createFolders(page: Page, parentId: string, count: number) {
 			let next = 0;
 			let failed = 0;
 			async function worker() {
-				while (next < count) {
+				while (next < names.length) {
 					const index = next++;
 					const response = await fetch("/api/v1/folders", {
 						method: "POST",
@@ -235,7 +318,7 @@ async function createFolders(page: Page, parentId: string, count: number) {
 							[csrf.headerName]: csrf.token,
 						},
 						body: JSON.stringify({
-							name: `Bulk ${String(index + 1).padStart(4, "0")}`,
+							name: names[index],
 							parentId,
 						}),
 					});
@@ -245,7 +328,7 @@ async function createFolders(page: Page, parentId: string, count: number) {
 			await Promise.all(Array.from({ length: 8 }, worker));
 			return failed;
 		},
-		{ parentId, count },
+		{ parentId, names },
 	);
 	expect(failures, "failed folder creations").toBe(0);
 }
@@ -279,4 +362,13 @@ async function findChildId(page: Page, parentId: string, name: string) {
 	);
 	expect(id, `${name} in the parent's listing`).not.toBeNull();
 	return id as string;
+}
+
+async function workspaceRootId(page: Page) {
+	return page.evaluate(async () => {
+		const response = await fetch("/api/v1/catalog/root", {
+			credentials: "include",
+		});
+		return ((await response.json()) as { id: string }).id;
+	});
 }

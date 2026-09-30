@@ -1,5 +1,5 @@
 import { Folder, FolderOpen } from "lucide-react";
-import { useContext } from "react";
+import { createContext, type RefObject, useContext } from "react";
 import { Collection } from "react-aria-components";
 import { catalogHref, type FolderEntry } from "~/lib/catalog/catalog";
 import { Spinner } from "~/lib/ui/spinner";
@@ -12,6 +12,21 @@ import {
 import { useExpandedFolders } from "./expanded-folders.store";
 import { FolderTrailContext, useNextOnTrail } from "./useRevealFolder";
 import { type Subfolders, useSubfolders } from "./useSubfolders";
+
+/** Called when a folder row is opened, by pointer or keyboard. */
+export const OpenFolderContext = createContext<(() => void) | undefined>(
+	undefined,
+);
+
+/**
+ * Whether more pages may load as a "load more" row comes into view. It opens
+ * when the user first scrolls or types. Until then, revealing the current folder
+ * can put the end of an earlier listing in view, and loading it would push the
+ * current folder back out. Paging toward the current folder doesn't wait.
+ */
+export const LoadMoreGateContext = createContext<RefObject<boolean>>({
+	current: true,
+});
 
 // Rows for one parent's subfolders, then whatever comes after them. React Aria
 // renders these wrappers into a hidden collection, so they can use hooks. A
@@ -29,13 +44,19 @@ export function SubfolderRows({
 }) {
 	const { folders, hasNextPage, isError, isLoading, loaded, loadMore, retry } =
 		subfolders;
+	const gate = useContext(LoadMoreGateContext);
 	return (
 		<>
 			<Collection items={folders}>
 				{(folder) => <FolderNode folder={folder} />}
 			</Collection>
 			{!isError && (!loaded || hasNextPage) ? (
-				<TreeLoadMoreItem isLoading={isOpen && isLoading} onLoadMore={loadMore}>
+				<TreeLoadMoreItem
+					isLoading={isOpen && isLoading}
+					onLoadMore={() => {
+						if (gate.current) loadMore();
+					}}
+				>
 					<Spinner aria-hidden="true" role="presentation" />
 					<span>Loading folders…</span>
 				</TreeLoadMoreItem>
@@ -59,6 +80,7 @@ export function SubfolderRows({
 
 export function FolderNode({ folder }: { folder: FolderEntry }) {
 	const { currentId } = useContext(FolderTrailContext);
+	const onOpen = useContext(OpenFolderContext);
 	const isCurrent = currentId === folder.id;
 	const expanded = useExpandedFolders((state) =>
 		state.expanded.includes(folder.id),
@@ -79,6 +101,7 @@ export function FolderNode({ folder }: { folder: FolderEntry }) {
 			href={catalogHref(folder.id)}
 			id={folder.id}
 			isCurrent={isCurrent}
+			onAction={onOpen}
 			textValue={folder.name}
 		>
 			<TreeItemContent>

@@ -1,6 +1,12 @@
 import { QueryClient } from "@tanstack/react-query";
-import { act, screen, waitFor } from "@testing-library/react";
-import { useParams } from "react-router";
+import {
+	act,
+	fireEvent,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
+import { useNavigate, useParams } from "react-router";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { catalogKeys, folderQuery } from "~/lib/catalog/catalog.query";
 import { renderRoute } from "../../../../../test-utils/render-route";
@@ -117,7 +123,15 @@ function scrollTreeTo(top: number) {
 // The shell derives the current folder from the URL; so does this harness.
 function Harness() {
 	const { entryId } = useParams();
-	return <FolderTree currentId={entryId} />;
+	const navigate = useNavigate();
+	return (
+		<>
+			<FolderTree currentId={entryId} />
+			<button onClick={() => navigate("/library/root")} type="button">
+				Go to root
+			</button>
+		</>
+	);
 }
 
 function renderTree(
@@ -259,6 +273,11 @@ it("mounts only the rows in view and loads the next page when the end scrolls in
 	expect(
 		await screen.findByRole("row", { name: "Album 99" }),
 	).toBeInTheDocument();
+	// The end is in view, but nobody has scrolled or typed yet.
+	scrollToEnd();
+	await settle();
+	expect(treeListings(requests, "root")).toHaveLength(1);
+	fireEvent.wheel(screen.getByRole("treegrid"));
 	scrollToEnd();
 	await waitFor(() => expect(treeListings(requests, "root")).toHaveLength(2));
 	expect(
@@ -405,4 +424,117 @@ it("keeps only folders from a server that ignores the kind filter", async () => 
 	expect(
 		screen.queryByRole("row", { name: "receipt.pdf" }),
 	).not.toBeInTheDocument();
+});
+
+// Zeta is the 101st top-level folder, so finding it takes a second page.
+function deepFolder() {
+	const first = Array.from({ length: 100 }, (_, index) =>
+		entry(`a-${index}`, `Album ${index}`, "root"),
+	);
+	const queryClient = new QueryClient({
+		defaultOptions: { queries: { retry: false } },
+	});
+	queryClient.setQueryData(folderQuery("z-0").queryKey, {
+		folder: {
+			...entry("z-0", "Zeta", "root"),
+			kind: "folder" as const,
+			ancestors: [{ id: "root", name: "Library" }],
+		},
+		children: [],
+		nextCursor: null,
+	});
+	const pages = { root: [first, [entry("z-0", "Zeta", "root")]], "z-0": [[]] };
+	return { pages, queryClient, at: "/library/z-0" };
+}
+
+// A scroll height the test raises once it wants the virtualizer "grown".
+function growableScrollHeight() {
+	const size = { height: 0 };
+	Object.defineProperty(HTMLElement.prototype, "scrollHeight", {
+		configurable: true,
+		get: () => size.height,
+	});
+	return size;
+}
+
+const settle = () => act(() => new Promise((done) => setTimeout(done, 120)));
+
+it("stops scrolling to the current folder once the user scrolls or types", async () => {
+	restoreLayout();
+	restoreLayout = stubVirtualLayout({ scrollHeight: 10_000 });
+	const { pages, queryClient, at } = deepFolder();
+	const { requests } = renderTree(pages, { at, queryClient });
+	const tree = screen.getByRole("treegrid");
+	fireEvent.wheel(tree);
+	await waitFor(() => expect(treeListings(requests, "root")).toHaveLength(2));
+	await settle();
+	expect(tree.scrollTop).toBe(0);
+});
+
+it("drops a pending scroll when the tree unmounts", async () => {
+	restoreLayout();
+	restoreLayout = stubVirtualLayout();
+	const height = growableScrollHeight();
+	const { pages, queryClient, at } = deepFolder();
+	const view = renderTree(pages, { at, queryClient });
+	const tree = screen.getByRole("treegrid");
+	await waitFor(() =>
+		expect(treeListings(view.requests, "root")).toHaveLength(2),
+	);
+	await settle();
+	view.unmount();
+	height.height = 10_000;
+	await settle();
+	expect(tree.scrollTop).toBe(0);
+});
+
+it("drops a pending scroll when the current folder changes", async () => {
+	restoreLayout();
+	restoreLayout = stubVirtualLayout();
+	const height = growableScrollHeight();
+	const { pages, queryClient, at } = deepFolder();
+	const { requests, user } = renderTree(pages, { at, queryClient });
+	const tree = screen.getByRole("treegrid");
+	await waitFor(() => expect(treeListings(requests, "root")).toHaveLength(2));
+	await settle();
+	await user.click(screen.getByRole("button", { name: "Go to root" }));
+	height.height = 10_000;
+	await settle();
+	expect(tree.scrollTop).toBe(0);
+});
+
+it("leaves an ancestor the user closed closed when the folder is refetched", async () => {
+	const queryClient = new QueryClient({
+		defaultOptions: { queries: { retry: false } },
+	});
+	const listing = {
+		folder: {
+			...italy,
+			kind: "folder" as const,
+			ancestors: [
+				{ id: "root", name: "Library" },
+				{ id: "travel", name: "Travel" },
+				{ id: "europe", name: "Europe" },
+			],
+		},
+		children: [],
+		nextCursor: null,
+	};
+	queryClient.setQueryData(folderQuery("italy").queryKey, listing);
+	const { user } = renderTree(topLevel, { at: "/library/italy", queryClient });
+	await screen.findByRole("row", { name: "Italy, current folder" });
+	await user.click(
+		within(row("Europe")).getByRole("button", { name: /collapse/i }),
+	);
+	expect(row("Europe")).toHaveAttribute("aria-expanded", "false");
+
+	// A refetch hands back the folder as a new object (it was renamed or touched).
+	act(() => {
+		queryClient.setQueryData(folderQuery("italy").queryKey, {
+			...listing,
+			folder: { ...listing.folder, updatedAt: "2026-09-22T00:00:00Z" },
+		});
+	});
+	await settle();
+	expect(row("Europe")).toHaveAttribute("aria-expanded", "false");
 });

@@ -65,3 +65,23 @@ it("keeps working when storage throws", async () => {
 	useExpandedFolders.getState().reveal(["a"]);
 	expect(useExpandedFolders.getState().expanded).toEqual(["a"]);
 });
+
+it.each([
+	["a string", "travel"],
+	["an object", { travel: true }],
+	["numbers", [1, 2]],
+	["nothing", undefined],
+])("ignores stored expansion that is %s", async (_, expanded) => {
+	localStorage.setItem(
+		storageKey,
+		JSON.stringify({ state: { expanded }, version: 1 }),
+	);
+	await useExpandedFolders.persist.rehydrate();
+	expect(useExpandedFolders.getState().expanded).toEqual([]);
+});
+
+it("ignores stored text that isn't JSON", async () => {
+	localStorage.setItem(storageKey, "{not json");
+	await useExpandedFolders.persist.rehydrate();
+	expect(useExpandedFolders.getState().expanded).toEqual([]);
+});

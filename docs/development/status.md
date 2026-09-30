@@ -141,7 +141,10 @@ observed results; use Git history for prior plans and completed migrations.
   model is the tree's: arrows, Right to open or enter, Left to close or go to the
   parent, Home, End, type-ahead. Opened folders persist in `localStorage` (500 most
   recent). Opening a folder reveals its ancestors, pages to it, and scrolls it into
-  view from the query cache without moving focus; the current row is marked. At 1,000
+  view from the query cache without moving focus; the current row is marked. Later
+  pages of a listing load once the user has scrolled or typed, so revealing never
+  pushes the current folder back out. The inline tree mounts only at the wide
+  breakpoint; the sheet's tree only while it is open. At 1,000
   subfolders the tree held 21 rows in the DOM, and the browser reported no long task
   (max 0 ms) while paging in or during 30 ArrowDown presses.
 - The inspector previews authorized originals for JPEG, PNG, GIF, WebP, AVIF, and
@@ -152,13 +155,16 @@ observed results; use Git history for prior plans and completed migrations.
 
 ## Latest observed checks
 
-- Folder tree (LIB-02): `cd web && npm test` passed (Biome, typegen and `tsc`, 116
-  Vitest tests, build). `npm run e2e` passed 7 tests on desktop and phone. Those cover
-  a three-level path revealed after reload, with both ancestors open and the current
-  row in view, arrow-key movement and Enter, expansion surviving a reload, and the
-  phone sheet closing on navigation with no horizontal overflow. A second test made
-  1,000 subfolders through the API: all reached by scrolling, 21 rows in the DOM, the
-  current folder 900 revealed and in view after a reload, and a `PerformanceObserver`
+- Folder tree (LIB-02): `cd web && npm test` passed (Biome, typegen and `tsc`, 130
+  Vitest tests, build). `npm run e2e` passed 8 tests on desktop and phone (two are
+  skipped on phone by design). They cover a three-level path revealed after reload,
+  with both ancestors open and the current row in view, arrow-key movement and Enter,
+  expansion surviving a reload, and the phone sheet closing on navigation with no
+  horizontal overflow. Another desktop test put the current folder below a large open
+  sibling that still has a next page, and checked that it lands at the bottom edge of
+  the tree. A last test made 1,000 subfolders through the API: all reached by
+  scrolling, 21 rows in the DOM, the current folder 900 revealed and in view after a
+  reload, and a `PerformanceObserver`
   reported no long task above 50 ms (the un-virtualized tree had peaked at 291 ms).
   Screenshots at 1440×900 (sidebar, with keyboard focus), 1024×768 (rail and open sheet)
   and 390×844 (top bar and open sheet) against the disposable PostgreSQL-profile stack

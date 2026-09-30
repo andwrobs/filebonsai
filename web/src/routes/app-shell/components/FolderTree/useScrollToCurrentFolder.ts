@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { type RefObject, useEffect } from "react";
+import { type RefObject, useEffect, useRef } from "react";
 import { subfoldersQuery } from "~/lib/catalog/catalog.query";
 import { useExpandedFolders } from "./expanded-folders.store";
 import { foldersIn } from "./useSubfolders";
@@ -32,9 +32,13 @@ export function useScrollToCurrentFolder({
 	scrollRef: RefObject<HTMLElement | null>;
 }) {
 	const queryClient = useQueryClient();
+	// The attempt reads these as they are when it runs. They arrive while it is
+	// waiting, and must not restart it after the user has scrolled.
+	const latest = useRef({ rootId, rowSize });
+	latest.current = { rootId, rowSize };
 	useEffect(() => {
 		const element = scrollRef.current;
-		if (!element || !currentId || !rowSize) return;
+		if (!element || !currentId) return;
 
 		const read = (parentId: string): CachedSubfolders | undefined => {
 			const { queryKey } = subfoldersQuery(parentId);
@@ -46,55 +50,63 @@ export function useScrollToCurrentFolder({
 				loaded: data !== undefined,
 				hasNextPage: (data?.pages.at(-1)?.nextCursor ?? null) !== null,
 				isError: state.status === "error",
+				isFetching: state.fetchStatus === "fetching",
 			};
 		};
 		// Once the row is known, the virtualizer still has to grow the scroll
 		// height to reach it, and it does that without a DOM change worth
-		// observing; so keep trying for a short while, frame by frame.
+		// observing; so keep trying for a short while, frame by frame, from a
+		// single chain of frames.
+		const events = ["wheel", "pointerdown", "keydown"];
+		let stopped = false;
 		let frames = 0;
 		let frame = 0;
-		const attempt = (): boolean => {
-			const rows = visibleRows({
-				rootId,
-				expanded: new Set(useExpandedFolders.getState().expanded),
-				read,
-			});
-			const index = rowIndexOf(rows, currentId);
-			if (index < 0) return false;
-			if (element.scrollHeight < (index + 1) * rowSize) {
-				if (frames++ < maxFrames) frame = requestAnimationFrame(retry);
-				return false;
-			}
-			element.scrollTop = nearestScrollTop({
-				index,
-				rowSize,
-				scrollTop: element.scrollTop,
-				viewportHeight: element.clientHeight,
-			});
-			return true;
-		};
-		const retry = () => {
-			if (attempt()) stop();
-		};
-
 		const stop = () => {
+			stopped = true;
 			cancelAnimationFrame(frame);
 			observer.disconnect();
-			for (const type of ["wheel", "pointerdown", "keydown"]) {
-				element.removeEventListener(type, stop);
+			for (const type of events) element.removeEventListener(type, stop);
+		};
+		const attempt = () => {
+			if (stopped) return;
+			const { rootId, rowSize } = latest.current;
+			const index = rowSize
+				? rowIndexOf(
+						visibleRows({
+							rootId,
+							expanded: new Set(useExpandedFolders.getState().expanded),
+							read,
+						}),
+						currentId,
+					)
+				: -1;
+			if (index < 0) return;
+			if (element.scrollHeight >= (index + 1) * rowSize) {
+				element.scrollTop = nearestScrollTop({
+					index,
+					rowSize,
+					scrollTop: element.scrollTop,
+					viewportHeight: element.clientHeight,
+				});
+				stop();
+			} else if (frames++ < maxFrames) {
+				cancelAnimationFrame(frame);
+				frame = requestAnimationFrame(attempt);
+			} else {
+				stop();
 			}
 		};
-		const observer = new MutationObserver(retry);
+		const observer = new MutationObserver(attempt);
 		observer.observe(element, {
 			attributeFilter: ["style"],
 			attributes: true,
 			childList: true,
 			subtree: true,
 		});
-		for (const type of ["wheel", "pointerdown", "keydown"]) {
+		for (const type of events) {
 			element.addEventListener(type, stop, { passive: true });
 		}
-		retry();
+		attempt();
 		return stop;
-	}, [currentId, queryClient, rootId, rowSize, scrollRef]);
+	}, [currentId, queryClient, scrollRef]);
 }

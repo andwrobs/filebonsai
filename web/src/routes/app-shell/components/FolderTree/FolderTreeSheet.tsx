@@ -44,7 +44,12 @@ export function FolderTreeSheet({
 				<SheetHeader>
 					<SheetTitle>Folders</SheetTitle>
 				</SheetHeader>
-				<FolderTree className="flex-1 px-2 pb-2" currentId={currentId} />
+				<FolderTree
+					className="flex-1 px-2 pb-2"
+					currentId={currentId}
+					density="touch"
+					onOpenFolder={() => setIsOpen(false)}
+				/>
 			</Sheet>
 		</>
 	);

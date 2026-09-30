@@ -37,14 +37,17 @@ export function useRevealFolder(currentId: string | undefined): FolderTrail {
 		select: currentFolder,
 	});
 	const reveal = useExpandedFolders((state) => state.reveal);
-	const trail = useMemo(() => {
+	// Key everything on the trail's IDs, not the folder object: a refetch hands
+	// back a new object, and must not re-open ancestors the user has closed.
+	const key = useMemo(() => {
 		// `ancestors` runs root to parent and is empty at the root itself.
-		if (!folder || folder.parentId === null) return [];
+		if (!folder || folder.parentId === null) return "";
 		return [
 			...folder.ancestors.slice(1).map((ancestor) => ancestor.id),
 			folder.id,
-		];
+		].join("/");
 	}, [folder]);
+	const trail = useMemo(() => (key ? key.split("/") : []), [key]);
 	useEffect(() => {
 		reveal(trail.slice(0, -1));
 	}, [trail, reveal]);
