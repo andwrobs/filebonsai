@@ -24,6 +24,7 @@ src/
     form/                   # TanStack Form bound to lib/ui fields
     meta/                   # App name and page titles
     url-state/              # URL-backed input drafts
+    preferences/            # Per-viewer preferences kept in this browser
     catalog/                # Entries, folders, and their queries (Library routes)
     storage/                # Storage summary and upload limit (Storage, shell, uploads)
     transfers/              # Upload store, tray, and control; outlives every route

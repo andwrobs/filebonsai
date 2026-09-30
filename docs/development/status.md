@@ -42,7 +42,8 @@ observed results; use Git history for prior plans and completed migrations.
   `file`) limits a page to one group in the same order; a filtered cursor is bound to
   the kind as well, unfiltered cursors keep their tokens, and no migration was needed
   (the existing indexes serve both groups in every order). The folder tree uses
-  `kind=folder`; the web client does not use the sort parameters yet (LIB-04).
+  `kind=folder`; the Library's table, grid and sort menu use `sort`, `order`, and
+  `foldersFirst`.
 - The PostgreSQL profile exposes authenticated Catalog HTTP through session-derived
   membership scope. Local-owner access includes secret-file bootstrap/reset,
   PostgreSQL-backed sessions, rotation/logout/reset invalidation, CSRF, persisted
@@ -101,10 +102,7 @@ observed results; use Git history for prior plans and completed migrations.
   pathless layout route keeps navigation and the transfer tray mounted across Library
   and Storage. The shell shows a full sidebar from 1100px and an icon rail from 768px.
   Below 768px it has a top bar, bottom navigation, and a floating upload button, with
-  safe-area padding. The folder list is a dense table (icon, name, kind, size,
-  modified, download). Its container queries drop the kind column and then stack
-  rows into two lines as the list narrows. Kind is display-only and comes from the
-  filename extension. Uploads sit in a bottom tray. It opens when an upload starts or
+  safe-area padding. Kind is display-only and comes from the filename extension. Uploads sit in a bottom tray. It opens when an upload starts or
   needs attention and folds away once everything settles. On phones the floating
   upload button sits above the tray at its measured height. The sidebar's
   Storage entry shows the connection name and committed bytes. The Recent, Shared,
@@ -124,14 +122,28 @@ observed results; use Git history for prior plans and completed migrations.
   child folders get Open folder. There are no tabs. From 1100px it is a sticky third
   column, and this browser's local storage remembers whether it is open. Below 1100px
   it is a modal drawer, and below 768px a bottom sheet; neither opens by itself. Esc
-  and Close return focus to the button that opened it. Folder names are links that
-  cover their row, so rows can also hold buttons. The list's column container queries
-  now measure the list, not the page.
-- The Library header, breadcrumbs, toolbar, new-folder form, empty state, and entry
-  list use `lib/ui` controls and Tailwind utilities. The list's own width still
-  drops Kind at 44rem and stacks rows at 30rem, including beside the docked inspector.
-  The Library rules have left `app.css`; its remaining rules style the inspector,
-  Storage, and shared legacy page controls.
+  and Close return focus to the button that opened it.
+- The Library header, breadcrumbs, toolbar, new-folder form, empty state, and entries
+  use `lib/ui` controls and Tailwind utilities. The Library rules have left
+  `app.css`; its remaining rules style the inspector, Storage, and shared legacy page
+  controls.
+- A folder's entries show as a table or a grid (LIB-04). The table is React Aria's
+  `Table` (name, kind, size, modified, actions). Name, Size and Modified headers sort
+  through the server: the same header flips direction, and a new one starts at A to
+  Z, largest, or newest. Kind can't be sorted. A Sort menu offers the same fields, both
+  directions, and Folders first, for the grid and for touch. The order lives in the
+  URL (`sort`, `order`, `folders=first`, defaults left out) and replaces the history
+  entry, so Back leaves the folder, a reload keeps the order, and links elsewhere open
+  the default. Each order is its own first-page query; the folder's details are a
+  separate query, so the tree's reveal never waits on a sort. The grid is a React
+  Aria `GridList` of tiles with a large type icon, a two-line name, size or kind with
+  the date, and Download and Details. The Table and Grid toggle is a per-viewer
+  preference in this browser's local storage (`lib/preferences` holds the shared
+  safe storage the tree also uses). The table drops Kind below 44rem of list width
+  and becomes two-line rows below 30rem (so beside the docked inspector at 1100px).
+  Below 768px both views are rows and the toggle is hidden. Rows and tiles are
+  focusable: arrows move between them (in two dimensions in the grid), Right moves
+  into a table row's cells, Tab reaches a tile's buttons, and Enter opens a folder. Only the first page of 50 still loads.
 - The shell shows a folder tree: in the sidebar from 1100px under the Library item,
   and in a left sheet opened from a Folders button on the icon rail and in the phone
   top bar (the sheet closes on navigation). It is React Aria's `Tree` inside a
@@ -154,6 +166,24 @@ observed results; use Git history for prior plans and completed migrations.
   Image object URLs are revoked when the preview closes or changes.
 
 ## Latest observed checks
+
+- Table and grid views (LIB-04): `cd web && npm test` passed (Biome, typegen and
+  `tsc`, 140 Vitest tests, build). They cover header sorting with `aria-sort` and the
+  URL, loading an order from the URL and ignoring unknown values, the Sort menu with
+  Folders first, the grid remembered in local storage, rows and no toggle on a phone,
+  and ArrowDown then Enter opening a folder. `npm run e2e` passed 10 tests on desktop
+  and phone (two skipped on phone by design). The new one uploads a 1 KiB and a 64 KiB
+  file beside a folder: sorting by Size (header on desktop, menu on the phone) put the
+  larger file first and the folder last, Folders first moved the folder ahead, and a
+  reload kept both. On desktop ArrowDown moved row focus, the grid survived a reload,
+  and ArrowLeft then Enter on a tile opened the folder. Screenshots against the
+  disposable PostgreSQL-profile stack at 1440×900 (table sorted by Size, row and cell
+  keyboard focus, docked inspector, Sort menu, grid with and without the inspector,
+  grid keyboard focus), 1100×900 (docked inspector, rows), 1024×768 (table and grid
+  beside the rail), and 390×844 (rows, Sort menu, sorted by Modified) were inspected.
+  They caught and verified fixes for an inspected row that took `lib/ui`'s expanded
+  tint instead of the selection color, rows taller than the row token, and focus rings
+  that never drew because `outline-none` also cleared the ring's outline style.
 
 - Folder tree (LIB-02): `cd web && npm test` passed (Biome, typegen and `tsc`, 130
   Vitest tests, build). `npm run e2e` passed 8 tests on desktop and phone (two are
@@ -507,7 +537,7 @@ items and required tests.
 1. Cloud transfer: run the decision 0007 compatibility proof against a disposable
    real Cloudflare R2 bucket, repair any provider mismatch, and record bounded
    streaming/recovery evidence before claiming R2 support or adding another provider.
-2. Web: LIB-04 table/grid views on the migrated list, then LIB-05 selection, M1-11
+2. Web: LIB-05 selection, M1-11
    file drops, ORG-01/02/03 mutations, and LIB-22 shared menus and in-app dragging.
    The inspector and Storage move onto `web/src/lib/ui` within LIB-15 and LIB-16.
 3. Photo metadata: accepted decisions

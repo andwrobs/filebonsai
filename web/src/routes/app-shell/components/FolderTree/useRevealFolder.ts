@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { createContext, useContext, useEffect, useMemo } from "react";
-import type { FolderListing } from "~/lib/catalog/catalog";
 import { folderQuery } from "~/lib/catalog/catalog.query";
 import { useExpandedFolders } from "./expanded-folders.store";
 
@@ -34,7 +33,6 @@ export function useRevealFolder(currentId: string | undefined): FolderTrail {
 	const { data: folder } = useQuery({
 		...folderQuery(currentId ?? ""),
 		enabled: currentId !== undefined,
-		select: currentFolder,
 	});
 	const reveal = useExpandedFolders((state) => state.reveal);
 	// Key everything on the trail's IDs, not the folder object: a refetch hands
@@ -53,5 +51,3 @@ export function useRevealFolder(currentId: string | undefined): FolderTrail {
 	}, [trail, reveal]);
 	return useMemo(() => ({ currentId, trail }), [currentId, trail]);
 }
-
-const currentFolder = (listing: FolderListing) => listing.folder;

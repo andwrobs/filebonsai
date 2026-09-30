@@ -1,15 +1,24 @@
 import { type ApiClient, unwrap } from "~/lib/api/api";
 import {
+	type ChildrenPage,
 	type EntryDetails,
 	type EntryKind,
 	type EntryPage,
+	type FolderDetails,
 	type FolderEntry,
-	type FolderListing,
+	type ListingOrder,
 	NotAFolderError,
 	uniqueEntries,
 } from "./catalog";
 
 type Options = { signal?: AbortSignal };
+type ChildrenOptions = Options & {
+	cursor?: string;
+	kind?: EntryKind;
+	limit?: number;
+	/** Omitted: the server's default order. */
+	order?: ListingOrder;
+};
 
 export interface CreateFolderInput {
 	/** Stable per intent, so a retried request can't create a second folder. */
@@ -21,12 +30,14 @@ export interface CreateFolderInput {
 export interface CatalogService {
 	workspaceRoot(options?: Options): Promise<FolderEntry>;
 	entry(id: string, options?: Options): Promise<EntryDetails>;
-	children(
+	children(id: string, options?: ChildrenOptions): Promise<EntryPage>;
+	/** A folder's details; a file throws NotAFolderError. */
+	folder(id: string, options?: Options): Promise<FolderDetails>;
+	/** The first page of a folder's children in the given order. */
+	firstPage(
 		id: string,
-		options?: Options & { cursor?: string; kind?: EntryKind; limit?: number },
-	): Promise<EntryPage>;
-	/** A folder with its first page of children; a file throws NotAFolderError. */
-	folder(id: string, options?: Options): Promise<FolderListing>;
+		options?: Options & { order?: ListingOrder },
+	): Promise<ChildrenPage>;
 	createFolder(input: CreateFolderInput): Promise<FolderEntry>;
 	/** The whole original as a Blob; the browser then saves or previews it. */
 	downloadOriginal(id: string, options?: Options): Promise<Blob>;
@@ -49,29 +60,28 @@ export function createCatalogService({ api }: Deps): CatalogService {
 
 	function children(
 		id: string,
-		{
-			cursor,
-			kind,
-			limit,
-			signal,
-		}: Options & { cursor?: string; kind?: EntryKind; limit?: number } = {},
+		{ cursor, kind, limit, order, signal }: ChildrenOptions = {},
 	) {
 		return unwrap(
 			http.GET("/api/v1/entries/{id}/children", {
-				params: { path: { id }, query: { cursor, kind, limit } },
+				params: { path: { id }, query: { cursor, kind, limit, ...order } },
 				signal,
 			}),
 		);
 	}
 
 	async function folder(id: string, options: Options = {}) {
-		const [found, page] = await Promise.all([
-			entry(id, options),
-			children(id, options),
-		]);
+		const found = await entry(id, options);
 		if (found.kind !== "folder") throw new NotAFolderError();
+		return found;
+	}
+
+	async function firstPage(
+		id: string,
+		options: Options & { order?: ListingOrder } = {},
+	) {
+		const page = await children(id, options);
 		return {
-			folder: found,
 			children: uniqueEntries(page.entries),
 			nextCursor: page.nextCursor,
 		};
@@ -114,6 +124,7 @@ export function createCatalogService({ api }: Deps): CatalogService {
 		entry,
 		children,
 		folder,
+		firstPage,
 		createFolder,
 		downloadOriginal,
 	};

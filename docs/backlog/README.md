@@ -141,7 +141,6 @@ Make the daily loop of finding, looking and acting feel like the design directio
 
 | Item | Kind | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- |
-| [LIB-04](everyday-library.md#lib-04-table-and-grid-views) Table and grid views | Build | P2 | M | none |
 | [LIB-05](everyday-library.md#lib-05-selection-model) Selection model | Build | P2 | M | none |
 | [LIB-07](everyday-library.md#lib-07-name-search) Name search | Build | P2 | M | none |
 | [LIB-08](everyday-library.md#lib-08-command-palette-and-keyboard-shortcuts) Command palette and keyboard shortcuts | Build | P2 | M | none |
@@ -185,7 +184,7 @@ See a file before downloading it. Derived assets inherit authorization and never
 | Item | Kind | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- |
 | [PRV-02](previews-and-media.md#prv-02-image-thumbnail-pipeline) Image thumbnail pipeline | Build | P2 | L | [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer), [PRV-10](previews-and-media.md#prv-10-processing-sandbox-container) |
-| [PRV-03](previews-and-media.md#prv-03-gallery-grid-and-lightbox) Gallery grid and lightbox | Build | P2 | M | [PRV-02](previews-and-media.md#prv-02-image-thumbnail-pipeline), [LIB-04](everyday-library.md#lib-04-table-and-grid-views) |
+| [PRV-03](previews-and-media.md#prv-03-gallery-grid-and-lightbox) Gallery grid and lightbox | Build | P2 | M | [PRV-02](previews-and-media.md#prv-02-image-thumbnail-pipeline) |
 | [PRV-04](previews-and-media.md#prv-04-photo-metadata-extraction) Photo metadata extraction | Build | P2 | L | [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer), [PRV-10](previews-and-media.md#prv-10-processing-sandbox-container) |
 | [PRV-05](previews-and-media.md#prv-05-text-markdown-and-pdf-previews) Text, Markdown and PDF previews | Build | P3 | M | [PRV-10](previews-and-media.md#prv-10-processing-sandbox-container) |
 | [PRV-06](previews-and-media.md#prv-06-video-posters-and-range-downloads) Video posters and range downloads | Build | P3 | L | [PRV-02](previews-and-media.md#prv-02-image-thumbnail-pipeline) |
@@ -284,7 +283,7 @@ Runtime UI capabilities, synced preferences and owner settings have separate bou
 | [CFG-02](configurable-shell.md#cfg-02-module-registry-and-layout-engine) Module registry and layout engine | Build | P2 | L | [CFG-01](configurable-shell.md#cfg-01-decision-configurable-shell-model) |
 | [CFG-03](configurable-shell.md#cfg-03-customize-layout-panel) Customize Layout panel | Build | P3 | M | [CFG-02](configurable-shell.md#cfg-02-module-registry-and-layout-engine) |
 | [CFG-04](configurable-shell.md#cfg-04-preferences-api) Preferences API | Build | P2 | M | [CFG-01](configurable-shell.md#cfg-01-decision-configurable-shell-model) |
-| [CFG-05](configurable-shell.md#cfg-05-per-folder-view-settings) Per-folder view settings | Build | P3 | M | [CFG-04](configurable-shell.md#cfg-04-preferences-api), [LIB-04](everyday-library.md#lib-04-table-and-grid-views) |
+| [CFG-05](configurable-shell.md#cfg-05-per-folder-view-settings) Per-folder view settings | Build | P3 | M | [CFG-04](configurable-shell.md#cfg-04-preferences-api) |
 | [CFG-06](configurable-shell.md#cfg-06-layout-import-and-export) Layout import and export | Build | P3 | S | [CFG-02](configurable-shell.md#cfg-02-module-registry-and-layout-engine) |
 | [CFG-07](configurable-shell.md#cfg-07-saved-views-smart-folders) Saved views (smart folders) | Build | P3 | M | [LIB-07](everyday-library.md#lib-07-name-search), [ORG-08](organize.md#org-08-tags) |
 | [CFG-08](configurable-shell.md#cfg-08-operator-configuration-reference) Operator configuration reference | Build | P3 | S | none |

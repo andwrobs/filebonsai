@@ -95,21 +95,32 @@ it("decodes the workspace root, discriminators, nullable cursors, and exact byte
 	expect(page.entries[0]?.kind).toBe("folder");
 });
 
-it("lists a folder with deduplicated children and refuses a file", async () => {
+it("reads a folder and refuses a file", async () => {
 	let target: object = folder;
-	const { catalog } = service((request) =>
-		request.url.endsWith("/children")
-			? Response.json({ entries: [file, file], nextCursor: "more" })
-			: Response.json(target),
-	);
-	const listing = await catalog.folder(rootId);
-	expect(listing.folder.id).toBe(rootId);
-	expect(listing.folder.ancestors).toEqual([]);
-	expect(listing.children).toHaveLength(1);
-	expect(listing.nextCursor).toBe("more");
+	const { catalog } = service(() => Response.json(target));
+	const found = await catalog.folder(rootId);
+	expect(found.id).toBe(rootId);
+	expect(found.ancestors).toEqual([]);
 
 	target = file;
 	await expect(catalog.folder(file.id)).rejects.toBeInstanceOf(NotAFolderError);
+});
+
+it("reads a first page in the requested order without repeats", async () => {
+	const { catalog, requests } = service(() =>
+		Response.json({ entries: [file, file], nextCursor: "more" }),
+	);
+	const page = await catalog.firstPage(rootId, {
+		order: { sort: "updatedAt", order: "desc", foldersFirst: true },
+	});
+	expect(page.children).toHaveLength(1);
+	expect(page.nextCursor).toBe("more");
+	expect(requests[0]?.url).toBe(
+		`${baseUrl}/api/v1/entries/${rootId}/children?sort=updatedAt&order=desc&foldersFirst=true`,
+	);
+
+	await catalog.firstPage(rootId);
+	expect(new URL(requests[1]?.url ?? "").search).toBe("");
 });
 
 it("sends a fresh CSRF token and the caller's idempotency key when creating a folder", async () => {

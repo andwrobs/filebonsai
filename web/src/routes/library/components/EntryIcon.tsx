@@ -11,6 +11,7 @@ import {
 	type LucideIcon,
 	Presentation,
 } from "lucide-react";
+import { cn } from "~/lib/ui/utils";
 import type { KindFamily } from "../entries";
 
 const icons: Record<KindFamily, LucideIcon> = {
@@ -43,14 +44,22 @@ const colors: Record<KindFamily, string> = {
 	file: "text-kind-file",
 };
 
-// Decorative: the row always shows the kind as text too.
-export function EntryIcon({ family }: { family: KindFamily }) {
+// Decorative: every view also shows the kind or name as text.
+export function EntryIcon({
+	className,
+	family,
+	strokeWidth = 1.75,
+}: {
+	className?: string;
+	family: KindFamily;
+	strokeWidth?: number;
+}) {
 	const Icon = icons[family];
 	return (
 		<Icon
 			aria-hidden="true"
-			className={`entry-icon size-5 ${colors[family]} @max-[30rem]/entries:size-6 @max-[30rem]/entries:[grid-area:icon]`}
-			strokeWidth={1.75}
+			className={cn("entry-icon size-5 shrink-0", colors[family], className)}
+			strokeWidth={strokeWidth}
 		/>
 	);
 }

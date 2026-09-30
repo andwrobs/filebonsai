@@ -1,7 +1,7 @@
-import { screen, within } from "@testing-library/react";
+import { act, screen, within } from "@testing-library/react";
 import type { LoaderFunctionArgs } from "react-router";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { catalogKeys } from "~/lib/catalog/catalog.query";
+import { firstPageQuery } from "~/lib/catalog/catalog.query";
 import { queryClient } from "~/lib/query/client";
 import { renderRoute } from "../../../test-utils/render-route";
 import { apiError, csrf, stubApi } from "../../../test-utils/stub-api";
@@ -90,13 +90,16 @@ it("lists a folder's entries with their kind and size", async () => {
 		await screen.findByRole("heading", { level: 1, name: "Library" }),
 	).toBeInTheDocument();
 	expect(document.title).toBe("Library · Filebonsai");
-	const rows = screen
-		.getAllByRole("listitem")
-		.filter((row) => row.querySelector(".entry-row"));
-	expect(rows).toHaveLength(2);
+	const table = screen.getByRole("grid", { name: "Items" });
+	const [header, ...rows] = within(table).getAllByRole("row");
 	expect(
-		within(rows[0] as HTMLElement).getByRole("link", { name: "Travel" }),
-	).toHaveAttribute("href", "/library/travel");
+		within(header as HTMLElement)
+			.getAllByRole("columnheader")
+			.map((column) => column.textContent),
+	).toEqual(["Name", "Kind", "Size", "Modified", "Actions"]);
+	expect(rows).toHaveLength(2);
+	expect(rows[0]).toHaveAccessibleName("Travel");
+	expect(rows[0]).toHaveAttribute("data-href", "/library/travel");
 	expect(
 		within(rows[1] as HTMLElement).getByText("5.2 MB"),
 	).toBeInTheDocument();
@@ -187,7 +190,7 @@ it("creates a folder with an idempotency key and shows it after the refresh", as
 	await user.type(within(form).getByLabelText("Folder name"), "Photos");
 	await user.click(within(form).getByRole("button", { name: "Create folder" }));
 	expect(
-		await screen.findByRole("link", { name: "Photos" }),
+		await screen.findByRole("row", { name: "Photos" }),
 	).toBeInTheDocument();
 	expect(screen.queryByLabelText("Folder name")).not.toBeInTheDocument();
 	const post = requests.find((request) => request.method === "POST");
@@ -295,7 +298,7 @@ it("lets a late reply refresh its own folder without closing the next folder's f
 			{ name: "Create folder" },
 		),
 	);
-	await user.click(screen.getByRole("link", { name: "Travel" }));
+	await user.click(screen.getByRole("row", { name: "Travel" }));
 	expect(
 		await screen.findByRole("heading", { level: 1, name: "Travel" }),
 	).toBeInTheDocument();
@@ -305,7 +308,7 @@ it("lets a late reply refresh its own folder without closing the next folder's f
 	reply();
 	await vi.waitFor(() =>
 		expect(
-			queryClient.getQueryState(catalogKeys.folder("root"))?.isInvalidated,
+			queryClient.getQueryState(firstPageQuery("root").queryKey)?.isInvalidated,
 		).toBe(true),
 	);
 	expect(screen.getByLabelText("Folder name")).toBe(nextForm);
@@ -342,4 +345,141 @@ it("shows a file's versions, storage connection and copyable digest", async () =
 	expect(
 		within(details).queryByRole("button", { name: "Copy SHA-256" }),
 	).not.toBeInTheDocument();
+});
+
+const childrenSearches = (requests: Request[]) =>
+	requests
+		.map((request) => new URL(request.url))
+		.filter((url) => url.pathname === "/api/v1/entries/root/children")
+		.map((url) => url.search);
+
+it("sorts from the table headers through the server and the URL", async () => {
+	const { requests } = stubApi(serveFolder(() => [travel, photo]));
+	const { user } = renderLibrary();
+	const modified = await screen.findByRole("columnheader", {
+		name: "Modified",
+	});
+	const name = screen.getByRole("columnheader", { name: "Name" });
+	expect(name).toHaveAttribute("aria-sort", "ascending");
+	expect(
+		screen.getByRole("columnheader", { name: "Kind" }),
+	).not.toHaveAttribute("aria-sort");
+
+	// A new field starts newest first; pressing it again flips it.
+	await user.click(modified);
+	await vi.waitFor(() =>
+		expect(modified).toHaveAttribute("aria-sort", "descending"),
+	);
+	expect(screen.getByLabelText("Test location")).toHaveTextContent(
+		"/library/root?sort=updatedAt&order=desc",
+	);
+	await user.click(modified);
+	await vi.waitFor(() =>
+		expect(modified).toHaveAttribute("aria-sort", "ascending"),
+	);
+	expect(childrenSearches(requests)).toEqual([
+		"?sort=name&order=asc&foldersFirst=false",
+		"?sort=updatedAt&order=desc&foldersFirst=false",
+		"?sort=updatedAt&order=asc&foldersFirst=false",
+	]);
+});
+
+it("loads the order in the URL and ignores values it doesn't know", async () => {
+	const { requests } = stubApi(serveFolder(() => [travel, photo]));
+	renderLibrary("root?sort=size&order=desc&folders=first");
+	expect(
+		await screen.findByRole("columnheader", { name: "Size" }),
+	).toHaveAttribute("aria-sort", "descending");
+	queryClient.clear();
+
+	renderLibrary("root?sort=kind&order=sideways");
+	await vi.waitFor(() => expect(childrenSearches(requests)).toHaveLength(2));
+	expect(childrenSearches(requests)).toEqual([
+		"?sort=size&order=desc&foldersFirst=true",
+		"?sort=name&order=asc&foldersFirst=false",
+	]);
+});
+
+it("sorts from the menu, including folders first", async () => {
+	const { requests } = stubApi(serveFolder(() => [travel, photo]));
+	const { user } = renderLibrary();
+	await user.click(await screen.findByRole("button", { name: "Sort" }));
+	await user.click(
+		screen.getByRole("menuitemcheckbox", { name: "Folders first" }),
+	);
+	// A checkbox item leaves the menu open for another choice.
+	await user.keyboard("{Escape}");
+	await vi.waitFor(() =>
+		expect(screen.getByLabelText("Test location")).toHaveTextContent(
+			"/library/root?folders=first",
+		),
+	);
+	await user.click(screen.getByRole("button", { name: "Sort" }));
+	await user.click(screen.getByRole("menuitemradio", { name: "Size" }));
+	await user.click(screen.getByRole("button", { name: "Sort" }));
+	expect(
+		screen.getByRole("menuitemradio", { name: "Largest first" }),
+	).toHaveAttribute("aria-checked", "true");
+	expect(childrenSearches(requests).at(-1)).toBe(
+		"?sort=size&order=desc&foldersFirst=true",
+	);
+});
+
+it("switches to a grid and remembers it for this viewer", async () => {
+	localStorage.clear();
+	stubApi(serveFolder(() => [travel, photo]));
+	const { user } = renderLibrary();
+	await screen.findByRole("columnheader", { name: "Name" });
+	await user.click(screen.getByRole("radio", { name: "Grid" }));
+	expect(screen.queryByRole("columnheader")).not.toBeInTheDocument();
+	const grid = screen.getByRole("grid", { name: "Items" });
+	expect(grid).toHaveAttribute("data-layout", "grid");
+	expect(within(grid).getByRole("row", { name: "Travel" })).toHaveAttribute(
+		"data-href",
+		"/library/travel",
+	);
+	expect(
+		within(grid).getByRole("button", { name: "Download IMG_8421.JPG" }),
+	).toBeInTheDocument();
+	expect(
+		JSON.parse(localStorage.getItem("filebonsai:library-view:v1") ?? "{}"),
+	).toMatchObject({ state: { view: "grid" } });
+	await user.click(screen.getByRole("radio", { name: "Table" }));
+	expect(
+		screen.getByRole("columnheader", { name: "Name" }),
+	).toBeInTheDocument();
+});
+
+it("shows rows and no view choice on a phone", async () => {
+	vi.stubGlobal("matchMedia", () => ({
+		matches: false,
+		addEventListener() {},
+		removeEventListener() {},
+	}));
+	stubApi(serveFolder(() => [travel, photo]));
+	renderLibrary();
+	const list = await screen.findByRole("grid", { name: "Items" });
+	expect(list).toHaveAttribute("data-layout", "stack");
+	expect(within(list).getByText(/^5\.2 MB · /)).toBeInTheDocument();
+	expect(screen.queryByRole("radio", { name: "Grid" })).not.toBeInTheDocument();
+	expect(screen.getByRole("button", { name: "Sort" })).toBeInTheDocument();
+});
+
+it("moves between rows with the arrow keys and opens a folder with Enter", async () => {
+	stubApi((path) =>
+		path === "/api/v1/entries/travel"
+			? Response.json(travel)
+			: path === "/api/v1/entries/travel/children"
+				? Response.json({ entries: [], nextCursor: null })
+				: serveFolder(() => [photo, travel])(path),
+	);
+	const { user } = renderLibrary();
+	const photoRow = await screen.findByRole("row", { name: "IMG_8421.JPG" });
+	act(() => photoRow.focus());
+	await user.keyboard("{ArrowDown}");
+	expect(screen.getByRole("row", { name: "Travel" })).toHaveFocus();
+	await user.keyboard("{Enter}");
+	expect(
+		await screen.findByRole("heading", { level: 1, name: "Travel" }),
+	).toBeInTheDocument();
 });
