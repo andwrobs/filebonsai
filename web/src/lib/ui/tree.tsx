@@ -16,9 +16,10 @@ import {
 
 import { cn } from "~/lib/ui/utils";
 
-// Indent per level, from the `--tree-item-level` React Aria sets on each row.
+// Indent per level without pushing deep folder names outside the tree.
+// React Aria still exposes the full level to assistive technology.
 const indent =
-	"[padding-inline-start:calc(0.25rem+(var(--tree-item-level)-1)*0.875rem)]";
+	"[padding-inline-start:min(6rem,calc(0.25rem+(var(--tree-item-level)-1)*0.875rem))]";
 
 // Rows have a fixed height, because the tree only mounts the rows in view and
 // positions them from it. `control` follows the `--control-height` token and

@@ -6,7 +6,7 @@ import { viewerStorage } from "~/lib/preferences/viewer-storage";
 const maxExpanded = 500;
 
 export interface ExpandedFolders {
-	/** Folder IDs, least recently expanded first; at most 500. */
+	/** Active folder IDs; only the newest 500 are remembered across reloads. */
 	expanded: string[];
 	/** Takes the tree's expanded set, whose iteration order is expansion order. */
 	setExpanded(keys: Iterable<Key>): void;
@@ -23,20 +23,20 @@ export const useExpandedFolders = create<ExpandedFolders>()(
 		(set) => ({
 			expanded: [],
 			setExpanded: (keys) =>
-				set({ expanded: newest([...keys].map((key) => String(key))) }),
+				set({ expanded: [...keys].map((key) => String(key)) }),
 			reveal: (ids) =>
 				set((state) => {
 					const missing = ids.filter((id) => !state.expanded.includes(id));
 					return missing.length === 0
 						? state
-						: { expanded: newest([...state.expanded, ...missing]) };
+						: { expanded: [...state.expanded, ...missing] };
 				}),
 		}),
 		{
 			name: "filebonsai:folder-tree:v1",
 			version: 1,
 			storage: createJSONStorage(() => viewerStorage),
-			partialize: ({ expanded }) => ({ expanded }),
+			partialize: ({ expanded }) => ({ expanded: newest(expanded) }),
 			// Stored text can be stale or edited; anything but a list of strings
 			// falls back to nothing expanded.
 			merge: (persisted, current) => {

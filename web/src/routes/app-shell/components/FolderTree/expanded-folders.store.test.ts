@@ -12,16 +12,41 @@ afterEach(() => vi.unstubAllGlobals());
 const ids = (count: number, from = 0) =>
 	Array.from({ length: count }, (_, index) => `folder-${from + index}`);
 
-it("keeps the 500 most recently expanded folders", () => {
+it("keeps active ancestors expanded while remembering only the newest 500", () => {
 	useExpandedFolders.getState().setExpanded(new Set(ids(500)));
 	useExpandedFolders.getState().reveal(["extra"]);
 	const { expanded } = useExpandedFolders.getState();
-	expect(expanded).toHaveLength(500);
-	expect(expanded[0]).toBe("folder-1");
+	expect(expanded).toHaveLength(501);
+	expect(expanded[0]).toBe("folder-0");
 	expect(expanded.at(-1)).toBe("extra");
+	expect(
+		JSON.parse(localStorage.getItem(storageKey) ?? "null").state.expanded,
+	).toEqual([...ids(500), "extra"].slice(-500));
 
 	useExpandedFolders.getState().setExpanded(new Set(ids(600)));
-	expect(useExpandedFolders.getState().expanded).toEqual(ids(500, 100));
+	expect(useExpandedFolders.getState().expanded).toEqual(ids(600));
+	expect(
+		JSON.parse(localStorage.getItem(storageKey) ?? "null").state.expanded,
+	).toEqual(ids(500, 100));
+});
+
+it("restores a deep active trail after loading capped preferences", async () => {
+	useExpandedFolders.getState().reveal(ids(510));
+	const saved = localStorage.getItem(storageKey) ?? "";
+	useExpandedFolders.setState({ expanded: [] });
+	localStorage.setItem(storageKey, saved);
+	await useExpandedFolders.persist.rehydrate();
+	expect(useExpandedFolders.getState().expanded).toEqual(ids(500, 10));
+	useExpandedFolders.getState().reveal(ids(510));
+	expect(useExpandedFolders.getState().expanded).toEqual(
+		expect.arrayContaining(ids(510)),
+	);
+	useExpandedFolders
+		.getState()
+		.setExpanded(new Set([...useExpandedFolders.getState().expanded, "other"]));
+	expect(useExpandedFolders.getState().expanded).toEqual(
+		expect.arrayContaining(ids(510)),
+	);
 });
 
 it("reveals only what is missing, in order, and repeats harmlessly", () => {
