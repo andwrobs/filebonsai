@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, FolderOpen, FolderPlus, Info } from "lucide-react";
 import { useId, useState } from "react";
-import { data, isRouteErrorResponse, Link, redirect } from "react-router";
+import { data, isRouteErrorResponse, redirect } from "react-router";
 import { ApiError, isUnauthorized } from "~/lib/api/api";
 import {
 	catalogHref,
@@ -12,6 +12,13 @@ import { folderQuery } from "~/lib/catalog/catalog.query";
 import { pageTitle } from "~/lib/meta/title";
 import { queryClient } from "~/lib/query/client";
 import { UploadControl } from "~/lib/transfers/UploadControl";
+import {
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+} from "~/lib/ui/breadcrumb";
+import { Button, LinkButton } from "~/lib/ui/button";
 import type { Route } from "./+types/library.route";
 import { EntryList } from "./components/EntryList";
 import { InspectorPanel, useInspector } from "./components/Inspector";
@@ -54,63 +61,84 @@ function Folder({
 	const inspector = useInspector(folder, children);
 
 	return (
-		<div className="page">
-			<header className="page-toolbar">
-				<div className="page-location">
+		<div className="@container/page flex flex-1 flex-col gap-5 px-(--content-gutter) pt-4 pb-8 max-md:pb-[calc(--spacing(8)+3.5rem)] max-md:pl-[max(var(--content-gutter),env(safe-area-inset-left))] max-md:pr-[max(var(--content-gutter),env(safe-area-inset-right))]">
+			<header className="flex min-h-[calc(var(--control-height)+1rem)] flex-wrap items-center justify-between gap-x-4 gap-y-3 border-b pb-3">
+				<div className="flex min-w-0 flex-[1_1_12rem] items-center gap-1">
 					{folder.parentId ? (
-						<Link
+						<LinkButton
 							aria-label="Parent folder"
-							className="icon-button"
-							title="Parent folder"
-							to={catalogHref(folder.parentId)}
+							size="icon"
+							href={catalogHref(folder.parentId)}
+							variant="ghost"
 						>
 							<ChevronLeft aria-hidden="true" />
-						</Link>
+						</LinkButton>
 					) : null}
-					<nav aria-label="Breadcrumb">
-						<ol className="breadcrumb">
+					<Breadcrumb aria-label="Breadcrumb" className="min-w-0">
+						<BreadcrumbList className="gap-x-2 gap-y-1 text-md">
 							{folder.parentId ? (
-								<li>
-									<Link to="/">Library</Link>
-								</li>
+								<BreadcrumbItem separatorClassName="hidden">
+									<BreadcrumbLink
+										className="rounded-sm text-muted-foreground hover:underline"
+										href="/"
+									>
+										Library
+									</BreadcrumbLink>
+								</BreadcrumbItem>
 							) : null}
-							<li aria-current="page">
-								<h1>{folder.name}</h1>
-							</li>
-						</ol>
-					</nav>
+							<BreadcrumbItem
+								className="min-w-0 gap-2"
+								separatorClassName="hidden"
+							>
+								{folder.parentId ? (
+									<span
+										aria-hidden="true"
+										className="mr-[0.15em] size-[0.4em] shrink-0 rotate-45 border-t-[1.5px] border-r-[1.5px] border-subtle-foreground"
+									/>
+								) : null}
+								<h1
+									aria-current="page"
+									className="min-w-0 text-xl leading-tight font-semibold text-foreground wrap-anywhere"
+								>
+									{folder.name}
+								</h1>
+							</BreadcrumbItem>
+						</BreadcrumbList>
+					</Breadcrumb>
 				</div>
-				<div className="page-actions">
-					<button
-						className="button secondary"
-						onClick={() => setIsCreating(true)}
-						type="button"
+				<div className="flex flex-wrap items-center gap-2">
+					<Button
+						className="@max-[30rem]/page:size-control @max-[30rem]/page:px-0"
+						onPress={() => setIsCreating(true)}
+						variant="outline"
 					>
-						<FolderPlus aria-hidden="true" className="button-icon" />
-						<span className="button-label">New folder</span>
-					</button>
+						<FolderPlus aria-hidden="true" />
+						<span className="@max-[30rem]/page:sr-only">New folder</span>
+					</Button>
 					<UploadControl parentId={folder.id} />
-					<button
+					<Button
 						aria-controls={inspector.open ? inspectorId : undefined}
 						aria-expanded={inspector.open}
-						className="button secondary inspector-toggle"
-						onClick={(event) => inspector.toggle(event.currentTarget)}
+						className="@max-[30rem]/page:size-control @max-[30rem]/page:px-0 aria-expanded:border-selection-border aria-expanded:bg-selection aria-expanded:text-selection-foreground"
+						onPress={(event) =>
+							inspector.toggle(event.target as HTMLButtonElement)
+						}
 						ref={inspector.toggleButton}
-						type="button"
+						variant="outline"
 					>
-						<Info aria-hidden="true" className="button-icon" />
-						<span className="button-label">Details</span>
-					</button>
+						<Info aria-hidden="true" />
+						<span className="@max-[30rem]/page:sr-only">Details</span>
+					</Button>
 				</div>
 			</header>
 
 			<div
-				className="library-body"
+				className="grid grid-cols-[minmax(0,1fr)] gap-6 data-[inspector=docked]:grid-cols-[minmax(0,1fr)_var(--inspector-width)]"
 				data-inspector={
 					inspector.open && inspector.docked ? "docked" : undefined
 				}
 			>
-				<div className="library-content">
+				<div className="flex min-w-0 flex-col gap-5">
 					{isCreating ? (
 						<NewFolderForm
 							// A form belongs to one folder; moving on starts a new one.
@@ -121,33 +149,29 @@ function Folder({
 					) : null}
 
 					<section
-						className="entries"
+						className="@container/entries flex min-w-0 flex-col"
 						aria-busy={refreshing}
 						aria-labelledby="items-heading"
 					>
-						<h2 className="visually-hidden" id="items-heading">
+						<h2 className="sr-only" id="items-heading">
 							Items
 						</h2>
 						{children.length === 0 ? (
-							<div className="empty-state">
+							<div className="grid justify-items-center gap-2 rounded-lg border border-dashed border-border-strong bg-background px-6 py-12 text-center">
 								<FolderOpen
 									aria-hidden="true"
-									className="empty-state-icon"
+									className="size-10 text-kind-folder"
 									strokeWidth={1.5}
 								/>
-								<h3>This folder is empty</h3>
-								<p>
+								<h3 className="text-lg font-semibold">This folder is empty</h3>
+								<p className="max-w-md text-muted-foreground">
 									Upload files or create a folder to start organizing your
 									Library.
 								</p>
-								<div className="empty-state-actions">
-									<button
-										className="button secondary"
-										onClick={() => setIsCreating(true)}
-										type="button"
-									>
+								<div className="mt-3 flex flex-wrap justify-center gap-2">
+									<Button onPress={() => setIsCreating(true)} variant="outline">
 										Create folder
-									</button>
+									</Button>
 									<UploadControl parentId={folder.id} variant="inline" />
 								</div>
 							</div>
@@ -159,7 +183,7 @@ function Folder({
 							/>
 						)}
 						{nextCursor ? (
-							<p className="pagination-note">
+							<p className="mt-3 text-sm text-muted-foreground">
 								More items are available; loading additional pages is coming
 								next.
 							</p>
@@ -181,15 +205,18 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 			? (error.status ?? 500)
 			: 500;
 	return (
-		<div className="page-message" role="alert">
-			<p className="eyebrow">
+		<div
+			className="mx-auto my-12 grid w-full max-w-2xl justify-items-start gap-3 px-(--content-gutter)"
+			role="alert"
+		>
+			<p className="text-xs font-bold tracking-[0.08em] text-muted-foreground uppercase">
 				{status === 401
 					? "Sign in"
 					: status === 404
 						? "Not found"
 						: "Unavailable"}
 			</p>
-			<h1>
+			<h1 className="text-2xl leading-tight font-semibold">
 				{status === 401
 					? "Open your Library"
 					: status === 404
@@ -197,13 +224,9 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 						: "The Library is unavailable."}
 			</h1>
 			{status === 401 ? (
-				<Link className="button primary" to="/sign-in">
-					Sign in
-				</Link>
+				<LinkButton href="/sign-in">Sign in</LinkButton>
 			) : (
-				<Link className="button primary" to="/">
-					Return to Library
-				</Link>
+				<LinkButton href="/">Return to Library</LinkButton>
 			)}
 		</div>
 	);

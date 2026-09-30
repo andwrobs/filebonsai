@@ -12,7 +12,7 @@ import {
 	writeDockedOpen,
 } from "../../inspector-state";
 
-// Matches the shell breakpoint in app.css: the sidebar and a docked inspector need this width.
+// Matches the wide shell: the sidebar and a docked inspector need this width.
 const wideScreen = "(min-width: 1100px)";
 
 function subscribeToWidth(notify: () => void) {

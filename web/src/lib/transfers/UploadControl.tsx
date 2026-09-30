@@ -5,8 +5,7 @@ import { transferStore } from "./transfer-store";
 
 // "toolbar" is the labelled page action (phones hide it for the floating button);
 // "fab" is the floating phone action, kept above the bottom navigation and any
-// transfer tray (TransferTray publishes --tray-height); "inline" sits in empty
-// states. The toolbar and inline buttons move onto lib/ui with the Library list.
+// transfer tray (TransferTray publishes --tray-height); "inline" sits in empty states.
 export function UploadControl({
 	parentId,
 	variant = "toolbar",
@@ -27,18 +26,23 @@ export function UploadControl({
 					<Upload aria-hidden="true" className="size-6" strokeWidth={2} />
 				</Button>
 			) : (
-				<button
+				<Button
 					className={
 						variant === "toolbar"
-							? "button primary toolbar-upload"
-							: "button primary"
+							? "max-md:hidden @max-[30rem]/page:size-control @max-[30rem]/page:px-0"
+							: undefined
 					}
-					onClick={choose}
-					type="button"
+					onPress={choose}
 				>
-					<Upload aria-hidden="true" className="button-icon" strokeWidth={2} />
-					<span>Upload</span>
-				</button>
+					<Upload aria-hidden="true" strokeWidth={2} />
+					<span
+						className={
+							variant === "toolbar" ? "@max-[30rem]/page:sr-only" : undefined
+						}
+					>
+						Upload
+					</span>
+				</Button>
 			)}
 			<input
 				ref={input}

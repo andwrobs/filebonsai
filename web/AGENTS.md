@@ -50,9 +50,9 @@ the deviations below.
 - Transfers belong to `src/lib/transfers`, never to a screen: navigation changes who
   observes an upload, not whether it runs. M1 retry resends the whole body from byte
   zero.
-- `src/styles/index.css` holds every token. The shell is on `lib/ui`; the other
-  screens still use `app.css` and the role aliases in `src/styles/tokens.css`, both
-  excluded from Biome, and move onto `lib/ui` screen by screen.
+- `src/styles/index.css` holds every token. The shell and Library list use `lib/ui`
+  and Tailwind utilities. The inspector and Storage still use `app.css` and role
+  aliases in `src/styles/tokens.css`, both excluded from Biome.
 
 ## Checks
 
