@@ -12,6 +12,8 @@ See [the backlog index](README.md) for how to pick up and retire items.
 
 Depends on: none
 
+In flight: `claude/org-01-entry-mutations` proposes [decision 0012](../decisions/0012-how-entries-change.md) for review.
+
 Context: LIB-03's V9 triggers copy each entry's kind, `updated_at` and current size onto its `catalog_names` row for listing order. Nothing updates an existing entry yet. Before rename, move, restore or a new version does, settle two things. First, lock order: an entry update now locks the entry, then its name row. Second, the copy trigger reads the entry without a lock, so a concurrent entry update can leave a stale copy. Take `FOR SHARE` on the entry in its own statement before copying, or give every writer one lock order. The persistence review recorded both on 2026-09-27.
 
 **Why.** Rename, move, trash and versions all change the catalog and should share one set of rules.

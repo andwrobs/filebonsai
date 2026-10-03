@@ -585,7 +585,9 @@ items and required tests.
    ORG-01/02/03 mutation rules and
    commands, and LIB-22 shared menus and catalog dragging. Cover grid-folder and
    left-sidebar destinations through one drag owner, with keyboard/touch alternatives.
-   Drops, mutations, menus and catalog dragging remain backlog work.
+   Drops, mutations, menus and catalog dragging remain backlog work. ORG-01 is
+   proposed as decision 0012 and awaits owner review; ORG-03 (move) starts once it is
+   accepted.
    The inspector and Storage move onto `web/src/lib/ui` within LIB-15/16.
 3. App-managed storage is near-term work after interaction polish: settle
    [TIER-10](../backlog/storage-tiers.md#tier-10-decision-secure-app-managed-connections),
