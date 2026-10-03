@@ -233,7 +233,7 @@ Depends on: [ENG-02](foundations.md#eng-02-playwright-end-to-end-harness), [LIB-
 
 Depends on: [M1-11](finish-m1.md#m1-11-drag-and-drop-upload), [ORG-02](organize.md#org-02-rename), [ORG-03](organize.md#org-03-move)
 
-Context: LIB-05 added the listing selection (`useEntrySelection` in the Library's Entries feature); its `target(entryId)` and the pure `entryTarget` rule in `web/src/routes/library/entry-selection.ts` already implement right-click targeting, and Escape defers to handlers that call `preventDefault`. `web/src/lib/ui` already has `context-menu`, `dropdown-menu` and `command` components. ORG-02 adds an overflow menu for touch rows, ORG-03 the move API and 'Move to…' dialog, and LIB-08 the command palette. Without one action list, each of these grows its own menu.
+Context: LIB-05 added the listing selection (`useEntrySelection`, owned by the Library route and shown by the inspector); its `target(entryId)` and the pure `entryTarget` rule in `web/src/routes/library/entry-selection.ts` already implement right-click targeting. `web/src/lib/ui` already has `context-menu`, `dropdown-menu` and `command` components. ORG-02 adds an overflow menu for touch rows, ORG-03 the move API and 'Move to…' dialog, and LIB-08 the command palette. Without one action list, each of these grows its own menu.
 
 **Why.** People expect to right-click a file or folder, drag entries between folders, and act on folders from the tree, as they do in Finder, Explorer, Drive and Dropbox.
 
@@ -280,3 +280,28 @@ Context: LIB-19 set per-size letter-spacing defaults in `web/src/styles/index.cs
 - Pixel diffs at 1440×900 and 390×844 for the shell, sign-in, not-found and the Library list name each changed screen; the not-found heading tightening is expected, other changes are reviewed rather than accepted automatically
 
 **Checks:** `web`; `rendered`
+
+## LIB-24 Sort by kind
+
+`P2` · `M` · Build · Backend, Web · *Public API change*
+
+Depends on: none
+
+Context: LIB-04's table shows a Kind column (File, Folder, or a family such as Image or PDF) derived in the web client from the media type and extension, but `GET /api/v1/entries/{id}/children` sorts only by `name`, `updatedAt` and `size`. LIB-03's V9 triggers copy each entry's kind, `updated_at` and current size onto `catalog_names` for keyset paging.
+
+**Why.** Grouping a folder by type is how people find "the PDFs" or "the photos" in Finder, Explorer and Drive. A Kind header that cannot be clicked looks broken next to the sortable ones.
+
+**Outcome.** A `kind` sort field that orders by a server-owned type family, with name as the tiebreaker, and a sortable Kind header and Sort menu entry.
+
+**Settle first.** Whether the family is computed by the server (one mapping shared with the web's `entryKind`, exported in the contract) or stored per version at upload; how unknown types order; whether a migration backfills the copied sort key.
+
+**Acceptance**
+
+- `sort=kind` pages stably in both directions with keyset cursors, folders-first and the `kind` filter, and a cursor from another sort is rejected
+- The family shown in the Kind column and the order agree for every family the web knows
+- The Kind header and Sort menu sort through the URL like the other fields
+
+**Invariants:** workspace-scoped listing; no internal storage paths in the sort key
+
+**Checks:** `backend` (PostgreSQL-backed paging tests); `contract`; `web`; `rendered`
+

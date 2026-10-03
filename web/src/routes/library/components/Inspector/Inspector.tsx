@@ -27,7 +27,9 @@ export function InspectorPanel({
 }) {
 	if (!inspector.open) return null;
 	// Keyed by entry so status text and copy feedback never carry over to another entry.
-	const details = (
+	const details = inspector.several ? (
+		<SelectionSummary entries={inspector.several} onClose={inspector.close} />
+	) : (
 		<InspectorDetails
 			entry={inspector.entry}
 			focusRequest={inspector.focusRequest}
@@ -50,7 +52,6 @@ export function InspectorPanel({
 			id={id}
 			onKeyDown={(event) => {
 				if (event.key !== "Escape") return;
-				// Claimed, so the listing keeps its selection.
 				event.preventDefault();
 				inspector.close();
 			}}
@@ -91,6 +92,58 @@ function InspectorDialog({
 	);
 }
 
+/** Several selected entries: how many, and how much the files hold. */
+function SelectionSummary({
+	entries,
+	onClose,
+}: {
+	entries: readonly Entry[];
+	onClose: () => void;
+}) {
+	const files = entries.filter((entry) => entry.kind === "file");
+	const folders = entries.length - files.length;
+	const bytes = files.reduce(
+		(total, file) => total + BigInt(file.currentVersion.sizeBytes),
+		0n,
+	);
+	const parts = [
+		files.length > 0 ? plural(files.length, "file") : null,
+		folders > 0 ? plural(folders, "folder") : null,
+	].filter(Boolean);
+	return (
+		<div className="inspector-content">
+			<header className="inspector-header">
+				<div className="inspector-title">
+					<h2>{entries.length} items selected</h2>
+					<p className="inspector-summary">
+						{parts.join(", ")}
+						{files.length > 0 ? ` · ${formatBytes(bytes.toString())}` : ""}
+					</p>
+				</div>
+				<CloseButton onClose={onClose} />
+			</header>
+		</div>
+	);
+}
+
+function plural(count: number, noun: string) {
+	return `${count} ${noun}${count === 1 ? "" : "s"}`;
+}
+
+function CloseButton({ onClose }: { onClose: () => void }) {
+	return (
+		<button
+			aria-label="Close details"
+			className="icon-button"
+			onClick={onClose}
+			title="Close details"
+			type="button"
+		>
+			<X aria-hidden="true" />
+		</button>
+	);
+}
+
 function InspectorDetails({
 	entry,
 	focusRequest,
@@ -127,15 +180,7 @@ function InspectorDetails({
 						{size ? `${kind.label} · ${formatBytes(size)}` : kind.label}
 					</p>
 				</div>
-				<button
-					aria-label="Close details"
-					className="icon-button"
-					onClick={onClose}
-					title="Close details"
-					type="button"
-				>
-					<X aria-hidden="true" />
-				</button>
+				<CloseButton onClose={onClose} />
 			</header>
 			{entry.kind === "file" ? (
 				<FilePreview entry={entry} key={entry.currentVersion.id} />

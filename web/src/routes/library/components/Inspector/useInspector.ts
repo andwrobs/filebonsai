@@ -4,10 +4,9 @@ import {
 	closeInspector,
 	type InspectorState,
 	inspectorView,
+	openInspector,
 	readDockedOpen,
 	settleInspector,
-	toggleEntry,
-	toggleInspector,
 	viewerStorage,
 	writeDockedOpen,
 } from "../../inspector-state";
@@ -31,12 +30,21 @@ function useDocked() {
 
 export type Inspector = ReturnType<typeof useInspector>;
 
+/** The listing's selection, which the inspector shows. */
+interface Selected {
+	selected: readonly string[];
+	selectOnly(entryId: string): void;
+}
+
 // One owner for the toolbar toggle, the rows' Details buttons, and the panel.
-export function useInspector(folder: FolderEntry, children: readonly Entry[]) {
+export function useInspector(
+	folder: FolderEntry,
+	children: readonly Entry[],
+	selection: Selected,
+) {
 	const docked = useDocked();
 	const [state, setState] = useState<InspectorState>(() => ({
 		dockedOpen: readDockedOpen(viewerStorage()),
-		entryId: null,
 		folderId: folder.id,
 		overlayOpen: false,
 	}));
@@ -64,7 +72,13 @@ export function useInspector(folder: FolderEntry, children: readonly Entry[]) {
 		// The opener can vanish (a folder reloads); the toolbar toggle is always there.
 		(target?.isConnected ? target : toggleButton.current)?.focus();
 	}, [restorePending]);
-	const view = inspectorView(state, folder, children, docked);
+	const view = inspectorView(
+		state,
+		folder,
+		children,
+		selection.selected,
+		docked,
+	);
 
 	function close() {
 		setState(closeInspector(state, docked));
@@ -72,11 +86,14 @@ export function useInspector(folder: FolderEntry, children: readonly Entry[]) {
 	}
 
 	// Whatever was pressed last, opening or closing, is where focus comes back to.
-	function apply(next: InspectorState, trigger: HTMLElement) {
+	function open(trigger: HTMLElement) {
 		opener.current = trigger;
-		if (!inspectorView(next, folder, children, docked).open) return close();
 		focusRequest.current = true;
-		setState(next);
+		setState(openInspector(state, folder.id, docked));
+	}
+	function closeFrom(trigger: HTMLElement) {
+		opener.current = trigger;
+		close();
 	}
 
 	return {
@@ -87,8 +104,12 @@ export function useInspector(folder: FolderEntry, children: readonly Entry[]) {
 		isFolder: view.entry.id === folder.id,
 		toggleButton,
 		toggle: (trigger: HTMLElement) =>
-			apply(toggleInspector(state, folder, children, docked), trigger),
-		toggleEntry: (entryId: string, trigger: HTMLElement) =>
-			apply(toggleEntry(state, folder, children, docked, entryId), trigger),
+			view.open ? closeFrom(trigger) : open(trigger),
+		/** A row's Details button: show that entry alone, or close when it already is. */
+		toggleEntry: (entryId: string, trigger: HTMLElement) => {
+			if (view.open && view.entry.id === entryId) return closeFrom(trigger);
+			selection.selectOnly(entryId);
+			open(trigger);
+		},
 	};
 }

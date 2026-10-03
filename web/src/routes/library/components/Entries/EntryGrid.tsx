@@ -36,10 +36,7 @@ export function EntryGrid({
 					className={cn(
 						item,
 						"hover:bg-accent data-selected:border-selection-border data-selected:bg-selection data-selected:text-selection-foreground",
-						// The inspected entry is marked apart from selection.
-						entry.inspected && "border-primary ring-1 ring-primary",
 					)}
-					data-inspected={entry.inspected || undefined}
 					href={entry.href}
 					id={entry.entry.id}
 					textValue={entry.entry.name}

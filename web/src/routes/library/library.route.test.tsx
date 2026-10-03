@@ -669,30 +669,18 @@ it("selects one, toggles, and extends a range without opening a folder", async (
 	expect(screen.queryByRole("button", { name: "Clear" })).toBeNull();
 });
 
-it("keeps focus and selection apart on the keyboard", async () => {
+it("moves and extends the selection from the keyboard", async () => {
 	stubApi(serveFolder(() => [travel, photo, notes]));
 	const { user } = renderLibrary();
-	await screen.findByRole("grid", { name: "Items" });
-	// Tabbing in focuses a row without selecting it.
-	await user.tab({ shift: false });
-	while (!document.activeElement?.closest('[role="grid"]')) await user.tab();
-	expect(selectedNames()).toEqual([]);
-
-	await user.keyboard(" ");
+	await user.click(await screen.findByRole("row", { name: "Travel" }));
 	expect(selectedNames()).toEqual(["travel"]);
+
+	// Arrows move the selection, as in Drive and Finder; Shift extends it.
 	await user.keyboard("{ArrowDown}");
 	expect(screen.getByRole("row", { name: "IMG_8421.JPG" })).toHaveFocus();
-	expect(selectedNames()).toEqual(["travel"]);
-	await user.keyboard("{Escape}");
-	expect(selectedNames()).toEqual([]);
-
-	// Shift extends from the anchor through the displayed order.
-	await user.keyboard("{Home} {Shift>}{ArrowDown}{/Shift}");
-	expect(selectedNames()).toEqual(["travel", "photo"]);
-	// Type-ahead moves focus only.
-	await user.keyboard("n");
-	expect(screen.getByRole("row", { name: "notes.txt" })).toHaveFocus();
-	expect(selectedNames()).toEqual(["travel", "photo"]);
+	expect(selectedNames()).toEqual(["photo"]);
+	await user.keyboard("{Shift>}{ArrowDown}{/Shift}");
+	expect(selectedNames()).toEqual(["photo", "notes"]);
 
 	await user.keyboard("{Control>}a{/Control}");
 	expect(selectedNames()).toEqual(["travel", "photo", "notes"]);
@@ -733,36 +721,48 @@ it("keeps the selection through sorting and view changes and prunes it on refres
 	expect(screen.getByText("1 selected")).toBeInTheDocument();
 });
 
-it("clears the selection on Escape unless a field or the inspector owns it", async () => {
+it("shows the selection in Details and clears it on empty space", async () => {
+	localStorage.clear();
 	stubApi(serveFolder(() => [travel, photo]));
 	const { user } = renderLibrary();
 	await user.click(await screen.findByRole("row", { name: "Travel" }));
 
-	// Details opens the inspector without selecting its entry.
+	// A row's Details button makes that entry the selection and shows it.
 	await user.click(
 		screen.getByRole("button", { name: "Details for IMG_8421.JPG" }),
 	);
-	expect(selectedNames()).toEqual(["travel"]);
+	expect(selectedNames()).toEqual(["photo"]);
 	const details = await screen.findByRole("complementary", {
 		name: "Details",
 	});
-	expect(screen.getByRole("row", { name: "IMG_8421.JPG" })).toHaveAttribute(
-		"aria-selected",
-		"false",
+	expect(within(details).getByRole("heading", { level: 2 })).toHaveTextContent(
+		"IMG_8421.JPG",
 	);
+
+	// Details follows whatever is selected next.
+	await user.click(screen.getByRole("row", { name: "Travel" }));
+	expect(within(details).getByRole("heading", { level: 2 })).toHaveTextContent(
+		"Travel",
+	);
+	await user.keyboard("{Control>}");
+	await user.click(screen.getByRole("row", { name: "IMG_8421.JPG" }));
+	await user.keyboard("{/Control}");
+	expect(within(details).getByRole("heading", { level: 2 })).toHaveTextContent(
+		"2 items selected",
+	);
+
+	// Escape in the inspector closes it and keeps the selection.
 	act(() => within(details).getAllByRole("button")[0]?.focus());
 	await user.keyboard("{Escape}");
 	expect(
 		screen.queryByRole("complementary", { name: "Details" }),
 	).not.toBeInTheDocument();
-	expect(selectedNames()).toEqual(["travel"]);
+	expect(selectedNames()).toEqual(["travel", "photo"]);
 
+	// Clicking empty space clears it; controls keep it.
 	await user.click(screen.getByRole("button", { name: "New folder" }));
-	await user.type(screen.getByLabelText("Folder name"), "x{Escape}");
-	expect(selectedNames()).toEqual(["travel"]);
-
-	act(() => (document.activeElement as HTMLElement | null)?.blur());
-	await user.keyboard("{Escape}");
+	expect(selectedNames()).toEqual(["travel", "photo"]);
+	await user.click(screen.getByRole("banner").parentElement as HTMLElement);
 	expect(selectedNames()).toEqual([]);
 });
 

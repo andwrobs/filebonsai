@@ -1,17 +1,9 @@
-import {
-	type FocusEvent,
-	type KeyboardEvent,
-	useEffect,
-	useRef,
-	useState,
-} from "react";
+import { useState } from "react";
 import type { Key, Selection } from "react-aria-components";
 import type { Entry } from "~/lib/catalog/catalog";
 import {
 	entryTarget,
-	escapeClearsSelection,
 	loadedSelection,
-	movesFocusOnly,
 	selectedInOrder,
 } from "../../entry-selection";
 
@@ -19,8 +11,9 @@ import {
 export interface CollectionSelection {
 	selectionMode: "multiple";
 	/**
-	 * "replace": click selects one, Cmd/Ctrl toggles, Shift extends, and
-	 * double-click or Enter opens. "toggle" is touch selection mode: taps toggle.
+	 * "replace": click selects one, Cmd/Ctrl toggles, Shift extends, arrows move
+	 * the selection, Escape clears, and double-click or Enter opens. "toggle" is
+	 * touch selection mode: taps toggle.
 	 */
 	selectionBehavior: "replace" | "toggle";
 	selectedKeys: Set<Key>;
@@ -33,13 +26,9 @@ export interface EntrySelection {
 	/** Touch selection mode: taps toggle and folders don't open. */
 	selecting: boolean;
 	collection: CollectionSelection;
-	/** Capture handlers for the element around the collection. */
-	guard: {
-		onPointerDownCapture(): void;
-		onKeyDownCapture(event: KeyboardEvent): void;
-		onFocusCapture(event: FocusEvent): void;
-	};
 	selectAll(): void;
+	/** Make one entry the whole selection. */
+	selectOnly(entryId: string): void;
 	clear(): void;
 	/** The visible Select action on touch. */
 	startSelecting(): void;
@@ -57,10 +46,10 @@ interface State {
 }
 
 /**
- * The current folder's selection, separate from keyboard focus and from the
- * inspected entry. It belongs to one folder: another folder starts empty, and
- * leaving the Library (sign-out, another workspace) discards it. IDs that are
- * no longer loaded stop counting, so a refresh prunes removed entries.
+ * The current folder's selection, which the inspector shows. It belongs to one
+ * folder: another folder starts empty, and leaving the Library (sign-out,
+ * another workspace) discards it. IDs that are no longer loaded stop counting,
+ * so a refresh prunes removed entries.
  */
 export function useEntrySelection({
 	entries,
@@ -83,33 +72,6 @@ export function useEntrySelection({
 
 	const set = (next: Set<Key>, nextSelecting = current.selecting) =>
 		setState({ folderId, keys: next, selecting: nextSelecting });
-	const clear = () => set(new Set(), false);
-
-	// React Aria's "replace" behavior selects whatever focus reaches. Drop
-	// those proposals: arrows and type-ahead move focus, and focus arriving
-	// from outside (Tab, or the inspector returning it) selects nothing.
-	const guard = useRef({ ignore: false, pointer: false });
-	const ignoreThisEvent = () => {
-		guard.current.ignore = true;
-		queueMicrotask(() => {
-			guard.current.ignore = false;
-		});
-	};
-
-	const hasSelection = selected.length > 0;
-	useEffect(() => {
-		if (!hasSelection) return;
-		const onKeyDown = (event: globalThis.KeyboardEvent) => {
-			if (!escapeClearsSelection(event)) return;
-			setState((previous) => ({
-				...previous,
-				keys: new Set(),
-				selecting: false,
-			}));
-		};
-		document.addEventListener("keydown", onKeyDown);
-		return () => document.removeEventListener("keydown", onKeyDown);
-	}, [hasSelection]);
 
 	return {
 		selected,
@@ -118,41 +80,12 @@ export function useEntrySelection({
 			selectionMode: "multiple",
 			selectionBehavior: selecting ? "toggle" : "replace",
 			selectedKeys: keys,
-			onSelectionChange: (selection) => {
-				if (guard.current.ignore) return;
-				set(loadedSelection(selection, entries));
-			},
-		},
-		guard: {
-			onPointerDownCapture: () => {
-				guard.current.pointer = true;
-				const release = () => {
-					// After the press's own handlers, which may select.
-					setTimeout(() => {
-						guard.current.pointer = false;
-					});
-				};
-				window.addEventListener("pointerup", release, {
-					capture: true,
-					once: true,
-				});
-				window.addEventListener("pointercancel", release, {
-					capture: true,
-					once: true,
-				});
-			},
-			onKeyDownCapture: (event) => {
-				if (movesFocusOnly(event)) ignoreThisEvent();
-			},
-			onFocusCapture: (event) => {
-				const from = event.relatedTarget;
-				const inside =
-					from instanceof Node && event.currentTarget.contains(from);
-				if (!inside && !guard.current.pointer) ignoreThisEvent();
-			},
+			onSelectionChange: (selection) =>
+				set(loadedSelection(selection, entries)),
 		},
 		selectAll: () => set(new Set(entries.map(({ id }) => id))),
-		clear,
+		selectOnly: (entryId) => set(new Set([entryId])),
+		clear: () => set(new Set(), false),
 		startSelecting: () => set(keys, true),
 		target: (entryId) => {
 			const { selection, targets } = entryTarget(selected, entryId);

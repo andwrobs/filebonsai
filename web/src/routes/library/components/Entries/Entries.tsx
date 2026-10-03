@@ -6,29 +6,30 @@ import { EntryRows } from "./EntryRows";
 import { EntryTable } from "./EntryTable";
 import { SelectionBar } from "./SelectionBar";
 import { useEntries } from "./useEntries";
+import type { EntrySelection } from "./useEntrySelection";
 
 /** A folder's entries as a table, a grid, or (narrow or on a phone) rows. */
 export function Entries({
 	entries,
-	folderId,
 	inspector,
 	inspectorId,
 	labelledBy,
 	library,
+	selection,
 }: {
 	entries: readonly Entry[];
-	folderId: string;
 	inspector: Inspector;
 	inspectorId: string;
 	labelledBy: string;
 	library: LibraryView;
+	selection: EntrySelection;
 }) {
-	const { container, items, layout, selection, showKind } = useEntries({
+	const { container, items, layout, showKind } = useEntries({
 		entries,
-		folderId,
 		inspector,
 		inspectorId,
 		phone: library.phone,
+		selection,
 		view: library.view,
 	});
 	return (
@@ -38,30 +39,28 @@ export function Entries({
 				selection={selection}
 				touch={library.phone}
 			/>
-			<div {...selection.guard}>
-				{layout === "table" ? (
-					<EntryTable
-						items={items}
-						labelledBy={labelledBy}
-						onSort={library.sortBy}
-						order={library.order}
-						selection={selection.collection}
-						showKind={showKind}
-					/>
-				) : layout === "grid" ? (
-					<EntryGrid
-						items={items}
-						labelledBy={labelledBy}
-						selection={selection.collection}
-					/>
-				) : (
-					<EntryRows
-						items={items}
-						labelledBy={labelledBy}
-						selection={selection.collection}
-					/>
-				)}
-			</div>
+			{layout === "table" ? (
+				<EntryTable
+					items={items}
+					labelledBy={labelledBy}
+					onSort={library.sortBy}
+					order={library.order}
+					selection={selection.collection}
+					showKind={showKind}
+				/>
+			) : layout === "grid" ? (
+				<EntryGrid
+					items={items}
+					labelledBy={labelledBy}
+					selection={selection.collection}
+				/>
+			) : (
+				<EntryRows
+					items={items}
+					labelledBy={labelledBy}
+					selection={selection.collection}
+				/>
+			)}
 		</div>
 	);
 }

@@ -1,9 +1,8 @@
 import { expect, it } from "vitest";
 import {
 	entryTarget,
-	escapeClearsSelection,
+	isEmptySpace,
 	loadedSelection,
-	movesFocusOnly,
 	selectedInOrder,
 } from "./entry-selection";
 
@@ -37,43 +36,13 @@ it("targets the whole selection from a selected entry, or only an unselected one
 	expect(entryTarget([], "b").targets).toEqual(["b"]);
 });
 
-it("tells focus movement from selection keys", () => {
-	const key = (key: string, modifiers: Partial<KeyboardEvent> = {}) => ({
-		key,
-		shiftKey: false,
-		altKey: false,
-		ctrlKey: false,
-		metaKey: false,
-		...modifiers,
-	});
-	for (const k of ["ArrowDown", "ArrowLeft", "Home", "PageDown", "n"]) {
-		expect(movesFocusOnly(key(k))).toBe(true);
-	}
-	expect(movesFocusOnly(key(" "))).toBe(false);
-	expect(movesFocusOnly(key("Enter"))).toBe(false);
-	expect(movesFocusOnly(key("ArrowDown", { shiftKey: true }))).toBe(false);
-	expect(movesFocusOnly(key("a", { ctrlKey: true }))).toBe(false);
-});
-
-it("leaves Escape to fields, overlays, and handlers that claimed it", () => {
-	const pressEscape = (target: Element, claimed = false) => {
-		const event = new KeyboardEvent("keydown", {
-			key: "Escape",
-			bubbles: true,
-			cancelable: true,
-		});
-		if (claimed) event.preventDefault();
-		let result: boolean | undefined;
-		target.addEventListener("keydown", (e) => {
-			result = escapeClearsSelection(e as KeyboardEvent);
-		});
-		target.dispatchEvent(event);
-		return result;
-	};
-	document.body.innerHTML = `<input id="field"><div role="menu"><button id="item"></button></div><button id="plain"></button>`;
-	const byId = (id: string) => document.getElementById(id) as Element;
-	expect(pressEscape(byId("plain"))).toBe(true);
-	expect(pressEscape(byId("plain"), true)).toBe(false);
-	expect(pressEscape(byId("field"))).toBe(false);
-	expect(pressEscape(byId("item"))).toBe(false);
+it("clears on empty space, never on an entry, a control or the inspector", () => {
+	document.body.innerHTML = `<main id="page"><p id="text">Items</p><table><tr role="row"><td id="cell"></td></tr></table><button id="button"><svg id="icon"></svg></button><aside><p id="details"></p></aside></main>`;
+	const byId = (id: string) => document.getElementById(id);
+	expect(isEmptySpace(byId("page"))).toBe(true);
+	expect(isEmptySpace(byId("text"))).toBe(true);
+	expect(isEmptySpace(byId("cell"))).toBe(false);
+	expect(isEmptySpace(byId("icon"))).toBe(false);
+	expect(isEmptySpace(byId("details"))).toBe(false);
+	expect(isEmptySpace(null)).toBe(false);
 });

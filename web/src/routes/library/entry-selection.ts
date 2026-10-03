@@ -42,56 +42,25 @@ export function entryTarget(
 }
 
 /**
- * A key that only moves focus in a collection: arrows, Home/End, paging, and
- * type-ahead letters. React Aria's "replace" behavior would select whatever
- * they reach; Filebonsai keeps focus and selection apart. Shift extends and
- * Space selects, so those still count.
+ * Whether a click landed on empty space, which clears the selection as in
+ * Drive or Finder. Entries, controls, fields and the inspector keep it.
  */
-export function movesFocusOnly(event: {
-	key: string;
-	shiftKey: boolean;
-	altKey: boolean;
-	ctrlKey: boolean;
-	metaKey: boolean;
-}): boolean {
-	if (event.shiftKey || event.altKey || event.ctrlKey || event.metaKey) {
-		return false;
-	}
-	if (navigationKeys.has(event.key)) return true;
-	return event.key.length === 1 && event.key !== " ";
+export function isEmptySpace(target: EventTarget | null): boolean {
+	return target instanceof Element && !target.closest(keepsSelection);
 }
 
-const navigationKeys = new Set([
-	"ArrowUp",
-	"ArrowDown",
-	"ArrowLeft",
-	"ArrowRight",
-	"Home",
-	"End",
-	"PageUp",
-	"PageDown",
-]);
-
-/**
- * Whether a page-level Escape belongs to the selection. A field, a menu, a
- * dialog, or anything that already handled the key keeps it.
- */
-export function escapeClearsSelection(event: KeyboardEvent): boolean {
-	if (event.key !== "Escape" || event.defaultPrevented) return false;
-	const target = event.target;
-	if (!(target instanceof Element)) return true;
-	if (target.closest(ownsEscape)) return false;
-	return !(target instanceof HTMLElement && target.isContentEditable);
-}
-
-const ownsEscape = [
+const keepsSelection = [
+	"a",
+	"button",
 	"input",
-	"textarea",
+	"label",
 	"select",
+	"textarea",
+	"aside",
 	"dialog",
+	'[role="row"]',
+	'[role="columnheader"]',
+	'[role="toolbar"]',
 	'[role="dialog"]',
-	'[role="alertdialog"]',
 	'[role="menu"]',
-	'[role="listbox"]',
-	'[role="combobox"]',
 ].join(",");
