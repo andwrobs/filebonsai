@@ -43,6 +43,17 @@ Replicas refer to the same version rather than creating additional logical files
 - Files, folders, and pending upload reservations share the sibling namespace. Pending
   files are hidden from normal listing until available.
 
+## Changing entries
+
+Rename, move, trash, restore and new versions follow
+[decision 0012](../decisions/0012-how-entries-change.md). Each entry carries a
+revision that changes with its name, parent, trash state or current version, and every
+mutation names the revision it expects. Every mutation is idempotent under a
+client-supplied key. Bulk operations report one result per item and may partly succeed.
+A selected entry inside another selected folder moves with it. A trashed entry leaves
+its parent's namespace, and a trashed folder is one unit with its subtree. Moving
+changes metadata only; versions, objects and storage keys stay as they are.
+
 ## File and upload lifecycle
 
 M1 begins an upload by atomically reserving a new file entry, version, object identity,

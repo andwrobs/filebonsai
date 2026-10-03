@@ -61,7 +61,7 @@ Depends on: [PHO-01](#pho-01-decision-photo-identity-and-album-semantics), [PRV-
 
 `P2` · `L` · Build · Backend · Public API change
 
-Depends on: [PHO-01](#pho-01-decision-photo-identity-and-album-semantics), [ORG-01](organize.md#org-01-decision-how-entries-change)
+Depends on: [PHO-01](#pho-01-decision-photo-identity-and-album-semantics)
 
 **Why.** A fast album interface needs reliable membership and ordering operations.
 

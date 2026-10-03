@@ -2,40 +2,15 @@
 
 Rename, move, trash, versions and tags. Every change is metadata, reversible where possible, and audited.
 
-These are the M3 features. They share one set of rules for concurrency, idempotency, bulk results and name reservation, so the first item is a decision that settles those rules once. After that, rename and move are metadata only. Trash is reversible. Deleting bytes happens only through a crash-safe job.
+These are the M3 features. They share one set of rules for concurrency, idempotency, bulk results and name reservation, and [decision 0012](../decisions/0012-how-entries-change.md) settles them. Rename and move are metadata only. Trash is reversible. Deleting bytes happens only through a crash-safe job.
 
 See [the backlog index](README.md) for how to pick up and retire items.
-
-## ORG-01 Decision: how entries change
-
-`P1` · `S` · Decision · Backend, Docs
-
-Depends on: none
-
-Context: LIB-03's V9 triggers copy each entry's kind, `updated_at` and current size onto its `catalog_names` row for listing order. Nothing updates an existing entry yet. Before rename, move, restore or a new version does, settle two things. First, lock order: an entry update now locks the entry, then its name row. Second, the copy trigger reads the entry without a lock, so a concurrent entry update can leave a stale copy. Take `FOR SHARE` on the entry in its own statement before copying, or give every writer one lock order. The persistence review recorded both on 2026-09-27.
-
-**Why.** Rename, move, trash and versions all change the catalog and should share one set of rules.
-
-**Outcome.** A decision record plus domain.md and catalog.md updates covering optimistic concurrency (entry revision via If-Match or a body field), mutation idempotency, bulk semantics (all-or-nothing vs per-item results), whether trashed entries keep their names, trashing a folder as a single unit, restoring when the parent is gone, trash retention, and audit.
-
-**Acceptance**
-
-- Recommends one option for each question, with its tradeoff
-- Lists the invariants each operation must prove
-- Work through selecting a folder and its descendant together, mixed-success moves, a stale entry/destination and a lost response; define normalization and replay rules so menu, dialog and drag clients cannot move an entry twice
-
-**Settle first**
-
-- Recommendation: a trashed entry leaves the namespace, and restoring into a name conflict asks for a new name
-
-**Read:** `docs/product/domain.md`, `docs/product/catalog.md`, `docs/api/conventions.md`  
-**Checks:** `decision-review`
 
 ## ORG-02 Rename
 
 `P1` · `M` · Build · Backend, Web · Public API change
 
-Depends on: [ORG-01](#org-01-decision-how-entries-change)
+Depends on: none
 
 **Why.** This is the first metadata mutation and sets the pattern for the rest.
 
@@ -43,7 +18,7 @@ Depends on: [ORG-01](#org-01-decision-how-entries-change)
 
 **Acceptance**
 
-- Of two concurrent renames, one wins and the other gets the conflict code chosen in ORG-01
+- Of two concurrent renames, one wins and the other gets the conflict code chosen in decision 0012 (`REVISION_CONFLICT`)
 - A pending upload's reservation causes a conflict
 - Unicode and 255-byte names; another workspace's entry returns 404
 - Physical storage untouched
@@ -56,7 +31,7 @@ Depends on: [ORG-01](#org-01-decision-how-entries-change)
 
 `P1` · `L` · Build · Backend, Web · Public API change
 
-Depends on: [ORG-01](#org-01-decision-how-entries-change)
+Depends on: none
 
 Context: M1-02's `getEntry` reads a folder and then its `ancestors` in two statements. Nothing moves entries yet, so they agree today. Once moves exist, read both in one snapshot or derive the folder row from the ancestor query, so `parentId` always matches the last ancestor.
 
@@ -68,7 +43,7 @@ Context: M1-02's `getEntry` reads a folder and then its `ancestors` in two state
 
 - Two concurrent opposing moves (A into B, B into A) can't create a cycle (PostgreSQL test)
 - Moving the root is rejected
-- Bulk results and parent/descendant selection normalization follow ORG-01; the same command supports the dialog and LIB-22's grid/sidebar/breadcrumb targets
+- Bulk results and parent/descendant selection normalization follow decision 0012; the same command supports the dialog and LIB-22's grid/sidebar/breadcrumb targets
 - Source and destination are authorized in the same workspace; a stale revision, missing/inaccessible target, current-parent no-op and name reservation conflict have explicit safe results
 - Idempotent replay after a lost response never performs a second move; partial results identify exactly which entries moved and which remain at their source
 - Physical storage, immutable versions and stored object keys are untouched; dragging a file into a folder does not upload it or change its storage connection
@@ -82,7 +57,7 @@ Context: M1-02's `getEntry` reads a folder and then its `ancestors` in two state
 
 `P1` · `L` · Build · Backend, Web · Public API change
 
-Depends on: [ORG-01](#org-01-decision-how-entries-change)
+Depends on: none
 
 **Why.** Deleting must be reversible before anything is deleted permanently.
 
@@ -90,7 +65,7 @@ Depends on: [ORG-01](#org-01-decision-how-entries-change)
 
 **Acceptance**
 
-- PostgreSQL tests for trashing and restoring subtrees, name release per ORG-01, and authorization
+- PostgreSQL tests for trashing and restoring subtrees, name release per decision 0012, and authorization
 - Beginning an upload into a trashed folder is rejected
 - An undo toast appears after trashing
 
@@ -120,7 +95,7 @@ Depends on: [ORG-04](#org-04-trash-and-restore), [ENG-05](foundations.md#eng-05-
 
 `P2` · `L` · Build · Backend, Web · Public API change
 
-Depends on: [ORG-01](#org-01-decision-how-entries-change)
+Depends on: none
 
 **Why.** M1 can't replace a file's contents; domain.md defers this on purpose.
 
@@ -222,7 +197,7 @@ Depends on: none
 
 `P2` · `M` · Build · Backend, Web · Public API change
 
-Depends on: [ORG-01](#org-01-decision-how-entries-change)
+Depends on: none
 
 **Why.** Audit events are in the domain model, and trash, sharing and Tidy recaps all need them.
 
@@ -276,7 +251,7 @@ Context: LIB-06 added the inspector, now in `web/src/routes/library/components/I
 
 `P2` · `L` · Build · Backend, Web · Public API change
 
-Depends on: [ORG-01](#org-01-decision-how-entries-change), [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer)
+Depends on: [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer)
 
 **Why.** Copy/paste and “Make a copy” are ordinary drive actions that differ from move, album membership and storage replicas.
 
