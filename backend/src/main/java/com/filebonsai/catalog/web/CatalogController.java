@@ -3,10 +3,11 @@ package com.filebonsai.catalog.web;
 import com.filebonsai.catalog.application.CatalogScopeProvider;
 import com.filebonsai.catalog.application.CreateFolder;
 import com.filebonsai.catalog.application.GetEntry;
-import com.filebonsai.catalog.application.GetFolderAncestors;
+import com.filebonsai.catalog.application.GetFolderDetails;
 import com.filebonsai.catalog.application.GetWorkspaceRoot;
 import com.filebonsai.catalog.application.ListChildren;
 import com.filebonsai.catalog.application.ListOrder;
+import com.filebonsai.catalog.application.MoveEntries;
 import com.filebonsai.catalog.application.StorageConnectionName;
 import com.filebonsai.catalog.domain.Entry;
 import com.filebonsai.catalog.domain.EntryId;
@@ -27,6 +28,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import java.net.URI;
+import java.util.HashSet;
 import java.util.UUID;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -62,26 +64,29 @@ import org.springframework.web.bind.annotation.RestController;
 })
 public class CatalogController {
     private final GetEntry getEntry;
-    private final GetFolderAncestors getFolderAncestors;
+    private final GetFolderDetails getFolderDetails;
     private final GetWorkspaceRoot getWorkspaceRoot;
     private final ListChildren listChildren;
     private final CreateFolder createFolder;
+    private final MoveEntries moveEntries;
     private final CatalogScopeProvider scopes;
     private final StorageConnectionName storage;
 
     public CatalogController(
             GetEntry getEntry,
-            GetFolderAncestors getFolderAncestors,
+            GetFolderDetails getFolderDetails,
             GetWorkspaceRoot getWorkspaceRoot,
             ListChildren listChildren,
             CreateFolder createFolder,
+            MoveEntries moveEntries,
             CatalogScopeProvider scopes,
             StorageConnectionName storage) {
         this.getEntry = getEntry;
-        this.getFolderAncestors = getFolderAncestors;
+        this.getFolderDetails = getFolderDetails;
         this.getWorkspaceRoot = getWorkspaceRoot;
         this.listChildren = listChildren;
         this.createFolder = createFolder;
+        this.moveEntries = moveEntries;
         this.scopes = scopes;
         this.storage = storage;
     }
@@ -107,7 +112,7 @@ public class CatalogController {
         var entryId = new EntryId(id);
         Entry entry = getEntry.get(scope, entryId);
         return switch (entry) {
-            case Entry.Folder folder -> CatalogResponseMapper.details(folder, getFolderAncestors.list(scope, entryId));
+            case Entry.Folder ignored -> CatalogResponseMapper.details(getFolderDetails.details(scope, entryId));
             case Entry.File file -> (FileEntryResponse) CatalogResponseMapper.response(file, storage);
         };
     }
@@ -169,7 +174,7 @@ public class CatalogController {
             content = @Content(schema = @Schema(implementation = FolderEntryResponse.class)))
     @ApiResponse(
             responseCode = "409",
-            description = "NAME_CONFLICT or IDEMPOTENCY_CONFLICT",
+            description = "NAME_CONFLICT, IDEMPOTENCY_CONFLICT or DEPTH_LIMIT_EXCEEDED",
             content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     @ApiResponse(
             responseCode = "403",
@@ -187,6 +192,43 @@ public class CatalogController {
                 createFolder.create(scopes.current(), new EntryId(request.parentId()), name, idempotencyKey));
         return ResponseEntity.created(URI.create("/api/v1/entries/" + result.id()))
                 .body(result);
+    }
+
+    @PostMapping(
+            value = "/entries/move",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(
+            operationId = "moveEntries",
+            summary = "Move entries into a folder",
+            description =
+                    "Decision 0012. Required Idempotency-Key UUID; the same key and normalized intent (destination plus each entry and expected revision, in any order) replay the original result without moving anything again, and changed intent gives 409. Each item is evaluated under lock in canonical entry-ID order and reported separately, so some may move while others fail; the response is 200 either way. An entry inside another selected folder moves with it and is not checked against its own revision. Moving changes only the parent and revision: names, updatedAt, versions and stored objects stay as they are. The destination is named by ID and need not be where the client last saw it. A missing, inaccessible or file destination fails the whole request and changes nothing.")
+    @Parameter(name = "X-CSRF-TOKEN", in = ParameterIn.HEADER, required = true, schema = @Schema(type = "string"))
+    @ApiResponse(
+            responseCode = "200",
+            description = "Per-item results, new or replayed",
+            content = @Content(schema = @Schema(implementation = MoveEntriesResponse.class)))
+    @ApiResponse(
+            responseCode = "409",
+            description = "IDEMPOTENCY_CONFLICT",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    @ApiResponse(
+            responseCode = "403",
+            description = "CSRF_INVALID",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    public MoveEntriesResponse moveEntries(
+            @RequestHeader("Idempotency-Key") UUID idempotencyKey, @Valid @RequestBody MoveEntriesRequest request) {
+        var seen = new HashSet<UUID>();
+        var items = request.items().stream()
+                .map(item -> {
+                    if (!seen.add(item.entryId())) {
+                        throw new InvalidField("items", "DUPLICATE_ENTRY", "Each entry may appear only once");
+                    }
+                    return new MoveEntries.Item(new EntryId(item.entryId()), item.expectedRevision());
+                })
+                .toList();
+        return CatalogResponseMapper.moved(
+                moveEntries.move(scopes.current(), new EntryId(request.destinationId()), items, idempotencyKey));
     }
 
     private static ListOrder listOrder(String sort, String order, boolean foldersFirst) {

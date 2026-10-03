@@ -16,6 +16,7 @@ import com.filebonsai.catalog.domain.ByteCount;
 import com.filebonsai.catalog.domain.EntryId;
 import com.filebonsai.catalog.domain.FileName;
 import com.filebonsai.catalog.domain.VersionId;
+import com.filebonsai.catalog.persistence.CatalogHierarchyLock;
 import com.filebonsai.storage.LocalObjectStorage;
 import com.filebonsai.storage.PublishedObjectStorage;
 import com.filebonsai.transfers.application.BeginUpload;
@@ -117,6 +118,7 @@ public final class PostgresLocalTransfers
                     }
                     return map(replay);
                 }
+                CatalogHierarchyLock.shared(transaction, scope.workspaceId());
                 if (transaction.fetchExists(
                                 DSL.table(DSL.name("catalog_entries")),
                                 DSL.field(DSL.name("id"), UUID.class)

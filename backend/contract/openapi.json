@@ -249,6 +249,112 @@
         "tags" : [ "Catalog" ]
       }
     },
+    "/api/v1/entries/move" : {
+      "post" : {
+        "description" : "Decision 0012. Required Idempotency-Key UUID; the same key and normalized intent (destination plus each entry and expected revision, in any order) replay the original result without moving anything again, and changed intent gives 409. Each item is evaluated under lock in canonical entry-ID order and reported separately, so some may move while others fail; the response is 200 either way. An entry inside another selected folder moves with it and is not checked against its own revision. Moving changes only the parent and revision: names, updatedAt, versions and stored objects stay as they are. The destination is named by ID and need not be where the client last saw it. A missing, inaccessible or file destination fails the whole request and changes nothing.",
+        "operationId" : "moveEntries",
+        "parameters" : [ {
+          "in" : "header",
+          "name" : "Idempotency-Key",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "in" : "header",
+          "name" : "X-CSRF-TOKEN",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MoveEntriesRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MoveEntriesResponse"
+                }
+              }
+            },
+            "description" : "Per-item results, new or replayed"
+          },
+          "400" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description" : "VALIDATION_FAILED, INVALID_REQUEST, INVALID_CURSOR, or NOT_A_FOLDER"
+          },
+          "401" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description" : "AUTH_REQUIRED"
+          },
+          "403" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description" : "CSRF_INVALID"
+          },
+          "404" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description" : "ENTRY_NOT_FOUND, including inaccessible entries"
+          },
+          "409" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description" : "IDEMPOTENCY_CONFLICT"
+          },
+          "500" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description" : "INTERNAL_ERROR"
+          }
+        },
+        "summary" : "Move entries into a folder",
+        "tags" : [ "Catalog" ]
+      }
+    },
     "/api/v1/entries/{id}" : {
       "get" : {
         "operationId" : "getEntry",
@@ -604,7 +710,7 @@
                 }
               }
             },
-            "description" : "NAME_CONFLICT or IDEMPOTENCY_CONFLICT"
+            "description" : "NAME_CONFLICT, IDEMPOTENCY_CONFLICT or DEPTH_LIMIT_EXCEEDED"
           },
           "500" : {
             "content" : {
@@ -1541,7 +1647,7 @@
         "description" : "Empty when no individual field is responsible"
       },
       "FileEntryResponse" : {
-        "required" : [ "createdAt", "currentVersion", "id", "kind", "name", "parentId", "updatedAt", "versionCount" ],
+        "required" : [ "createdAt", "currentVersion", "id", "kind", "name", "parentId", "revision", "updatedAt", "versionCount" ],
         "type" : "object",
         "properties" : {
           "createdAt" : {
@@ -1567,6 +1673,12 @@
             "type" : "string",
             "description" : "Containing folder identity",
             "format" : "uuid"
+          },
+          "revision" : {
+            "minimum" : 1,
+            "type" : "integer",
+            "description" : "Changes with the name, parent or current version; send it back as expectedRevision",
+            "format" : "int64"
           },
           "updatedAt" : {
             "type" : "string",
@@ -1596,7 +1708,7 @@
         "description" : "A folder above the requested folder"
       },
       "FolderDetailsResponse" : {
-        "required" : [ "ancestors", "createdAt", "id", "kind", "name", "parentId", "updatedAt" ],
+        "required" : [ "ancestors", "createdAt", "id", "kind", "name", "parentId", "revision", "updatedAt" ],
         "type" : "object",
         "properties" : {
           "ancestors" : {
@@ -1628,6 +1740,12 @@
             "format" : "uuid",
             "nullable" : true
           },
+          "revision" : {
+            "minimum" : 1,
+            "type" : "integer",
+            "description" : "Changes with the name, parent or current version; send it back as expectedRevision",
+            "format" : "int64"
+          },
           "updatedAt" : {
             "type" : "string",
             "format" : "date-time"
@@ -1635,7 +1753,7 @@
         }
       },
       "FolderEntryResponse" : {
-        "required" : [ "createdAt", "id", "kind", "name", "parentId", "updatedAt" ],
+        "required" : [ "createdAt", "id", "kind", "name", "parentId", "revision", "updatedAt" ],
         "type" : "object",
         "properties" : {
           "createdAt" : {
@@ -1660,9 +1778,92 @@
             "format" : "uuid",
             "nullable" : true
           },
+          "revision" : {
+            "minimum" : 1,
+            "type" : "integer",
+            "description" : "Changes with the name, parent or current version; send it back as expectedRevision",
+            "format" : "int64"
+          },
           "updatedAt" : {
             "type" : "string",
             "format" : "date-time"
+          }
+        }
+      },
+      "MoveEntriesRequest" : {
+        "required" : [ "destinationId", "items" ],
+        "type" : "object",
+        "properties" : {
+          "destinationId" : {
+            "type" : "string",
+            "description" : "The folder to move the entries into",
+            "format" : "uuid"
+          },
+          "items" : {
+            "maxItems" : 1000,
+            "minItems" : 1,
+            "type" : "array",
+            "description" : "1–1000 entries, each named once; the order doesn't matter",
+            "items" : {
+              "$ref" : "#/components/schemas/MoveEntryRequestItem"
+            }
+          }
+        }
+      },
+      "MoveEntriesResponse" : {
+        "required" : [ "items" ],
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "description" : "One result per requested entry, in canonical entry-ID order",
+            "items" : {
+              "$ref" : "#/components/schemas/MoveEntryResult"
+            }
+          }
+        }
+      },
+      "MoveEntryRequestItem" : {
+        "required" : [ "entryId", "expectedRevision" ],
+        "type" : "object",
+        "properties" : {
+          "entryId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "expectedRevision" : {
+            "minimum" : 1,
+            "type" : "integer",
+            "description" : "The entry's revision as the client last read it",
+            "format" : "int64"
+          }
+        }
+      },
+      "MoveEntryResult" : {
+        "required" : [ "entryId", "outcome", "previousParentId", "revision" ],
+        "type" : "object",
+        "properties" : {
+          "entryId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "outcome" : {
+            "type" : "string",
+            "description" : "MOVED: now in the destination. MOVED_WITH_ANCESTOR: a selected folder above it moved, carrying it. UNCHANGED: already in the destination. ANCESTOR_NOT_MOVED: a selected folder above it failed, so it stayed. NOT_FOUND: missing or inaccessible. REVISION_CONFLICT: changed since the client read it. NAME_CONFLICT: an entry or pending upload in the destination holds the name. CANNOT_MOVE_ROOT. DESTINATION_INSIDE_ENTRY: the destination is the folder or inside it. DEPTH_LIMIT_EXCEEDED: a folder would pass the depth limit.",
+            "enum" : [ "MOVED", "MOVED_WITH_ANCESTOR", "UNCHANGED", "ANCESTOR_NOT_MOVED", "NOT_FOUND", "REVISION_CONFLICT", "NAME_CONFLICT", "CANNOT_MOVE_ROOT", "DESTINATION_INSIDE_ENTRY", "DEPTH_LIMIT_EXCEEDED" ]
+          },
+          "previousParentId" : {
+            "type" : "string",
+            "description" : "The folder the entry left; set only for MOVED",
+            "format" : "uuid",
+            "nullable" : true
+          },
+          "revision" : {
+            "minimum" : 1,
+            "type" : "integer",
+            "description" : "The entry's revision after the request; null only for NOT_FOUND",
+            "format" : "int64",
+            "nullable" : true
           }
         }
       },

@@ -260,6 +260,83 @@ class AccessHttpPostgresTest {
                         .contentType("application/json")
                         .content(mapper.writeValueAsString(java.util.Map.of("parentId", rootA, "name", "Allowed"))))
                 .andExpect(status().isCreated());
+
+        String allowed = folderNamed(session, "Allowed");
+        String target = mapper.readTree(mvc.perform(post("/api/v1/folders")
+                                .cookie(session, csrf)
+                                .header(LocalOwnerAccess.CSRF_HEADER, csrf.getValue())
+                                .header("Idempotency-Key", UUID.randomUUID())
+                                .contentType("application/json")
+                                .content(mapper.writeValueAsString(
+                                        java.util.Map.of("parentId", rootA, "name", "Target"))))
+                        .andExpect(status().isCreated())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString())
+                .get("id")
+                .asText();
+        String move = mapper.writeValueAsString(java.util.Map.of(
+                "destinationId",
+                target,
+                "items",
+                java.util.List.of(java.util.Map.of("entryId", allowed, "expectedRevision", 1))));
+        mvc.perform(post("/api/v1/entries/move")
+                        .cookie(session)
+                        .header("Idempotency-Key", UUID.randomUUID())
+                        .contentType("application/json")
+                        .content(move))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("CSRF_INVALID"));
+        mvc.perform(post("/api/v1/entries/move")
+                        .cookie(session, csrf)
+                        .header(LocalOwnerAccess.CSRF_HEADER, csrf.getValue())
+                        .header("Idempotency-Key", UUID.randomUUID())
+                        .contentType("application/json")
+                        .content(mapper.writeValueAsString(java.util.Map.of(
+                                "destinationId",
+                                ROOT_B,
+                                "items",
+                                java.util.List.of(java.util.Map.of("entryId", allowed, "expectedRevision", 1))))))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("ENTRY_NOT_FOUND"));
+        mvc.perform(post("/api/v1/entries/move")
+                        .cookie(session, csrf)
+                        .header(LocalOwnerAccess.CSRF_HEADER, csrf.getValue())
+                        .header("Idempotency-Key", UUID.randomUUID())
+                        .contentType("application/json")
+                        .content(mapper.writeValueAsString(java.util.Map.of(
+                                "destinationId",
+                                target,
+                                "items",
+                                java.util.List.of(
+                                        java.util.Map.of("entryId", allowed, "expectedRevision", 1),
+                                        java.util.Map.of("entryId", ROOT_B, "expectedRevision", 1))))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[?(@.entryId == '" + allowed + "')].outcome")
+                        .value("MOVED"))
+                .andExpect(jsonPath("$.items[?(@.entryId == '" + ROOT_B + "')].outcome")
+                        .value("NOT_FOUND"));
+        mvc.perform(get("/api/v1/entries/" + allowed).cookie(session))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.parentId").value(target))
+                .andExpect(jsonPath("$.revision").value(2))
+                .andExpect(
+                        jsonPath("$.ancestors[*].id").value(org.hamcrest.Matchers.contains(rootA.toString(), target)));
+    }
+
+    private String folderNamed(Cookie session, String name) throws Exception {
+        var page = mapper.readTree(
+                mvc.perform(get("/api/v1/entries/" + rootA + "/children").cookie(session))
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString());
+        for (var entry : page.get("entries")) {
+            if (entry.get("name").asText().equals(name)) {
+                return entry.get("id").asText();
+            }
+        }
+        throw new AssertionError("No folder named " + name);
     }
 
     @Test
@@ -685,16 +762,20 @@ class AccessHttpPostgresTest {
                 storage,
                 document.path("paths").path("/api/v1/entries/{id}").path("get"),
                 document.path("paths").path("/api/v1/entries/{id}/children").path("get"),
-                document.path("paths").path("/api/v1/folders").path("post"))) {
+                document.path("paths").path("/api/v1/folders").path("post"),
+                document.path("paths").path("/api/v1/entries/move").path("post"))) {
             assertThat(operation.path("responses").has("401")).isTrue();
         }
-        var createFolder = document.path("paths").path("/api/v1/folders").path("post");
-        assertThat(createFolder.path("responses").has("403")).isTrue();
-        assertThat(createFolder.path("parameters")).anySatisfy(parameter -> {
-            assertThat(parameter.path("name").asText()).isEqualTo(LocalOwnerAccess.CSRF_HEADER);
-            assertThat(parameter.path("in").asText()).isEqualTo("header");
-            assertThat(parameter.path("required").asBoolean()).isTrue();
-        });
+        for (var write : java.util.List.of(
+                document.path("paths").path("/api/v1/folders").path("post"),
+                document.path("paths").path("/api/v1/entries/move").path("post"))) {
+            assertThat(write.path("responses").has("403")).isTrue();
+            assertThat(write.path("parameters")).anySatisfy(parameter -> {
+                assertThat(parameter.path("name").asText()).isEqualTo(LocalOwnerAccess.CSRF_HEADER);
+                assertThat(parameter.path("in").asText()).isEqualTo("header");
+                assertThat(parameter.path("required").asBoolean()).isTrue();
+            });
+        }
         assertThat(document.path("components")
                         .path("securitySchemes")
                         .path("sessionCookie")

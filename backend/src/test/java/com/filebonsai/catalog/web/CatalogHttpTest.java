@@ -12,6 +12,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.filebonsai.catalog.application.CatalogScope;
+import com.filebonsai.catalog.domain.Entry;
+import com.filebonsai.catalog.domain.FileName;
 import com.filebonsai.catalog.support.FixtureCatalog;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -47,6 +50,9 @@ class CatalogHttpTest {
 
     @Autowired
     ObjectMapper mapper;
+
+    @Autowired
+    FixtureCatalog fixture;
 
     @Test
     void filesFoldersAndRootHaveDistinctShapes() throws Exception {
@@ -304,6 +310,163 @@ class CatalogHttpTest {
     }
 
     @Test
+    void movingReportsEachItemAndReplaysTheOriginalResult() throws Exception {
+        mvc.perform(get("/api/v1/entries/" + FILE))
+                .andExpect(jsonPath("$.revision").value(1));
+        mvc.perform(get("/api/v1/entries/" + ROOT + "/children"))
+                .andExpect(jsonPath("$.entries[*].revision").value(contains(1, 1)));
+        String archive = createFolder(ROOT, "Archive");
+        String missing = UUID.randomUUID().toString();
+        String key = UUID.randomUUID().toString();
+        String body = moveBody(archive, Map.of(FILE, 1, EMPTY, 1, missing, 4));
+
+        String first = mvc.perform(post("/api/v1/entries/move")
+                        .header("Idempotency-Key", key)
+                        .contentType("application/json")
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(jsonPath("$.items[*].entryId").value(contains(FILE, EMPTY, missing)))
+                .andExpect(jsonPath("$.items[*].outcome").value(contains("MOVED", "MOVED", "NOT_FOUND")))
+                .andExpect(jsonPath("$.items[0].revision").value(2))
+                .andExpect(jsonPath("$.items[0].previousParentId").value(ROOT))
+                .andExpect(jsonPath("$.items[2].revision").isEmpty())
+                .andExpect(jsonPath("$.items[2].previousParentId").isEmpty())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        var notFound = mapper.readTree(first).get("items").get(2);
+        assertThat(notFound.has("revision") && notFound.get("revision").isNull())
+                .isTrue();
+        assertThat(notFound.has("previousParentId")
+                        && notFound.get("previousParentId").isNull())
+                .isTrue();
+        mvc.perform(get("/api/v1/entries/" + FILE))
+                .andExpect(jsonPath("$.parentId").value(archive))
+                .andExpect(jsonPath("$.revision").value(2));
+        mvc.perform(get("/api/v1/entries/" + EMPTY))
+                .andExpect(jsonPath("$.revision").value(2))
+                .andExpect(jsonPath("$.ancestors[*].id").value(contains(ROOT, archive)));
+
+        mvc.perform(post("/api/v1/entries/move")
+                        .header("Idempotency-Key", key)
+                        .contentType("application/json")
+                        .content(moveBody(archive, Map.of(missing, 4, EMPTY, 1, FILE, 1))))
+                .andExpect(status().isOk())
+                .andExpect(result ->
+                        assertThat(result.getResponse().getContentAsString()).isEqualTo(first));
+        mvc.perform(post("/api/v1/entries/move")
+                        .header("Idempotency-Key", key)
+                        .contentType("application/json")
+                        .content(moveBody(archive, Map.of(FILE, 2))))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("IDEMPOTENCY_CONFLICT"));
+        mvc.perform(post("/api/v1/entries/move")
+                        .header("Idempotency-Key", UUID.randomUUID())
+                        .contentType("application/json")
+                        .content(moveBody(ROOT, Map.of(FILE, 1, ROOT, 1))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[*].outcome").value(contains("CANNOT_MOVE_ROOT", "ANCESTOR_NOT_MOVED")));
+    }
+
+    @Test
+    void invalidMovesFailWithoutMovingAnything() throws Exception {
+        String archive = createFolder(ROOT, "Archive");
+        for (String body : List.of(
+                "{}",
+                "{\"destinationId\":\"" + archive + "\",\"items\":[]}",
+                "{\"destinationId\":\"" + archive + "\",\"items\":[{\"entryId\":\"" + FILE + "\"}]}",
+                "{\"destinationId\":\"" + archive + "\",\"items\":[{\"entryId\":\"" + FILE
+                        + "\",\"expectedRevision\":0}]}",
+                "{\"destinationId\":\"" + archive + "\",\"items\":[{\"entryId\":\"" + FILE
+                        + "\",\"expectedRevision\":\"1\"}]}",
+                "{\"destinationId\":\"" + archive + "\",\"items\":[{\"entryId\":\"" + FILE
+                        + "\",\"expectedRevision\":1.5}]}",
+                "{\"destinationId\":\"" + archive + "\",\"items\":[null]}",
+                "{\"destinationId\":\"" + archive + "\",\"items\":[{\"entryId\":\"" + FILE
+                        + "\",\"expectedRevision\":1,\"extra\":true}]}")) {
+            mvc.perform(post("/api/v1/entries/move")
+                            .header("Idempotency-Key", UUID.randomUUID())
+                            .contentType("application/json")
+                            .content(body))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.requestId").isString());
+        }
+        String duplicate = "{\"destinationId\":\"" + archive + "\",\"items\":[{\"entryId\":\"" + FILE
+                + "\",\"expectedRevision\":1},{\"entryId\":\"" + FILE + "\",\"expectedRevision\":1}]}";
+        mvc.perform(post("/api/v1/entries/move")
+                        .header("Idempotency-Key", UUID.randomUUID())
+                        .contentType("application/json")
+                        .content(duplicate))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.fieldErrors[0].field").value("items"))
+                .andExpect(jsonPath("$.fieldErrors[0].code").value("DUPLICATE_ENTRY"));
+        mvc.perform(post("/api/v1/entries/move")
+                        .contentType("application/json")
+                        .content(moveBody(archive, Map.of(FILE, 1))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+        mvc.perform(post("/api/v1/entries/move")
+                        .header("Idempotency-Key", UUID.randomUUID())
+                        .contentType("application/json")
+                        .content(moveBody(UUID.randomUUID().toString(), Map.of(FILE, 1))))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("ENTRY_NOT_FOUND"));
+        mvc.perform(post("/api/v1/entries/move")
+                        .header("Idempotency-Key", UUID.randomUUID())
+                        .contentType("application/json")
+                        .content(moveBody(FILE, Map.of(EMPTY, 1))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("NOT_A_FOLDER"));
+        mvc.perform(get("/api/v1/entries/" + FILE))
+                .andExpect(jsonPath("$.parentId").value(ROOT))
+                .andExpect(jsonPath("$.revision").value(1));
+    }
+
+    @Test
+    void creatingAFolderPastTheDepthLimitConflicts() throws Exception {
+        var scope = new CatalogScope(FixtureCatalog.PRINCIPAL, FixtureCatalog.WORKSPACE);
+        var parent = FixtureCatalog.ROOT;
+        for (int depth = 1; depth <= Entry.MAXIMUM_FOLDER_DEPTH; depth++) {
+            parent = fixture.create(scope, parent, new FileName("Level " + depth), UUID.randomUUID())
+                    .id();
+        }
+        mvc.perform(post("/api/v1/folders")
+                        .header("Idempotency-Key", UUID.randomUUID())
+                        .contentType("application/json")
+                        .content(mapper.writeValueAsString(Map.of("parentId", parent.value(), "name", "Too deep"))))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("DEPTH_LIMIT_EXCEEDED"));
+        mvc.perform(get("/api/v1/entries/" + parent.value()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ancestors.length()").value(1024));
+    }
+
+    private String createFolder(String parentId, String name) throws Exception {
+        return mapper.readTree(mvc.perform(post("/api/v1/folders")
+                                .header("Idempotency-Key", UUID.randomUUID())
+                                .contentType("application/json")
+                                .content(mapper.writeValueAsString(Map.of("parentId", parentId, "name", name))))
+                        .andExpect(status().isCreated())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString())
+                .get("id")
+                .asText();
+    }
+
+    private String moveBody(String destinationId, Map<String, Integer> revisions) throws Exception {
+        return mapper.writeValueAsString(Map.of(
+                "destinationId",
+                destinationId,
+                "items",
+                revisions.entrySet().stream()
+                        .map(entry -> Map.of("entryId", entry.getKey(), "expectedRevision", entry.getValue()))
+                        .toList()));
+    }
+
+    @Test
     void missingEntriesAndWrongFolderKindReturnStableErrors() throws Exception {
         mvc.perform(get("/api/v1/entries/" + UUID.randomUUID()))
                 .andExpect(status().isNotFound())
@@ -340,7 +503,7 @@ class CatalogHttpTest {
                 .getContentAsString();
         JsonNode document = mapper.readTree(schema);
         JsonNode schemas = document.path("components").path("schemas");
-        assertThat(document.path("paths").size()).isEqualTo(4);
+        assertThat(document.path("paths").size()).isEqualTo(5);
         assertThat(document.path("paths")
                         .path("/api/v1/catalog/root")
                         .path("get")
@@ -414,6 +577,15 @@ class CatalogHttpTest {
         ObjectNode errorFixture = (ObjectNode) mapper.readTree(error);
         errorFixture.put("requestId", FIXTURE_REQUEST_ID);
         Files.writeString(output.resolve("fixtures/error.json"), errorFixture + "\n");
+        String moved = mvc.perform(post("/api/v1/entries/move")
+                        .header("Idempotency-Key", "50000000-0000-4000-8000-000000000001")
+                        .contentType("application/json")
+                        .content(moveBody(EMPTY, Map.of(FILE, 1, "ffffffff-ffff-4fff-8fff-ffffffffffff", 1))))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        Files.writeString(output.resolve("fixtures/move-result.json"), moved + "\n");
         ObjectNode future = errorFixture.deepCopy();
         future.put("code", "FUTURE_SERVER_ERROR");
         future.put("newField", "ignored by old clients");

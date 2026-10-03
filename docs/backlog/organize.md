@@ -29,29 +29,25 @@ Depends on: none
 
 ## ORG-03 Move
 
-`P1` · `L` · Build · Backend, Web · Public API change
+`P1` · `M` · Build · Web
 
 Depends on: none
 
-Context: M1-02's `getEntry` reads a folder and then its `ancestors` in two statements. Nothing moves entries yet, so they agree today. Once moves exist, read both in one snapshot or derive the folder row from the ancestor query, so `parentId` always matches the last ancestor.
+Context: The move API is built (`POST /api/v1/entries/move`, decision 0012). It takes a destination and 1–1,000 entries with their expected revisions under an `Idempotency-Key`, and returns per-item outcomes with each entry's new revision and, for a moved entry, its previous parent. Every entry response now carries `revision`. PostgreSQL tests cover concurrent opposing moves, replay, partial results, selection normalization, the 1,024-level depth limit and untouched storage.
 
 **Why.** Reorganizing a library means moving things, sometimes many at once.
 
-**Outcome.** Move one or more entries into a folder, rejecting cycles and reporting name conflicts per item. A 'Move to…' dialog with a folder picker. Dragging entries to move them belongs to LIB-22.
+**Outcome.** A 'Move to…' dialog with a folder picker, opened for the current selection from the toolbar, the inspector and the touch actions. Dragging entries to move them belongs to LIB-22, which reuses the same command.
 
 **Acceptance**
 
-- Two concurrent opposing moves (A into B, B into A) can't create a cycle (PostgreSQL test)
-- Moving the root is rejected
-- Bulk results and parent/descendant selection normalization follow decision 0012; the same command supports the dialog and LIB-22's grid/sidebar/breadcrumb targets
-- Source and destination are authorized in the same workspace; a stale revision, missing/inaccessible target, current-parent no-op and name reservation conflict have explicit safe results
-- Idempotent replay after a lost response never performs a second move; partial results identify exactly which entries moved and which remain at their source
-- Physical storage, immutable versions and stored object keys are untouched; dragging a file into a folder does not upload it or change its storage connection
-- After moving a folder, entry parent and ancestor reads agree in one snapshot and affected tree/listing paths refresh
-- A move that would exceed ORG-15's depth limit is rejected
+- One move command (key created when the user confirms, kept for retries until a result arrives) backs the dialog and later LIB-22's drag targets
+- The picker browses folders like the tree, disables the selection's own folders and their descendants, and is usable by keyboard and on touch
+- Results are shown per item: everything moved, or which entries stayed and why (name taken, changed elsewhere, not found, too deep); moved entries leave the selection
+- Source folders, the destination, the folder tree and open details refresh from `previousParentId` and the destination; ancestors and breadcrumbs follow a moved folder
+- An uncertain response retries with the same key rather than moving twice
 
-**Invariants:** INV-01, INV-02, INV-08  
-**Checks:** `postgres`; `contract`; `web`; `rendered`
+**Checks:** `web`; `rendered`
 
 ## ORG-04 Trash and restore
 
@@ -271,25 +267,3 @@ Depends on: [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer)
 **Read:** `docs/product/domain.md`, `docs/architecture/storage-and-transfers.md`, `docs/backlog/metadata.md`
 
 **Checks:** `postgres`; `contract`; `web`; `rendered`
-
-## ORG-15 Bound folder depth
-
-`P2` · `S` · Build · Backend · Public API change
-
-Depends on: none
-
-Context: M1-02's ancestor query stops at 1024 levels and refuses a truncated path with an internal error. Folder creation has no depth limit, so a user who nests past 1024 levels gets a `500` when reading the deepest folder. The fixture adapter has no cap.
-
-**Why.** A valid hierarchy should never read as an internal fault.
-
-**Outcome.** One documented maximum folder depth, enforced when a folder is created (and later moved) with a defined error, and matched by the ancestor query's cap.
-
-**Acceptance**
-
-- Creating a folder past the limit returns a documented `4xx` error code, concurrent creations included (PostgreSQL test)
-- A folder at the limit still returns its full `ancestors`
-- The fixture adapter applies the same limit
-
-**Invariants:** INV-01  
-**Read:** `docs/api/conventions.md`, `docs/product/catalog.md`  
-**Checks:** `postgres`; `contract`

@@ -18,6 +18,7 @@ import { EntryResponseFromJSON } from "../../clients/typescript/models/EntryResp
 import { EntryDetailsResponseFromJSON } from "../../clients/typescript/models/EntryDetailsResponse";
 import { FileEntryResponseFromJSON } from "../../clients/typescript/models/FileEntryResponse";
 import { FolderEntryResponseFromJSON } from "../../clients/typescript/models/FolderEntryResponse";
+import { MoveEntriesResponseFromJSON } from "../../clients/typescript/models/MoveEntriesResponse";
 import { StorageSummaryResponseFromJSON } from "../../clients/typescript/models/StorageSummaryResponse";
 import { UploadLimitsResponseFromJSON } from "../../clients/typescript/models/UploadLimitsResponse";
 import { UploadResponseFromJSON } from "../../clients/typescript/models/UploadResponse";
@@ -62,6 +63,21 @@ test("decodes folder details with root-to-parent ancestors", () => {
   if (file.kind === "file") {
     assert.equal(file.versionCount, 1);
   }
+});
+
+test("decodes per-item move results and entry revisions", () => {
+  const moved = MoveEntriesResponseFromJSON(fixture("move-result"));
+
+  assert.deepEqual(
+    moved.items.map((item) => item.outcome),
+    ["MOVED", "NOT_FOUND"],
+  );
+  assert.equal(moved.items[0].revision, 2);
+  assert.equal(moved.items[0].previousParentId, "00000000-0000-4000-8000-000000000001");
+  assert.equal(moved.items[1].revision, null);
+  assert.equal(moved.items[1].previousParentId, null);
+  assert.equal(FileEntryResponseFromJSON(fixture("file")).revision, 1);
+  assert.equal(FolderEntryResponseFromJSON(fixture("workspace-root")).revision, 1);
 });
 
 test("decodes a version recorded without a digest", () => {

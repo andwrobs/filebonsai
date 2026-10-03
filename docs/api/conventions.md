@@ -33,12 +33,30 @@ Java public controllers and DTOs are authoritative. Springdoc exports OpenAPI 3.
 ## Entry mutations
 
 Rename, move, trash and restore follow
-[decision 0012](../decisions/0012-how-entries-change.md); none exists
-yet. Each requires an `Idempotency-Key` and an `expectedRevision` per entry, and
-a stale revision is `409 REVISION_CONFLICT`. Bulk operations return `200` with one
-result per requested item, in entry-ID order, and may partly succeed. Request-level
-failures (validation, a missing destination, idempotency conflict) change nothing. A
-replay returns the stored original result.
+[decision 0012](../decisions/0012-how-entries-change.md). Each requires an
+`Idempotency-Key` and an `expectedRevision` per entry. Bulk operations return `200`
+with one result per requested item, in canonical entry-ID order, and may partly
+succeed. Request-level failures (validation, a missing destination, idempotency
+conflict) change nothing. A replay returns the stored original result for 30 days.
+
+Every entry response carries `revision`, an integer from 1 that increases whenever the
+entry's name, parent, trash state or current version changes. It is not a timestamp
+and says nothing about the entry's children.
+
+`POST /api/v1/entries/move` takes `destinationId` and 1–1,000 `items`, each an
+`entryId` and `expectedRevision`, naming each entry once (a repeat is a field error
+`DUPLICATE_ENTRY` on `items`). Each result has `entryId`, `outcome`, the resulting
+`revision` (null only for `NOT_FOUND`) and `previousParentId` (set only for `MOVED`).
+The outcomes are `MOVED`, `MOVED_WITH_ANCESTOR`, `UNCHANGED`, `ANCESTOR_NOT_MOVED`,
+`NOT_FOUND`, `REVISION_CONFLICT`, `NAME_CONFLICT`, `CANNOT_MOVE_ROOT`,
+`DESTINATION_INSIDE_ENTRY` and `DEPTH_LIMIT_EXCEEDED`; adding one is a breaking change.
+An entry already in the destination is `UNCHANGED` whatever revision was sent. A move
+changes only the parent and revision: the name, `updatedAt`, versions and stored objects
+stay as they are. A missing or inaccessible destination is `404 ENTRY_NOT_FOUND`, and a
+file destination `400 NOT_A_FOLDER`.
+
+A folder sits at most 1,024 levels below the root. Creating one deeper is
+`409 DEPTH_LIMIT_EXCEEDED`. JSON integers reject fractional values as well as strings.
 
 ## Folder listings
 
@@ -64,7 +82,8 @@ repeat an entry.
 A folder read through `GET /api/v1/entries/{id}` carries `ancestors`: the `id` and
 `name` of each folder above it, ordered from the workspace root to its parent, and empty
 for the root. One bounded recursive query builds the chain within the caller's
-workspace, so an inaccessible folder stays a `404 ENTRY_NOT_FOUND`. Listing rows and
+workspace, so an inaccessible folder stays a `404 ENTRY_NOT_FOUND`. The folder and its
+chain are read from one snapshot, so `parentId` always equals the last ancestor's `id`. Listing rows and
 `GET /api/v1/catalog/root` use `FolderEntryResponse`, which has no ancestors.
 
 ## File details

@@ -38,6 +38,18 @@ final class CatalogContractChecks: XCTestCase {
         XCTAssertEqual(file.versionCount, 1)
     }
 
+    func testDecodesPerItemMoveResultsAndEntryRevisions() throws {
+        let moved = try decoder.decode(MoveEntriesResponse.self, from: fixture("move-result"))
+
+        XCTAssertEqual(moved.items.map(\.outcome), [.moved, .notFound])
+        XCTAssertEqual(moved.items[0].revision, 2)
+        XCTAssertEqual(
+            moved.items[0].previousParentId?.uuidString.lowercased(), "00000000-0000-4000-8000-000000000001")
+        XCTAssertNil(moved.items[1].revision)
+        XCTAssertNil(moved.items[1].previousParentId)
+        XCTAssertEqual(try decoder.decode(FileEntryResponse.self, from: fixture("file")).revision, 1)
+    }
+
     func testDecodesAVersionRecordedWithoutADigest() throws {
         let json = Data(
             """
@@ -71,6 +83,7 @@ final class CatalogContractChecks: XCTestCase {
               "kind": "folder",
               "name": "Recipes",
               "parentId": null,
+              "revision": 1,
               "updatedAt": "2026-02-01T00:00:00.123456Z"
             }
             """.utf8)

@@ -23,7 +23,7 @@ Today's schema shapes the options:
 - `idempotency_records` stores one `response_entry_id` per key for 30 days.
 - `getEntry` reads a folder, then its `ancestors` in a second statement. With moves,
   the two can disagree.
-- Folder creation has no depth limit (ORG-15); the ancestor query stops at 1024.
+- Folder creation has no depth limit; the ancestor query stops at 1024 levels.
 
 ## Decision
 
@@ -99,7 +99,7 @@ The move outcomes are:
 | `NAME_CONFLICT` | An entry or pending upload in the destination holds the name. |
 | `CANNOT_MOVE_ROOT` | The workspace root never moves. |
 | `DESTINATION_INSIDE_ENTRY` | The destination is the folder itself or inside it. |
-| `DEPTH_LIMIT_EXCEEDED` | The move would put a folder deeper than ORG-15's limit. |
+| `DEPTH_LIMIT_EXCEEDED` | The move would put a folder deeper than the folder depth limit. |
 
 Other bulk operations define their own outcome lists on the same pattern.
 
@@ -134,9 +134,9 @@ All catalog writers follow one lock order:
 
 1. A per-workspace hierarchy lock, `pg_advisory_xact_lock` on a workspace-scoped key.
    Operations that change where a folder is or whether it is visible (moving, trashing
-   or restoring a folder) take it exclusively. Folder creation and begin-upload take it
-   shared, so they can't add a child to a folder that is being moved or trashed. File
-   moves and renames don't take it.
+   or restoring a folder) take it exclusively. Folder creation, begin-upload and file
+   moves take it shared, so they can't add a child to a folder that is being moved or
+   trashed. Renames don't take it.
 2. The affected entry rows, `FOR UPDATE`, in ascending UUID order.
 3. Their name rows, then any destination name claims.
 
@@ -152,6 +152,13 @@ free of deadlocks.
 The V9 copy trigger also reads its entry `FOR SHARE` in its own statement, so a name
 write that doesn't follow the order waits for an uncommitted entry change instead of
 copying stale values.
+
+### Folder depth
+
+A folder sits at most 1,024 levels below the root, which is at depth 0. That is the
+ancestor query's existing cap, so every valid folder reads its full path. Creating a
+folder below that depth is `409 DEPTH_LIMIT_EXCEEDED`. A move checks the moved folder's
+deepest subfolder against the destination's depth under the exclusive lock.
 
 ### Reads after a move
 
@@ -201,8 +208,9 @@ in one transaction so it can add the insert without restructuring them.
   new required response field, which existing generated clients decode compatibly.
 - Bulk results need stored JSON results in `idempotency_records`. Its
   `response_entry_id` becomes nullable, and a check requires exactly one of the two.
-- The V9 copy trigger changes to read `FOR SHARE`, and folder creation and begin-upload
-  take the shared hierarchy lock, in the first build item that changes entries.
+- The V9 copy trigger changes to read `FOR SHARE`, and folder creation, begin-upload and
+  file moves take the shared hierarchy lock, in the first build item that changes
+  entries.
 - Moves, trash and restore have one request shape and one result shape that the dialog,
   menus, keyboard and drag targets all use.
 - Partial success means clients must show mixed results and refresh by

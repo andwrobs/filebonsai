@@ -15,6 +15,7 @@ const folder = (id: string, name: string, parentId: string | null) => ({
 	name,
 	parentId,
 	updatedAt: stamp,
+	revision: 1,
 });
 
 let restoreLayout = () => {};

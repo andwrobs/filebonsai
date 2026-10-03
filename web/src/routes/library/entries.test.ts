@@ -13,6 +13,7 @@ const folder = {
 	name: "Library",
 	parentId: null,
 	updatedAt: "2026-09-21T00:00:00Z",
+	revision: 1,
 };
 
 const now = new Date("2026-09-25T15:00:00Z");

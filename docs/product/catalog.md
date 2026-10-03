@@ -9,6 +9,8 @@ Catalog is the first cross-platform vertical slice. This document describes obse
 - Repeating the same key and normalized intent returns the original folder identity. Reusing the key for changed intent conflicts.
 - Files, folders, and pending upload reservations share one sibling namespace.
 - Changing existing entries (rename, move, trash, restore) follows decision 0012: a revision precondition per entry, an idempotency key per command, and per-item results for bulk operations.
+- Moving entries into a folder reports each one: moved, carried inside a moved folder, already there, or why it stayed. A folder can't move into itself or below itself, the root never moves, and a name already taken in the destination (by an entry or a pending upload) keeps that entry where it was.
+- Folders nest at most 1,024 levels below the root.
 - Missing or inaccessible entries are indistinguishable as `ENTRY_NOT_FOUND`; a file used as a folder target returns `NOT_A_FOLDER`.
 - Clients provide loading, empty, validation/error, and not-found states without treating one platform's screen as the specification for another.
 
