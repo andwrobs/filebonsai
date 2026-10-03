@@ -28,6 +28,7 @@ const folder = {
 	name: "Library",
 	parentId: null,
 	updatedAt: "2026-09-20T12:34:56.123456Z",
+	revision: 1,
 };
 
 const file = {
@@ -44,6 +45,7 @@ const file = {
 	name: "large.bin",
 	parentId: rootId,
 	updatedAt: "2026-09-20T12:34:57Z",
+	revision: 1,
 };
 
 it("uses generated catalog paths, parameters, and cookie credentials", async () => {

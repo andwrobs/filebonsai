@@ -1,5 +1,6 @@
 package com.filebonsai.catalog.persistence;
 
+import static com.filebonsai.catalog.application.CatalogFailure.Reason.DEPTH_LIMIT_EXCEEDED;
 import static com.filebonsai.catalog.application.CatalogFailure.Reason.ENTRY_NOT_FOUND;
 import static com.filebonsai.catalog.application.CatalogFailure.Reason.IDEMPOTENCY_CONFLICT;
 import static com.filebonsai.catalog.application.CatalogFailure.Reason.NAME_CONFLICT;
@@ -12,16 +13,20 @@ import static com.filebonsai.catalog.persistence.jooq.Tables.IDEMPOTENCY_RECORDS
 import static com.filebonsai.catalog.persistence.jooq.Tables.PHYSICAL_OBJECTS;
 import static com.filebonsai.catalog.persistence.jooq.Tables.WORKSPACE_MEMBERS;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.filebonsai.catalog.application.CatalogCursor;
 import com.filebonsai.catalog.application.CatalogFailure;
 import com.filebonsai.catalog.application.CatalogScope;
 import com.filebonsai.catalog.application.CreateFolder;
 import com.filebonsai.catalog.application.GetCommittedBytes;
 import com.filebonsai.catalog.application.GetEntry;
-import com.filebonsai.catalog.application.GetFolderAncestors;
+import com.filebonsai.catalog.application.GetFolderDetails;
 import com.filebonsai.catalog.application.GetWorkspaceRoot;
 import com.filebonsai.catalog.application.ListChildren;
 import com.filebonsai.catalog.application.ListOrder;
+import com.filebonsai.catalog.application.MoveEntries;
 import com.filebonsai.catalog.domain.ByteCount;
 import com.filebonsai.catalog.domain.Entry;
 import com.filebonsai.catalog.domain.EntryId;
@@ -34,9 +39,14 @@ import java.security.NoSuchAlgorithmException;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.HexFormat;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
@@ -44,11 +54,16 @@ import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.ResultQuery;
 import org.jooq.RowN;
-import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 
 public final class PostgresCatalog
-        implements GetEntry, GetFolderAncestors, GetWorkspaceRoot, ListChildren, CreateFolder, GetCommittedBytes {
+        implements GetEntry,
+                GetFolderDetails,
+                GetWorkspaceRoot,
+                ListChildren,
+                CreateFolder,
+                MoveEntries,
+                GetCommittedBytes {
     private static final String ENTRY_CLAIM = "entry";
     private static final String RESERVATION_CLAIM = "reservation";
     private static final String FOLDER = "folder";
@@ -64,7 +79,11 @@ public final class PostgresCatalog
     // Added by V7, after the generated classes.
     private static final Field<byte[]> OBJECT_SHA256 = DSL.field(DSL.name("physical_objects", "sha256"), byte[].class);
     private static final Field<Integer> VERSION_COUNT = versionCount();
+    // Added by V10.
+    private static final Field<Long> REVISION = DSL.field(DSL.name("catalog_entries", "revision"), Long.class);
     private static final String CREATE_FOLDER_OPERATION = "create-folder";
+    private static final String MOVE_ENTRIES_OPERATION = "move-entries";
+    private static final ObjectMapper JSON = new ObjectMapper();
 
     private final DSLContext database;
     private final CatalogCursor cursors;
@@ -80,10 +99,20 @@ public final class PostgresCatalog
     }
 
     @Override
-    public List<Ancestor> list(CatalogScope scope, EntryId folderId) {
-        // Anchor authorization and every recursive step to the same workspace. The depth cap
-        // bounds a malformed hierarchy; a truncated path must never appear as a valid breadcrumb.
-        var rows = database.fetch("""
+    public FolderDetails details(CatalogScope scope, EntryId folderId) {
+        return database.transactionResult(configuration -> {
+            DSLContext snapshot = DSL.using(configuration);
+            snapshot.execute("set transaction isolation level repeatable read, read only");
+            Entry.Folder folder = folder(snapshot, scope, folderId);
+            return new FolderDetails(folder, ancestors(snapshot, scope, folderId));
+        });
+    }
+
+    private List<Ancestor> ancestors(DSLContext context, CatalogScope scope, EntryId folderId) {
+        // Anchor authorization and every recursive step to the same workspace. The depth cap is the folder depth
+        // limit, so a deeper hierarchy can only be malformed; a truncated path must never appear as a breadcrumb.
+        var rows = context.fetch(
+                """
                 with recursive path (id, parent_id, name, workspace_id, depth) as (
                     select n.entry_id, n.parent_id, n.name, n.workspace_id, 0
                     from catalog_names n
@@ -99,10 +128,10 @@ public final class PostgresCatalog
                         and n.workspace_id = path.workspace_id and n.claim_kind = 'entry'
                     join catalog_entries e on e.id = n.entry_id
                         and e.workspace_id = n.workspace_id and e.kind = 'folder'
-                    where path.depth < 1024
+                    where path.depth < ?
                 )
                 select id, parent_id, name from path order by depth desc
-                """, folderId.value(), scope.workspaceId(), scope.principalId());
+                """, folderId.value(), scope.workspaceId(), scope.principalId(), Entry.MAXIMUM_FOLDER_DEPTH);
         if (rows.isEmpty()) {
             throw new CatalogFailure(ENTRY_NOT_FOUND, "Entry was not found");
         }
@@ -235,6 +264,7 @@ public final class PostgresCatalog
                         CATALOG_ENTRIES.KIND,
                         CATALOG_ENTRIES.CREATED_AT,
                         CATALOG_ENTRIES.UPDATED_AT,
+                        REVISION,
                         FILE_VERSIONS.ID,
                         FILE_VERSIONS.SIZE_BYTES,
                         OBJECT_SHA256,
@@ -282,8 +312,8 @@ public final class PostgresCatalog
         try {
             return database.transactionResult(
                     configuration -> create(DSL.using(configuration), scope, parentId, name, idempotencyKey));
-        } catch (DataAccessException exception) {
-            if ("23505".equals(exception.sqlState())) {
+        } catch (RuntimeException exception) {
+            if (SqlErrors.uniqueViolation(exception)) {
                 throw new CatalogFailure(NAME_CONFLICT, "A sibling entry or pending upload already reserves this name");
             }
             throw exception;
@@ -327,7 +357,11 @@ public final class PostgresCatalog
             }
             throw new IllegalStateException("Create-folder replay does not refer to a folder");
         }
+        CatalogHierarchyLock.shared(transaction, scope.workspaceId());
         folder(transaction, scope, parentId);
+        if (ancestors(transaction, scope, parentId).size() + 1 > Entry.MAXIMUM_FOLDER_DEPTH) {
+            throw new CatalogFailure(DEPTH_LIMIT_EXCEEDED, "The folder would be deeper than the folder depth limit");
+        }
         UUID id = UUID.randomUUID();
         transaction
                 .deleteFrom(CATALOG_NAMES)
@@ -390,7 +424,317 @@ public final class PostgresCatalog
                         now,
                         now.plusDays(30))
                 .execute();
-        return new Entry.Folder(new EntryId(id), parentId, name, now.toInstant(), now.toInstant());
+        return new Entry.Folder(new EntryId(id), parentId, name, now.toInstant(), now.toInstant(), 1);
+    }
+
+    @Override
+    public List<ItemResult> move(CatalogScope scope, EntryId destinationId, List<Item> items, UUID idempotencyKey) {
+        Objects.requireNonNull(destinationId);
+        Objects.requireNonNull(idempotencyKey);
+        List<Item> normalized = MoveEntries.normalized(items);
+        return database.transactionResult(
+                configuration -> move(DSL.using(configuration), scope, destinationId, normalized, idempotencyKey));
+    }
+
+    private record Moving(UUID id, boolean folder, long revision, UUID parentId) {}
+
+    private List<ItemResult> move(
+            DSLContext transaction, CatalogScope scope, EntryId destinationId, List<Item> items, UUID idempotencyKey) {
+        UUID workspace = scope.workspaceId();
+        transaction.execute(
+                "select pg_advisory_xact_lock(hashtextextended(?, 0))",
+                workspace + ":" + scope.principalId() + ":" + MOVE_ENTRIES_OPERATION + ":" + idempotencyKey);
+        byte[] intent = moveIntent(destinationId, items);
+        OffsetDateTime now = transaction.fetchValue(DSL.field("current_timestamp", OffsetDateTime.class));
+        Record replay = transaction.fetchOne(
+                "select request_hash, result::text as result, expires_at from idempotency_records"
+                        + " where workspace_id = ? and principal_id = ? and operation = ? and idempotency_key = ?",
+                workspace,
+                scope.principalId(),
+                MOVE_ENTRIES_OPERATION,
+                idempotencyKey);
+        if (replay != null && !replay.get("expires_at", OffsetDateTime.class).isAfter(now)) {
+            transaction.execute(
+                    "delete from idempotency_records"
+                            + " where workspace_id = ? and principal_id = ? and operation = ? and idempotency_key = ?",
+                    workspace,
+                    scope.principalId(),
+                    MOVE_ENTRIES_OPERATION,
+                    idempotencyKey);
+            replay = null;
+        }
+        if (replay != null) {
+            if (!MessageDigest.isEqual(intent, replay.get("request_hash", byte[].class))) {
+                throw new CatalogFailure(IDEMPOTENCY_CONFLICT, "Idempotency key was already used for different input");
+            }
+            return readResults(replay.get("result", String.class));
+        }
+
+        UUID[] ids = items.stream().map(item -> item.entryId().value()).toArray(UUID[]::new);
+        // Kind never changes, so this unlocked read safely chooses the hierarchy lock mode.
+        boolean movesFolders = transaction.fetchExists(
+                CATALOG_ENTRIES,
+                CATALOG_ENTRIES
+                        .WORKSPACE_ID
+                        .eq(workspace)
+                        .and(CATALOG_ENTRIES.ID.in(ids))
+                        .and(CATALOG_ENTRIES.KIND.eq(FOLDER)));
+        if (movesFolders) {
+            CatalogHierarchyLock.exclusive(transaction, workspace);
+        } else {
+            CatalogHierarchyLock.shared(transaction, workspace);
+        }
+        folder(transaction, scope, destinationId);
+        List<Ancestor> destinationAncestors = ancestors(transaction, scope, destinationId);
+        Set<UUID> destinationPath = new HashSet<>();
+        destinationAncestors.forEach(
+                ancestor -> destinationPath.add(ancestor.id().value()));
+        destinationPath.add(destinationId.value());
+
+        // Entry rows first, in UUID order; the names are read after the locks so they are current.
+        Map<UUID, Moving> moving = new HashMap<>();
+        var lockedRows = transaction.fetch(
+                "select id, kind, revision from catalog_entries where workspace_id = ? and id = any(?)"
+                        + " order by id for update",
+                workspace,
+                DSL.val(ids));
+        var parents = new HashMap<UUID, UUID>();
+        transaction
+                .fetch(
+                        "select entry_id, parent_id from catalog_names"
+                                + " where workspace_id = ? and claim_kind = 'entry' and entry_id = any(?)",
+                        workspace,
+                        DSL.val(ids))
+                .forEach(row -> parents.put(row.get("entry_id", UUID.class), row.get("parent_id", UUID.class)));
+        for (Record row : lockedRows) {
+            UUID id = row.get("id", UUID.class);
+            moving.put(
+                    id,
+                    new Moving(
+                            id,
+                            FOLDER.equals(row.get("kind", String.class)),
+                            row.get("revision", Long.class),
+                            parents.get(id)));
+        }
+        Map<UUID, UUID> carriedBy = movesFolders ? closestSelectedAncestors(transaction, workspace, moving) : Map.of();
+
+        Map<UUID, ItemResult> results = new LinkedHashMap<>();
+        for (Item item : items) {
+            UUID id = item.entryId().value();
+            Moving entry = moving.get(id);
+            if (entry == null) {
+                results.put(id, new ItemResult(item.entryId(), Outcome.NOT_FOUND, null, null));
+            } else if (!carriedBy.containsKey(id)) {
+                results.put(
+                        id,
+                        moveOne(
+                                transaction,
+                                workspace,
+                                destinationId,
+                                destinationPath,
+                                destinationAncestors.size(),
+                                item,
+                                entry));
+            }
+        }
+        for (Item item : items) {
+            UUID id = item.entryId().value();
+            if (carriedBy.containsKey(id)) {
+                UUID top = carriedBy.get(id);
+                while (carriedBy.containsKey(top)) {
+                    top = carriedBy.get(top);
+                }
+                Outcome outcome = results.get(top).outcome() == Outcome.MOVED
+                        ? Outcome.MOVED_WITH_ANCESTOR
+                        : Outcome.ANCESTOR_NOT_MOVED;
+                results.put(
+                        id,
+                        new ItemResult(item.entryId(), outcome, moving.get(id).revision(), null));
+            }
+        }
+        List<ItemResult> ordered =
+                items.stream().map(item -> results.get(item.entryId().value())).toList();
+        transaction.execute(
+                "insert into idempotency_records (workspace_id, principal_id, operation, idempotency_key,"
+                        + " request_hash, response_entry_id, result, created_at, expires_at)"
+                        + " values (?, ?, ?, ?, ?, null, ?::jsonb,"
+                        + " current_timestamp, current_timestamp + interval '30 days')",
+                workspace,
+                scope.principalId(),
+                MOVE_ENTRIES_OPERATION,
+                idempotencyKey,
+                intent,
+                writeResults(ordered));
+        return ordered;
+    }
+
+    private ItemResult moveOne(
+            DSLContext transaction,
+            UUID workspace,
+            EntryId destinationId,
+            Set<UUID> destinationPath,
+            int destinationDepth,
+            Item item,
+            Moving entry) {
+        EntryId id = item.entryId();
+        if (entry.parentId() == null) {
+            return new ItemResult(id, Outcome.CANNOT_MOVE_ROOT, entry.revision(), null);
+        }
+        if (entry.parentId().equals(destinationId.value())) {
+            return new ItemResult(id, Outcome.UNCHANGED, entry.revision(), null);
+        }
+        if (entry.revision() != item.expectedRevision()) {
+            return new ItemResult(id, Outcome.REVISION_CONFLICT, entry.revision(), null);
+        }
+        if (entry.folder() && destinationPath.contains(entry.id())) {
+            return new ItemResult(id, Outcome.DESTINATION_INSIDE_ENTRY, entry.revision(), null);
+        }
+        if (entry.folder() && exceedsDepth(transaction, workspace, entry.id(), destinationDepth)) {
+            return new ItemResult(id, Outcome.DEPTH_LIMIT_EXCEEDED, entry.revision(), null);
+        }
+        // An abandoned upload's expired reservation must not hold the name, as for folder creation.
+        transaction.execute(
+                "delete from catalog_names where workspace_id = ? and parent_id = ? and claim_kind = 'reservation'"
+                        + " and expires_at <= current_timestamp and name = (select name from catalog_names"
+                        + " where workspace_id = ? and entry_id = ? and claim_kind = 'entry')",
+                workspace,
+                destinationId.value(),
+                workspace,
+                entry.id());
+        // A uniqueness violation aborts the statement; the savepoint keeps the other items' moves.
+        transaction.execute("savepoint move_entry");
+        try {
+            transaction.execute(
+                    "update catalog_names set parent_id = ?"
+                            + " where workspace_id = ? and entry_id = ? and claim_kind = 'entry'",
+                    destinationId.value(),
+                    workspace,
+                    entry.id());
+        } catch (RuntimeException exception) {
+            if (!SqlErrors.uniqueViolation(exception)) {
+                throw exception;
+            }
+            transaction.execute("rollback to savepoint move_entry");
+            return new ItemResult(id, Outcome.NAME_CONFLICT, entry.revision(), null);
+        }
+        transaction.execute("release savepoint move_entry");
+        long revision = transaction
+                .fetchSingle(
+                        "update catalog_entries set revision = revision + 1"
+                                + " where workspace_id = ? and id = ? returning revision",
+                        workspace,
+                        entry.id())
+                .get(0, Long.class);
+        return new ItemResult(id, Outcome.MOVED, revision, new EntryId(entry.parentId()));
+    }
+
+    /** Whether the folder's subtree, placed under a destination at this depth, would pass the depth limit. */
+    private static boolean exceedsDepth(DSLContext transaction, UUID workspace, UUID folderId, int destinationDepth) {
+        // The folder lands at destinationDepth + 1, so its subtree may be at most this many levels deep.
+        int allowed = Entry.MAXIMUM_FOLDER_DEPTH - destinationDepth - 1;
+        if (allowed < 0) {
+            return true;
+        }
+        Integer height =
+                transaction.fetchSingle("""
+                        with recursive down (id, depth) as (
+                            select ?::uuid, 0
+                            union all
+                            select n.entry_id, down.depth + 1
+                            from down
+                            join catalog_names n on n.workspace_id = ? and n.parent_id = down.id
+                                and n.claim_kind = 'entry' and n.entry_kind = 'folder'
+                            where down.depth <= ?
+                        )
+                        select max(depth) from down
+                        """, folderId, workspace, allowed).get(0, Integer.class);
+        return height > allowed;
+    }
+
+    /** For each selected entry inside another selected folder, the closest such folder. */
+    private static Map<UUID, UUID> closestSelectedAncestors(
+            DSLContext transaction, UUID workspace, Map<UUID, Moving> moving) {
+        UUID[] selected = moving.keySet().toArray(UUID[]::new);
+        UUID[] folders =
+                moving.values().stream().filter(Moving::folder).map(Moving::id).toArray(UUID[]::new);
+        var carriedBy = new HashMap<UUID, UUID>();
+        transaction
+                .fetch(
+                        """
+                        with recursive up (item, node, depth) as (
+                            select n.entry_id, n.parent_id, 1
+                            from catalog_names n
+                            where n.workspace_id = ? and n.claim_kind = 'entry' and n.entry_id = any(?)
+                            union all
+                            select up.item, n.parent_id, up.depth + 1
+                            from up
+                            join catalog_names n on n.workspace_id = ? and n.claim_kind = 'entry'
+                                and n.entry_id = up.node
+                            where not (up.node = any(?)) and up.depth <= ?
+                        )
+                        select distinct on (item) item, node from up
+                        where node = any(?)
+                        order by item, depth
+                        """,
+                        workspace,
+                        DSL.val(selected),
+                        workspace,
+                        DSL.val(folders),
+                        Entry.MAXIMUM_FOLDER_DEPTH,
+                        DSL.val(folders))
+                .forEach(row -> carriedBy.put(row.get("item", UUID.class), row.get("node", UUID.class)));
+        return carriedBy;
+    }
+
+    private static String writeResults(List<ItemResult> results) {
+        var array = JSON.createArrayNode();
+        for (ItemResult result : results) {
+            var node = array.addObject();
+            node.put("entryId", result.entryId().value().toString());
+            node.put("outcome", result.outcome().name());
+            if (result.revision() != null) {
+                node.put("revision", result.revision());
+            }
+            if (result.previousParentId() != null) {
+                node.put("previousParentId", result.previousParentId().value().toString());
+            }
+        }
+        return array.toString();
+    }
+
+    private static List<ItemResult> readResults(String json) {
+        try {
+            var results = new ArrayList<ItemResult>();
+            for (JsonNode node : JSON.readTree(json)) {
+                results.add(new ItemResult(
+                        new EntryId(UUID.fromString(node.get("entryId").asText())),
+                        Outcome.valueOf(node.get("outcome").asText()),
+                        node.has("revision") ? node.get("revision").asLong() : null,
+                        node.has("previousParentId")
+                                ? new EntryId(UUID.fromString(
+                                        node.get("previousParentId").asText()))
+                                : null));
+            }
+            return results;
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("Stored move result is not valid JSON", exception);
+        }
+    }
+
+    /** Destination, then each normalized item's ID and expected revision. */
+    private static byte[] moveIntent(EntryId destinationId, List<Item> items) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            digest.update(destinationId.value().toString().getBytes(StandardCharsets.UTF_8));
+            for (Item item : items) {
+                digest.update((byte) 0);
+                digest.update(
+                        (item.entryId().value() + ":" + item.expectedRevision()).getBytes(StandardCharsets.UTF_8));
+            }
+            return digest.digest();
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("SHA-256 is required by the Java runtime", exception);
+        }
     }
 
     private Condition member(CatalogScope scope) {
@@ -430,6 +774,7 @@ public final class PostgresCatalog
                         CATALOG_ENTRIES.KIND,
                         CATALOG_ENTRIES.CREATED_AT,
                         CATALOG_ENTRIES.UPDATED_AT,
+                        REVISION,
                         FILE_VERSIONS.ID,
                         FILE_VERSIONS.SIZE_BYTES,
                         OBJECT_SHA256,
@@ -457,8 +802,9 @@ public final class PostgresCatalog
         var name = new FileName(row.get(CATALOG_NAMES.NAME));
         var created = row.get(CATALOG_ENTRIES.CREATED_AT).toInstant();
         var updated = row.get(CATALOG_ENTRIES.UPDATED_AT).toInstant();
+        long revision = row.get(REVISION);
         if (FOLDER.equals(row.get(CATALOG_ENTRIES.KIND))) {
-            return new Entry.Folder(id, parent == null ? null : new EntryId(parent), name, created, updated);
+            return new Entry.Folder(id, parent == null ? null : new EntryId(parent), name, created, updated, revision);
         }
         byte[] digest = row.get(OBJECT_SHA256);
         return new Entry.File(
@@ -467,6 +813,7 @@ public final class PostgresCatalog
                 name,
                 created,
                 updated,
+                revision,
                 new Entry.Version(
                         new VersionId(row.get(FILE_VERSIONS.ID)),
                         new ByteCount(row.get(FILE_VERSIONS.SIZE_BYTES)),

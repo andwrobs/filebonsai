@@ -14,6 +14,9 @@ import com.filebonsai.catalog.application.CatalogFailure;
 import com.filebonsai.catalog.application.CatalogScope;
 import com.filebonsai.catalog.application.ListChildren;
 import com.filebonsai.catalog.application.ListOrder;
+import com.filebonsai.catalog.application.MoveEntries;
+import com.filebonsai.catalog.application.MoveEntries.ItemResult;
+import com.filebonsai.catalog.application.MoveEntries.Outcome;
 import com.filebonsai.catalog.domain.ByteCount;
 import com.filebonsai.catalog.domain.Entry;
 import com.filebonsai.catalog.domain.EntryId;
@@ -321,6 +324,62 @@ class FixtureCatalogTest {
         assertReason(() -> catalog.list(scope, FILE, ListOrder.DEFAULT, 10, null), CatalogFailure.Reason.NOT_A_FOLDER);
         assertReason(() -> create(FILE, "x"), CatalogFailure.Reason.NOT_A_FOLDER);
         assertReason(() -> catalog.get(scope, new EntryId(UUID.randomUUID())), CatalogFailure.Reason.ENTRY_NOT_FOUND);
+    }
+
+    @Test
+    void movesLikeThePostgresqlAdapter() {
+        Entry.Folder archive = create(ROOT, "Archive");
+        Entry.Folder inside = create(EMPTY, "Inside");
+        UUID key = UUID.randomUUID();
+        var first = move(archive.id(), key, item(FILE, 1), item(EMPTY, 1), item(inside.id(), 5));
+
+        assertThat(first)
+                .containsExactlyInAnyOrder(
+                        new ItemResult(FILE, Outcome.MOVED, 2L, ROOT),
+                        new ItemResult(EMPTY, Outcome.MOVED, 2L, ROOT),
+                        new ItemResult(inside.id(), Outcome.MOVED_WITH_ANCESTOR, 1L, null));
+        assertThat(catalog.details(scope, inside.id()).ancestors())
+                .extracting(ancestor -> ancestor.id())
+                .containsExactly(ROOT, archive.id(), EMPTY);
+        assertThat(move(archive.id(), key, item(inside.id(), 5), item(EMPTY, 1), item(FILE, 1)))
+                .isEqualTo(first);
+        assertThat(move(archive.id(), UUID.randomUUID(), item(ROOT, 1), item(FILE, 2)))
+                .containsExactly(
+                        new ItemResult(ROOT, Outcome.CANNOT_MOVE_ROOT, 1L, null),
+                        new ItemResult(FILE, Outcome.ANCESTOR_NOT_MOVED, 2L, null));
+        assertReason(() -> move(archive.id(), key, item(FILE, 2)), CatalogFailure.Reason.IDEMPOTENCY_CONFLICT);
+        assertThat(move(inside.id(), UUID.randomUUID(), item(EMPTY, 2)))
+                .containsExactly(new ItemResult(EMPTY, Outcome.DESTINATION_INSIDE_ENTRY, 2L, null));
+        assertThat(move(ROOT, UUID.randomUUID(), item(FILE, 1)))
+                .containsExactly(new ItemResult(FILE, Outcome.REVISION_CONFLICT, 2L, null));
+        create(ROOT, "Italy.pdf");
+        assertThat(move(ROOT, UUID.randomUUID(), item(FILE, 2)))
+                .containsExactly(new ItemResult(FILE, Outcome.NAME_CONFLICT, 2L, null));
+        assertReason(() -> move(FILE, UUID.randomUUID(), item(EMPTY, 2)), CatalogFailure.Reason.NOT_A_FOLDER);
+        assertReason(() -> move(archive.id(), UUID.randomUUID()), CatalogFailure.Reason.VALIDATION_FAILED);
+    }
+
+    @Test
+    void limitsFolderDepthWhenCreatingAndMoving() {
+        EntryId parent = ROOT;
+        for (int depth = 1; depth <= Entry.MAXIMUM_FOLDER_DEPTH; depth++) {
+            parent = create(parent, "Level " + depth).id();
+        }
+        EntryId deepest = parent;
+        assertThat(catalog.details(scope, deepest).ancestors()).hasSize(Entry.MAXIMUM_FOLDER_DEPTH);
+        assertReason(() -> create(deepest, "Too deep"), CatalogFailure.Reason.DEPTH_LIMIT_EXCEEDED);
+        EntryId atDepth1023 = catalog.details(scope, deepest).folder().parentId();
+        create(EMPTY, "Child");
+        assertThat(move(atDepth1023, UUID.randomUUID(), item(EMPTY, 1)))
+                .containsExactly(new ItemResult(EMPTY, Outcome.DEPTH_LIMIT_EXCEEDED, 1L, null));
+    }
+
+    private List<ItemResult> move(EntryId destination, UUID key, MoveEntries.Item... items) {
+        return catalog.move(scope, destination, List.of(items), key);
+    }
+
+    private static MoveEntries.Item item(EntryId id, long expectedRevision) {
+        return new MoveEntries.Item(id, expectedRevision);
     }
 
     private Entry.Folder create(EntryId parent, String name) {

@@ -12,7 +12,7 @@ See [the backlog index](README.md) for pickup, checks and retirement rules.
 
 `P1` · `M` · Decision · Backend, Docs
 
-Depends on: [ORG-01](organize.md#org-01-decision-how-entries-change), [CFG-11](configurable-shell.md#cfg-11-decision-owner-settings-and-deployment-guardrails)
+Depends on: [CFG-11](configurable-shell.md#cfg-11-decision-owner-settings-and-deployment-guardrails)
 
 **Why.** Independent retention and placement controls can contradict each other without one effective-policy model.
 

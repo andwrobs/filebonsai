@@ -29,6 +29,7 @@ const entry = (
 	name,
 	parentId,
 	updatedAt: stamp,
+	revision: 1,
 });
 const root = entry("root", "Library", null);
 const travel = entry("travel", "Travel", "root");

@@ -89,6 +89,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/entries/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Move entries into a folder
+         * @description Decision 0012. Required Idempotency-Key UUID; the same key and normalized intent (destination plus each entry and expected revision, in any order) replay the original result without moving anything again, and changed intent gives 409. Each item is evaluated under lock in canonical entry-ID order and reported separately, so some may move while others fail; the response is 200 either way. An entry inside another selected folder moves with it and is not checked against its own revision. Moving changes only the parent and revision: names, updatedAt, versions and stored objects stay as they are. The destination is named by ID and need not be where the client last saw it. A missing, inaccessible or file destination fails the whole request and changes nothing.
+         */
+        post: operations["moveEntries"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/entries/{id}": {
         parameters: {
             query?: never;
@@ -371,6 +391,11 @@ export interface components {
              * @description Containing folder identity
              */
             parentId: string;
+            /**
+             * Format: int64
+             * @description Changes with the name, parent, trash state or current version; send it back as expectedRevision
+             */
+            revision: number;
             /** Format: date-time */
             updatedAt: string;
             /**
@@ -405,6 +430,11 @@ export interface components {
              * @description Null only for the workspace root
              */
             parentId: string | null;
+            /**
+             * Format: int64
+             * @description Changes with the name, parent, trash state or current version; send it back as expectedRevision
+             */
+            revision: number;
             /** Format: date-time */
             updatedAt: string;
         };
@@ -425,8 +455,54 @@ export interface components {
              * @description Null only for the workspace root
              */
             parentId: string | null;
+            /**
+             * Format: int64
+             * @description Changes with the name, parent, trash state or current version; send it back as expectedRevision
+             */
+            revision: number;
             /** Format: date-time */
             updatedAt: string;
+        };
+        MoveEntriesRequest: {
+            /**
+             * Format: uuid
+             * @description The folder to move the entries into
+             */
+            destinationId: string;
+            /** @description 1–1000 entries, each named once; the order doesn't matter */
+            items: components["schemas"]["MoveEntryRequestItem"][];
+        };
+        MoveEntriesResponse: {
+            /** @description One result per requested entry, in canonical entry-ID order */
+            items: components["schemas"]["MoveEntryResult"][];
+        };
+        MoveEntryRequestItem: {
+            /** Format: uuid */
+            entryId: string;
+            /**
+             * Format: int64
+             * @description The entry's revision as the client last read it
+             */
+            expectedRevision: number;
+        };
+        MoveEntryResult: {
+            /** Format: uuid */
+            entryId: string;
+            /**
+             * @description MOVED: now in the destination. MOVED_WITH_ANCESTOR: a selected folder above it moved, carrying it. UNCHANGED: already in the destination, whatever revision was sent. ANCESTOR_NOT_MOVED: a selected folder above it failed, so it stayed. NOT_FOUND: missing or inaccessible. REVISION_CONFLICT: changed since the client read it. NAME_CONFLICT: an entry or pending upload in the destination holds the name. CANNOT_MOVE_ROOT. DESTINATION_INSIDE_ENTRY: the destination is the folder or inside it. DEPTH_LIMIT_EXCEEDED: a folder would pass the depth limit.
+             * @enum {string}
+             */
+            outcome: "MOVED" | "MOVED_WITH_ANCESTOR" | "UNCHANGED" | "ANCESTOR_NOT_MOVED" | "NOT_FOUND" | "REVISION_CONFLICT" | "NAME_CONFLICT" | "CANNOT_MOVE_ROOT" | "DESTINATION_INSIDE_ENTRY" | "DEPTH_LIMIT_EXCEEDED";
+            /**
+             * Format: uuid
+             * @description The folder the entry left; set only for MOVED
+             */
+            previousParentId: string | null;
+            /**
+             * Format: int64
+             * @description The entry's revision after the request; null only for NOT_FOUND
+             */
+            revision: number | null;
         };
         StorageCapabilitiesResponse: {
             /** @description False means downloads always send the whole original. */
@@ -692,6 +768,87 @@ export interface operations {
             };
         };
     };
+    moveEntries: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+                "X-CSRF-TOKEN": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoveEntriesRequest"];
+            };
+        };
+        responses: {
+            /** @description Per-item results, new or replayed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoveEntriesResponse"];
+                };
+            };
+            /** @description VALIDATION_FAILED, INVALID_REQUEST, INVALID_CURSOR, or NOT_A_FOLDER */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description AUTH_REQUIRED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description ENTRY_NOT_FOUND, including inaccessible entries */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description IDEMPOTENCY_CONFLICT */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description INTERNAL_ERROR */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
     getEntry: {
         parameters: {
             query?: never;
@@ -927,7 +1084,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description NAME_CONFLICT or IDEMPOTENCY_CONFLICT */
+            /** @description NAME_CONFLICT, IDEMPOTENCY_CONFLICT or DEPTH_LIMIT_EXCEEDED */
             409: {
                 headers: {
                     [name: string]: unknown;

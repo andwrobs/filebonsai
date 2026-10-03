@@ -7,7 +7,8 @@ public final class CatalogFailure extends RuntimeException {
         NAME_CONFLICT,
         IDEMPOTENCY_CONFLICT,
         INVALID_CURSOR,
-        VALIDATION_FAILED
+        VALIDATION_FAILED,
+        DEPTH_LIMIT_EXCEEDED
     }
 
     private final Reason reason;

@@ -18,6 +18,14 @@ public record FileEntryResponse(
 
         @Schema(requiredMode = REQUIRED) Instant createdAt,
         @Schema(requiredMode = REQUIRED) Instant updatedAt,
+
+        @Schema(
+                requiredMode = REQUIRED,
+                minimum = "1",
+                description =
+                        "Changes with the name, parent, trash state or current version; send it back as expectedRevision")
+        long revision,
+
         @Schema(requiredMode = REQUIRED) CurrentVersionResponse currentVersion,
 
         @Schema(

@@ -31,7 +31,7 @@ Depends on: none
 
 `P2` · `M` · Build · Backend, Web · Public API change
 
-Depends on: [TDY-01](#tdy-01-decision-tidy-mode-interaction-spec), [ORG-01](organize.md#org-01-decision-how-entries-change)
+Depends on: [TDY-01](#tdy-01-decision-tidy-mode-interaction-spec)
 
 **Why.** Archive needs a meaning before any tier exists; add the navigation entry when this capability ships.
 

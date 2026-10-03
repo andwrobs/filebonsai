@@ -17,7 +17,14 @@ public record FolderEntryResponse(
         String name,
 
         @Schema(requiredMode = REQUIRED) Instant createdAt,
-        @Schema(requiredMode = REQUIRED) Instant updatedAt)
+        @Schema(requiredMode = REQUIRED) Instant updatedAt,
+
+        @Schema(
+                requiredMode = REQUIRED,
+                minimum = "1",
+                description =
+                        "Changes with the name, parent, trash state or current version; send it back as expectedRevision")
+        long revision)
         implements EntryResponse {
     public enum Kind {
         folder

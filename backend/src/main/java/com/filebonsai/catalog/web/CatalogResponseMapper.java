@@ -1,6 +1,7 @@
 package com.filebonsai.catalog.web;
 
-import com.filebonsai.catalog.application.GetFolderAncestors;
+import com.filebonsai.catalog.application.GetFolderDetails;
+import com.filebonsai.catalog.application.MoveEntries;
 import com.filebonsai.catalog.application.StorageConnectionName;
 import com.filebonsai.catalog.domain.Entry;
 import java.util.List;
@@ -18,6 +19,7 @@ final class CatalogResponseMapper {
                         file.name().value(),
                         file.createdAt(),
                         file.updatedAt(),
+                        file.revision(),
                         new CurrentVersionResponse(
                                 file.currentVersion().id().value(),
                                 file.currentVersion().sizeBytes().decimal(),
@@ -35,10 +37,12 @@ final class CatalogResponseMapper {
                 folder.parentId() == null ? null : folder.parentId().value(),
                 folder.name().value(),
                 folder.createdAt(),
-                folder.updatedAt());
+                folder.updatedAt(),
+                folder.revision());
     }
 
-    static FolderDetailsResponse details(Entry.Folder folder, List<GetFolderAncestors.Ancestor> ancestors) {
+    static FolderDetailsResponse details(GetFolderDetails.FolderDetails details) {
+        Entry.Folder folder = details.folder();
         return new FolderDetailsResponse(
                 FolderDetailsResponse.Kind.folder,
                 folder.id().value(),
@@ -46,9 +50,22 @@ final class CatalogResponseMapper {
                 folder.name().value(),
                 folder.createdAt(),
                 folder.updatedAt(),
-                ancestors.stream()
+                folder.revision(),
+                details.ancestors().stream()
                         .map(ancestor -> new FolderAncestorResponse(
                                 ancestor.id().value(), ancestor.name().value()))
                         .toList());
+    }
+
+    static MoveEntriesResponse moved(List<MoveEntries.ItemResult> results) {
+        return new MoveEntriesResponse(results.stream()
+                .map(result -> new MoveEntriesResponse.Item(
+                        result.entryId().value(),
+                        MoveEntriesResponse.Outcome.valueOf(result.outcome().name()),
+                        result.revision(),
+                        result.previousParentId() == null
+                                ? null
+                                : result.previousParentId().value()))
+                .toList());
     }
 }

@@ -74,7 +74,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         int status =
                 switch (exception.reason()) {
                     case ENTRY_NOT_FOUND -> 404;
-                    case NAME_CONFLICT, IDEMPOTENCY_CONFLICT -> 409;
+                    case NAME_CONFLICT, IDEMPOTENCY_CONFLICT, DEPTH_LIMIT_EXCEEDED -> 409;
                     default -> 400;
                 };
         return ResponseEntity.status(status)
