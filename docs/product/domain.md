@@ -46,7 +46,7 @@ Replicas refer to the same version rather than creating additional logical files
 ## Changing entries
 
 Rename, move, trash, restore and new versions follow
-[decision 0012](../decisions/0012-how-entries-change.md) (proposed). Each entry carries a
+[decision 0012](../decisions/0012-how-entries-change.md). Each entry carries a
 revision that changes with its name, parent, trash state or current version, and every
 mutation names the revision it expects. Every mutation is idempotent under a
 client-supplied key. Bulk operations report one result per item and may partly succeed.

@@ -33,8 +33,8 @@ Java public controllers and DTOs are authoritative. Springdoc exports OpenAPI 3.
 ## Entry mutations
 
 Rename, move, trash and restore follow
-[decision 0012](../decisions/0012-how-entries-change.md), which is proposed; none
-exists yet. Each requires an `Idempotency-Key` and an `expectedRevision` per entry, and
+[decision 0012](../decisions/0012-how-entries-change.md); none exists
+yet. Each requires an `Idempotency-Key` and an `expectedRevision` per entry, and
 a stale revision is `409 REVISION_CONFLICT`. Bulk operations return `200` with one
 result per requested item, in entry-ID order, and may partly succeed. Request-level
 failures (validation, a missing destination, idempotency conflict) change nothing. A

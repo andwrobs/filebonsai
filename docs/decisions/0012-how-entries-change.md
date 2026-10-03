@@ -1,6 +1,6 @@
 # 0012: How entries change
 
-Status: proposed
+Status: accepted
 Date: 2026-10-03
 
 ## Context

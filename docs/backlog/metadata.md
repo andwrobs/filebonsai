@@ -58,7 +58,7 @@ Depends on: none
 
 `P2` · `L` · Build · Backend · Public API change
 
-Depends on: [MET-01](#met-01-decision-metadata-authority-and-provenance), [ORG-01](organize.md#org-01-decision-how-entries-change), [PRV-04](previews-and-media.md#prv-04-photo-metadata-extraction)
+Depends on: [MET-01](#met-01-decision-metadata-authority-and-provenance), [PRV-04](previews-and-media.md#prv-04-photo-metadata-extraction)
 
 **Why.** People must be able to correct dates and descriptions without changing the original.
 

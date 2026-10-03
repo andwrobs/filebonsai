@@ -82,7 +82,7 @@ Drive/Dropbox/Photos workflows to their owning epics and records research source
 | Searchable, editable, portable metadata | MET-01; build on accepted decisions 0009/0010 | MET-02/03/04/05; MET-09 privacy-safe media |
 | Dynamic cloud connections with local credential custody | TIER-10; near-term order in status.md | TIER-03/11/12/14, TIER-13 onboarding, TIER-15 workflow/security proof |
 | Storage and retention choices in the app | CFG-11, POL-01; build on TIER setup | POL-02/03/04/05 |
-| Fast mobile and desktop organization | TDY-01 and ORG-01 | TDY-02 through 06, TDY-10/11 and PHO-05 |
+| Fast mobile and desktop organization | TDY-01 | TDY-02 through 06, TDY-10/11 and PHO-05 |
 | Beautiful adaptable layouts | Existing CFG-01 and LIB polish | CFG-02/03/04/10/12/13 |
 | Clear hook/store orchestration | Decision 0011; ARC-02 through 05, independently | ARC-06 enforcement |
 | Credible everyday alternative | Existing M1/LIB/ORG/ACC work | PAR gaps, migration, recovery and OSS readiness |
@@ -162,20 +162,19 @@ Rename, move, trash, versions and tags. Every change is metadata, reversible whe
 
 | Item | Kind | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- |
-| [ORG-01](organize.md#org-01-decision-how-entries-change) Decision: how entries change | Decision | P1 | S | none |
-| [ORG-02](organize.md#org-02-rename) Rename | Build | P1 | M | [ORG-01](organize.md#org-01-decision-how-entries-change) |
-| [ORG-03](organize.md#org-03-move) Move | Build | P1 | L | [ORG-01](organize.md#org-01-decision-how-entries-change) |
-| [ORG-04](organize.md#org-04-trash-and-restore) Trash and restore | Build | P1 | L | [ORG-01](organize.md#org-01-decision-how-entries-change) |
+| [ORG-02](organize.md#org-02-rename) Rename | Build | P1 | M | none |
+| [ORG-03](organize.md#org-03-move) Move | Build | P1 | L | none |
+| [ORG-04](organize.md#org-04-trash-and-restore) Trash and restore | Build | P1 | L | none |
 | [ORG-05](organize.md#org-05-permanent-deletion-and-object-garbage-collection) Permanent deletion and object garbage collection | Build | P2 | L | [ORG-04](organize.md#org-04-trash-and-restore), [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer) |
-| [ORG-06](organize.md#org-06-upload-a-new-version-of-a-file) Upload a new version of a file | Build | P2 | L | [ORG-01](organize.md#org-01-decision-how-entries-change) |
+| [ORG-06](organize.md#org-06-upload-a-new-version-of-a-file) Upload a new version of a file | Build | P2 | L | none |
 | [ORG-07](organize.md#org-07-version-history) Version history | Build | P2 | M | [ORG-06](organize.md#org-06-upload-a-new-version-of-a-file) |
 | [ORG-08](organize.md#org-08-tags) Tags | Build | P2 | M | none |
 | [ORG-09](organize.md#org-09-download-a-folder-as-zip) Download a folder as ZIP | Build | P2 | M | none |
 | [ORG-10](organize.md#org-10-duplicate-finder) Duplicate finder | Build | P2 | M | none |
-| [ORG-11](organize.md#org-11-activity-and-audit-log) Activity and audit log | Build | P2 | M | [ORG-01](organize.md#org-01-decision-how-entries-change) |
+| [ORG-11](organize.md#org-11-activity-and-audit-log) Activity and audit log | Build | P2 | M | none |
 | [ORG-12](organize.md#org-12-undo-for-reversible-actions) Undo for reversible actions | Build | P3 | S | [ORG-02](organize.md#org-02-rename), [ORG-03](organize.md#org-03-move), [ORG-04](organize.md#org-04-trash-and-restore) |
 | [ORG-13](organize.md#org-13-file-notes) File notes | Build | P3 | S | none |
-| [ORG-14](organize.md#org-14-copy-files-without-coupling-their-lifecycle) Copy files without coupling their lifecycle | Build | P2 | L | [ORG-01](organize.md#org-01-decision-how-entries-change), [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer) |
+| [ORG-14](organize.md#org-14-copy-files-without-coupling-their-lifecycle) Copy files without coupling their lifecycle | Build | P2 | L | [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer) |
 | [ORG-15](organize.md#org-15-bound-folder-depth) Bound folder depth | Build | P2 | S | none |
 
 ### [Previews & media](previews-and-media.md)
@@ -200,7 +199,7 @@ Swipe through files one card at a time and decide what stays, what gets archived
 | Item | Kind | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- |
 | [TDY-01](tidy-mode.md#tdy-01-decision-tidy-mode-interaction-spec) Decision: Tidy mode interaction spec | Decision | P1 | M | none |
-| [TDY-02](tidy-mode.md#tdy-02-archived-state-and-archive-view) Archived state and Archive view | Build | P2 | M | [TDY-01](tidy-mode.md#tdy-01-decision-tidy-mode-interaction-spec), [ORG-01](organize.md#org-01-decision-how-entries-change) |
+| [TDY-02](tidy-mode.md#tdy-02-archived-state-and-archive-view) Archived state and Archive view | Build | P2 | M | [TDY-01](tidy-mode.md#tdy-01-decision-tidy-mode-interaction-spec) |
 | [TDY-03](tidy-mode.md#tdy-03-access-recency-signal) Access recency signal | Build | P2 | S | none |
 | [TDY-04](tidy-mode.md#tdy-04-tidy-deck-candidates-api) Tidy deck candidates API | Build | P2 | M | [TDY-01](tidy-mode.md#tdy-01-decision-tidy-mode-interaction-spec), [TDY-03](tidy-mode.md#tdy-03-access-recency-signal) |
 | [TDY-05](tidy-mode.md#tdy-05-tidy-decision-batches) Tidy decision batches | Build | P2 | M | [TDY-02](tidy-mode.md#tdy-02-archived-state-and-archive-view), [ORG-03](organize.md#org-03-move), [ORG-04](organize.md#org-04-trash-and-restore), [ORG-11](organize.md#org-11-activity-and-audit-log) |
@@ -340,7 +339,7 @@ Find files by what they contain and what people know about them, while preservin
 | Item | Kind | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- |
 | [MET-01](metadata.md#met-01-decision-metadata-authority-and-provenance) Decision: metadata authority and provenance | Decision | P1 | M | none |
-| [MET-02](metadata.md#met-02-revisioned-annotations-and-effective-metadata-api) Revisioned annotations and effective metadata API | Build | P2 | L | [MET-01](metadata.md#met-01-decision-metadata-authority-and-provenance), [ORG-01](organize.md#org-01-decision-how-entries-change), [PRV-04](previews-and-media.md#prv-04-photo-metadata-extraction) |
+| [MET-02](metadata.md#met-02-revisioned-annotations-and-effective-metadata-api) Revisioned annotations and effective metadata API | Build | P2 | L | [MET-01](metadata.md#met-01-decision-metadata-authority-and-provenance), [PRV-04](previews-and-media.md#prv-04-photo-metadata-extraction) |
 | [MET-03](metadata.md#met-03-metadata-inspector-and-bulk-corrections) Metadata inspector and bulk corrections | Build | P2 | M | [MET-02](metadata.md#met-02-revisioned-annotations-and-effective-metadata-api) |
 | [MET-04](metadata.md#met-04-portable-sidecar-import-and-metadata-export) Portable sidecar import and metadata export | Build | P2 | L | [MET-02](metadata.md#met-02-revisioned-annotations-and-effective-metadata-api), [REC-03](integrity-and-recovery.md#rec-03-decision-export-format), [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer) |
 | [MET-05](metadata.md#met-05-faceted-metadata-search) Faceted metadata search | Build | P2 | L | [LIB-07](everyday-library.md#lib-07-name-search), [MET-02](metadata.md#met-02-revisioned-annotations-and-effective-metadata-api) |
@@ -357,7 +356,7 @@ Photos should have a home of their own: a fast chronological library, albums, a 
 | --- | --- | --- | --- | --- |
 | [PHO-01](photos.md#pho-01-decision-photo-identity-and-album-semantics) Decision: photo identity and album semantics | Decision | P1 | M | none |
 | [PHO-02](photos.md#pho-02-photos-home-and-chronological-browsing) Photos home and chronological browsing | Build | P2 | L | [PHO-01](photos.md#pho-01-decision-photo-identity-and-album-semantics), [PRV-04](previews-and-media.md#prv-04-photo-metadata-extraction), [PRV-03](previews-and-media.md#prv-03-gallery-grid-and-lightbox) |
-| [PHO-03](photos.md#pho-03-albums-api-and-collection-integrity) Albums API and collection integrity | Build | P2 | L | [PHO-01](photos.md#pho-01-decision-photo-identity-and-album-semantics), [ORG-01](organize.md#org-01-decision-how-entries-change) |
+| [PHO-03](photos.md#pho-03-albums-api-and-collection-integrity) Albums API and collection integrity | Build | P2 | L | [PHO-01](photos.md#pho-01-decision-photo-identity-and-album-semantics) |
 | [PHO-04](photos.md#pho-04-fast-add-to-albums-and-album-browser) Fast add-to-albums and album browser | Build | P2 | M | [PHO-03](photos.md#pho-03-albums-api-and-collection-integrity), [PHO-02](photos.md#pho-02-photos-home-and-chronological-browsing) |
 | [PHO-05](photos.md#pho-05-album-curation-deck-for-touch-and-keyboard) Album curation deck for touch and keyboard | Build | P2 | M | [PHO-04](photos.md#pho-04-fast-add-to-albums-and-album-browser), [TDY-06](tidy-mode.md#tdy-06-swipe-deck-ui) |
 | [PHO-06](photos.md#pho-06-heic-raw-and-companion-media-support) HEIC RAW and companion-media support | Spike | P2 | M | [PHO-01](photos.md#pho-01-decision-photo-identity-and-album-semantics) |
@@ -374,7 +373,7 @@ Owners should choose storage and retention behavior in the app, understand what 
 
 | Item | Kind | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- |
-| [POL-01](lifecycle-policies.md#pol-01-decision-policy-precedence-and-lifecycle-semantics) Decision: policy precedence and lifecycle semantics | Decision | P1 | M | [ORG-01](organize.md#org-01-decision-how-entries-change), [CFG-11](configurable-shell.md#cfg-11-decision-owner-settings-and-deployment-guardrails) |
+| [POL-01](lifecycle-policies.md#pol-01-decision-policy-precedence-and-lifecycle-semantics) Decision: policy precedence and lifecycle semantics | Decision | P1 | M | [CFG-11](configurable-shell.md#cfg-11-decision-owner-settings-and-deployment-guardrails) |
 | [POL-02](lifecycle-policies.md#pol-02-policy-registry-and-effective-policy-explanation) Policy registry and effective-policy explanation | Build | P2 | L | [POL-01](lifecycle-policies.md#pol-01-decision-policy-precedence-and-lifecycle-semantics), [ORG-11](organize.md#org-11-activity-and-audit-log) |
 | [POL-03](lifecycle-policies.md#pol-03-dry-run-policy-planner) Dry-run policy planner | Build | P2 | L | [POL-02](lifecycle-policies.md#pol-02-policy-registry-and-effective-policy-explanation), [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer) |
 | [POL-04](lifecycle-policies.md#pol-04-storage-and-retention-strategy-editor) Storage and retention strategy editor | Build | P2 | M | [POL-03](lifecycle-policies.md#pol-03-dry-run-policy-planner), [CFG-09](configurable-shell.md#cfg-09-runtime-ui-capabilities-api), [LIB-16](everyday-library.md#lib-16-storage-summary-and-explanatory-panels) |

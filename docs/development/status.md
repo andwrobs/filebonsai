@@ -582,12 +582,11 @@ items and required tests.
    streaming/recovery evidence before claiming R2 support or adding another provider.
 2. Web interaction polish: on the completed selection (LIB-05), table/grid
    (LIB-04) and folder tree (LIB-02), build M1-11 computer-file drops,
-   ORG-01/02/03 mutation rules and
+   ORG-02/03 mutations (rules accepted in decision 0012) and
    commands, and LIB-22 shared menus and catalog dragging. Cover grid-folder and
    left-sidebar destinations through one drag owner, with keyboard/touch alternatives.
-   Drops, mutations, menus and catalog dragging remain backlog work. ORG-01 is
-   proposed as decision 0012 and awaits owner review; ORG-03 (move) starts once it is
-   accepted.
+   Drops, mutations, menus and catalog dragging remain backlog work. ORG-03 (move)
+   is in progress: backend move API first, then the Move to… dialog.
    The inspector and Storage move onto `web/src/lib/ui` within LIB-15/16.
 3. App-managed storage is near-term work after interaction polish: settle
    [TIER-10](../backlog/storage-tiers.md#tier-10-decision-secure-app-managed-connections),
