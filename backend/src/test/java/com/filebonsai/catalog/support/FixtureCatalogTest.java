@@ -178,6 +178,10 @@ class FixtureCatalogTest {
                 .containsExactly("Italy.pdf", "Zulu", "Recipes", "Alpha");
         assertThat(names(new ListOrder(ListOrder.Key.SIZE, true, true)))
                 .containsExactly("Zulu", "Recipes", "Alpha", "Italy.pdf");
+        assertThat(names(new ListOrder(ListOrder.Key.KIND, false, false)))
+                .containsExactly("Alpha", "Recipes", "Zulu", "Italy.pdf");
+        assertThat(names(new ListOrder(ListOrder.Key.KIND, true, false)))
+                .containsExactly("Italy.pdf", "Zulu", "Recipes", "Alpha");
     }
 
     @Test
@@ -299,7 +303,8 @@ class FixtureCatalogTest {
                 new ListOrder(ListOrder.Key.NAME, true, false),
                 new ListOrder(ListOrder.Key.NAME, false, true),
                 new ListOrder(ListOrder.Key.UPDATED_AT, false, false),
-                new ListOrder(ListOrder.Key.SIZE, false, false))) {
+                new ListOrder(ListOrder.Key.SIZE, false, false),
+                new ListOrder(ListOrder.Key.KIND, false, false))) {
             assertReason(() -> catalog.list(scope, ROOT, other, 1, cursor), CatalogFailure.Reason.INVALID_CURSOR);
         }
         assertReason(() -> catalog.list(scope, ROOT, ListOrder.DEFAULT, 1, ""), CatalogFailure.Reason.INVALID_CURSOR);

@@ -20,6 +20,7 @@ import com.filebonsai.catalog.application.ListOrder;
 import com.filebonsai.catalog.domain.Entry;
 import com.filebonsai.catalog.domain.EntryId;
 import com.filebonsai.catalog.domain.FileName;
+import com.filebonsai.catalog.domain.KindFamily;
 import com.filebonsai.catalog.persistence.jooq.DefaultSchema;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -269,6 +270,51 @@ class PostgresCatalogTest {
     }
 
     @Test
+    void kindRankColumnAgreesWithTheDomainFamilyForEveryExtension() {
+        var names = new ArrayList<String>();
+        for (KindFamily family : KindFamily.values()) {
+            for (String extension : family.extensions()) {
+                names.add("x." + extension);
+                names.add("x." + extension.toUpperCase(java.util.Locale.ROOT));
+                names.add("a.b." + extension);
+                names.add(extension);
+                names.add("." + extension);
+                names.add("x." + extension + ".bak");
+            }
+        }
+        names.addAll(List.of("x", "x.", "..pdf", "x.Pdf", "x.\u212Aey", "x.İmg", "x.jpg ", "photo.JPEG", "😀.mp4"));
+        Entry.Folder parent = create(ROOT, "Families");
+        for (String name : names) {
+            // The catalog stores NFC names, so compare what it would store.
+            FileName stored = new FileName(name);
+            assertThat(database.fetchValue("select catalog_kind_rank('file', ?)", stored.value()))
+                    .as(name)
+                    .isEqualTo((short) KindFamily.ofFile(stored).rank());
+        }
+        // A folder ranks first whatever its name; the column follows renames.
+        Entry.Folder folder = create(parent.id(), "Photos.jpg");
+        assertThat(database.fetchValue(
+                        "select entry_kind_rank from catalog_names where entry_id = ?",
+                        folder.id().value()))
+                .isEqualTo((short) 0);
+        UUID file = UUID.randomUUID();
+        OffsetDateTime now = OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC);
+        database.transaction(configuration -> {
+            DSLContext transaction = DSL.using(configuration);
+            UUID version = UUID.randomUUID();
+            insertEntry(transaction, file, "file", version, now);
+            insertVersion(transaction, file, version, 1, now);
+            insertEntryName(transaction, file, parent.id().value(), "notes.txt", now);
+        });
+        assertThat(database.fetchValue("select entry_kind_rank from catalog_names where entry_id = ?", file))
+                .isEqualTo((short) KindFamily.TEXT.rank());
+        database.execute(
+                "update catalog_names set name = 'renamed.PDF' where entry_id = ? and claim_kind = 'entry'", file);
+        assertThat(database.fetchValue("select entry_kind_rank from catalog_names where entry_id = ?", file))
+                .isEqualTo((short) KindFamily.PDF.rank());
+    }
+
+    @Test
     void everyOrderPagesInKeyNameAndIdSequenceWhileEntriesAreInserted() {
         var random = new Random(20260927);
         int folderNumber = 0;
@@ -382,7 +428,8 @@ class PostgresCatalogTest {
                     WORKSPACE, now);
             transaction.execute(
                     "insert into catalog_names (id, workspace_id, parent_id, name, claim_kind, entry_id, expires_at,"
-                            + " created_at) select md5('n' || i)::uuid, ?, ?, 'child ' || ((i * 31) % 97) || ' ' || i,"
+                            + " created_at) select md5('n' || i)::uuid, ?, ?, 'child ' || ((i * 31) % 97) || ' ' || i"
+                            + " || (array['', '.pdf', '.jpg', '.txt', '.zip', '.mov'])[i % 6 + 1],"
                             + " 'entry', md5('e' || i)::uuid, null, ?::timestamptz from generate_series(1, 10000) i",
                     WORKSPACE, parent.id().value(), now);
         });
@@ -808,7 +855,7 @@ class PostgresCatalogTest {
                                 + "and table_name <> 'upload_sessions' and table_name not like 'r2_%' "
                                 + "and not (table_name = 'physical_objects' and column_name = 'sha256') "
                                 + "and not (table_name = 'catalog_names' "
-                                + "and column_name in ('entry_kind', 'entry_updated_at', 'entry_size_bytes')) "
+                                + "and column_name in ('entry_kind', 'entry_updated_at', 'entry_size_bytes', 'entry_kind_rank')) "
                                 + "order by table_name, column_name")
                 .forEach(row -> migrated.computeIfAbsent(
                                 row.get("table_name", String.class), ignored -> new ArrayList<>())
@@ -940,6 +987,8 @@ class PostgresCatalogTest {
     }
 
     private static final String[] NAME_STARTS = {"a", "B", "Z", "é", "😀", "\uE000"};
+    // Repeated families, so kind ties fall through to name and ID; a folder's extension never counts.
+    private static final String[] NAME_ENDS = {"", ".pdf", ".JPG", ".png", ".txt", ".tar.gz", ".unknown"};
     private static final long[] SIZES = {0, 1, 1, 1024, 9007199254740993L};
     private static final long[] MICROS_AFTER = {0, 1, 1, 1_000_000};
     private int childNumber;
@@ -947,7 +996,8 @@ class PostgresCatalogTest {
     /** A child whose kind, size, time and name start repeat, so ties fall through to name and ID. */
     private Entry insertChild(EntryId parent, Random random) {
         UUID id = UUID.randomUUID();
-        String name = NAME_STARTS[random.nextInt(NAME_STARTS.length)] + " " + childNumber++;
+        String name = NAME_STARTS[random.nextInt(NAME_STARTS.length)] + " " + childNumber++
+                + NAME_ENDS[random.nextInt(NAME_ENDS.length)];
         OffsetDateTime at = OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC)
                 .plusNanos(MICROS_AFTER[random.nextInt(MICROS_AFTER.length)] * 1_000);
         boolean folder = random.nextInt(3) == 0;

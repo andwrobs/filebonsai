@@ -319,7 +319,7 @@
     },
     "/api/v1/entries/{id}/children" : {
       "get" : {
-        "description" : "Ordered by `sort`, then NFC name in UTF-8 byte order, then ID; `desc` reverses all three. `foldersFirst` keeps folders ahead of files in either direction. `kind` limits the page to folders or files; the order is unchanged. `updatedAt` is the entry's `updatedAt`. `size` is the current version's `sizeBytes`, and a folder sorts below any file. No snapshot: inserts or changes behind the cursor may be missed, and changes ahead may repeat an entry. Deduplicate by ID or refresh when needed. Tokens are opaque, scoped to the workspace/folder/sort/order/foldersFirst/kind, and invalid after cursor-key rotation; fixture restart rotates its key.",
+        "description" : "Ordered by `sort`, then NFC name in UTF-8 byte order, then ID; `desc` reverses all three. `foldersFirst` keeps folders ahead of files in either direction. `kind` limits the page to folders or files; the order is unchanged. `updatedAt` is the entry's `updatedAt`. `size` is the current version's `sizeBytes`, and a folder sorts below any file. `kind` orders by `family`: folders, then archive, audio, code, document, image, pdf, presentation, spreadsheet, text, video, then file. No snapshot: inserts or changes behind the cursor may be missed, and changes ahead may repeat an entry. Deduplicate by ID or refresh when needed. Tokens are opaque, scoped to the workspace/folder/sort/order/foldersFirst/kind, and invalid after cursor-key rotation; fixture restart rotates its key.",
         "operationId" : "listChildren",
         "parameters" : [ {
           "in" : "path",
@@ -355,7 +355,7 @@
           "required" : false,
           "schema" : {
             "type" : "string",
-            "enum" : [ "name", "updatedAt", "size" ],
+            "enum" : [ "name", "updatedAt", "size", "kind" ],
             "default" : "name"
           }
         }, {
@@ -1541,7 +1541,7 @@
         "description" : "Empty when no individual field is responsible"
       },
       "FileEntryResponse" : {
-        "required" : [ "createdAt", "currentVersion", "id", "kind", "name", "parentId", "updatedAt", "versionCount" ],
+        "required" : [ "createdAt", "currentVersion", "family", "id", "kind", "name", "parentId", "updatedAt", "versionCount" ],
         "type" : "object",
         "properties" : {
           "createdAt" : {
@@ -1550,6 +1550,11 @@
           },
           "currentVersion" : {
             "$ref" : "#/components/schemas/CurrentVersionResponse"
+          },
+          "family" : {
+            "type" : "string",
+            "description" : "Open vocabulary guessed from the name's extension (ASCII case-insensitive, after the last dot unless it leads the name); known values are archive, audio, code, document, image, pdf, presentation, spreadsheet, text, video and file (unknown extension). The name is metadata, so this is a hint about content, not a check. Clients must show an unknown value rather than fail.",
+            "example" : "pdf"
           },
           "id" : {
             "type" : "string",

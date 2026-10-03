@@ -33,10 +33,12 @@ Java public controllers and DTOs are authoritative. Springdoc exports OpenAPI 3.
 ## Folder listings
 
 `GET /api/v1/entries/{id}/children` pages direct children. Optional `sort` is `name`
-(default), `updatedAt`, or `size`, and `order` is `asc` (default) or `desc`. Every
-order compares its key, then normalized-name UTF-8 bytes, then canonical UUID text,
-and `desc` reverses all three. `updatedAt` is the entry's `updatedAt`. `size` is the
-current version's size, and a folder sorts below any file. `foldersFirst=true` keeps
+(default), `updatedAt`, `size`, or `kind`, and `order` is `asc` (default) or `desc`.
+Every order compares its key, then normalized-name UTF-8 bytes, then canonical UUID
+text, and `desc` reverses all three. `updatedAt` is the entry's `updatedAt`. `size` is
+the current version's size, and a folder sorts below any file. `kind` orders folders
+first, then file `family` values by label (archive, audio, code, document, image, pdf,
+presentation, spreadsheet, text, video), then `file`. `foldersFirst=true` keeps
 folders ahead of files in either direction. Optional `kind` is `folder` or `file`
 (case-sensitive) and limits the page to that kind. The order is unchanged: sort, order,
 then the name and ID tie-breaks, and `foldersFirst` doesn't change a filtered sequence.
@@ -48,6 +50,13 @@ other returns `400 INVALID_CURSOR`. Unknown `sort` or `order` values return
 `sort=`, means the default, as it does for `limit`. Paging is keyset-based
 without a snapshot, so changes behind the cursor may be missed and changes ahead may
 repeat an entry.
+
+A file's `family` is an open vocabulary guessed by the server from the name's
+extension: the text after the last dot, unless that dot leads the name, compared in
+ASCII lower case. An unknown extension is `file`. Clients show an unknown value rather
+than fail. The name is metadata, so `family` is a display hint, never a content check.
+A new family or extension changes the kind order and needs a migration that replaces
+the database's mapping alongside the Java one.
 
 ## Folder details
 

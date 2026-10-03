@@ -3,7 +3,9 @@ package com.filebonsai.catalog.web;
 import com.filebonsai.catalog.application.GetFolderAncestors;
 import com.filebonsai.catalog.application.StorageConnectionName;
 import com.filebonsai.catalog.domain.Entry;
+import com.filebonsai.catalog.domain.KindFamily;
 import java.util.List;
+import java.util.Locale;
 
 final class CatalogResponseMapper {
     private CatalogResponseMapper() {}
@@ -16,6 +18,7 @@ final class CatalogResponseMapper {
                         file.id().value(),
                         file.parentId().value(),
                         file.name().value(),
+                        family(file),
                         file.createdAt(),
                         file.updatedAt(),
                         new CurrentVersionResponse(
@@ -26,6 +29,10 @@ final class CatalogResponseMapper {
                         file.versionCount());
             case Entry.Folder folder -> response(folder);
         };
+    }
+
+    private static String family(Entry.File file) {
+        return KindFamily.ofFile(file.name()).name().toLowerCase(Locale.ROOT);
     }
 
     static FolderEntryResponse response(Entry.Folder folder) {

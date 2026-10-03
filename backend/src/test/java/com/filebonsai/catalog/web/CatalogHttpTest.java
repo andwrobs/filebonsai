@@ -207,7 +207,12 @@ class CatalogHttpTest {
         mvc.perform(get(children).param("sort", "size").param("order", "desc").param("foldersFirst", "true"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.entries[*].name").value(contains("Recipes", "Italy.pdf")));
-        for (var invalid : List.of(Map.of("sort", "Name"), Map.of("sort", "kind"), Map.of("order", "DESC"))) {
+        mvc.perform(get(children).param("sort", "kind").param("order", "desc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.entries[*].name").value(contains("Italy.pdf", "Recipes")))
+                .andExpect(jsonPath("$.entries[0].family").value("pdf"))
+                .andExpect(jsonPath("$.entries[1].family").doesNotExist());
+        for (var invalid : List.of(Map.of("sort", "Name"), Map.of("sort", "family"), Map.of("order", "DESC"))) {
             var field = invalid.keySet().iterator().next();
             mvc.perform(get(children).param(field, invalid.get(field)))
                     .andExpect(status().isBadRequest())

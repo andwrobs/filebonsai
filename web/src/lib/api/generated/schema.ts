@@ -115,7 +115,7 @@ export interface paths {
         };
         /**
          * List direct children
-         * @description Ordered by `sort`, then NFC name in UTF-8 byte order, then ID; `desc` reverses all three. `foldersFirst` keeps folders ahead of files in either direction. `kind` limits the page to folders or files; the order is unchanged. `updatedAt` is the entry's `updatedAt`. `size` is the current version's `sizeBytes`, and a folder sorts below any file. No snapshot: inserts or changes behind the cursor may be missed, and changes ahead may repeat an entry. Deduplicate by ID or refresh when needed. Tokens are opaque, scoped to the workspace/folder/sort/order/foldersFirst/kind, and invalid after cursor-key rotation; fixture restart rotates its key.
+         * @description Ordered by `sort`, then NFC name in UTF-8 byte order, then ID; `desc` reverses all three. `foldersFirst` keeps folders ahead of files in either direction. `kind` limits the page to folders or files; the order is unchanged. `updatedAt` is the entry's `updatedAt`. `size` is the current version's `sizeBytes`, and a folder sorts below any file. `kind` orders by `family`: folders, then archive, audio, code, document, image, pdf, presentation, spreadsheet, text, video, then file. No snapshot: inserts or changes behind the cursor may be missed, and changes ahead may repeat an entry. Deduplicate by ID or refresh when needed. Tokens are opaque, scoped to the workspace/folder/sort/order/foldersFirst/kind, and invalid after cursor-key rotation; fixture restart rotates its key.
          */
         get: operations["listChildren"];
         put?: never;
@@ -357,6 +357,11 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
             currentVersion: components["schemas"]["CurrentVersionResponse"];
+            /**
+             * @description Open vocabulary guessed from the name's extension (ASCII case-insensitive, after the last dot unless it leads the name); known values are archive, audio, code, document, image, pdf, presentation, spreadsheet, text, video and file (unknown extension). The name is metadata, so this is a hint about content, not a check. Clients must show an unknown value rather than fail.
+             * @example pdf
+             */
+            family: string;
             /** Format: uuid */
             id: string;
             /**
@@ -755,7 +760,7 @@ export interface operations {
             query?: {
                 limit?: number;
                 cursor?: string;
-                sort?: "name" | "updatedAt" | "size";
+                sort?: "name" | "updatedAt" | "size" | "kind";
                 order?: "asc" | "desc";
                 foldersFirst?: boolean;
                 kind?: "folder" | "file";

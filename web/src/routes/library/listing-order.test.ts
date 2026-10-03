@@ -22,7 +22,7 @@ it("round-trips an order through the URL, leaving out defaults and keeping other
 
 it("falls back to the default for anything it doesn't know", () => {
 	expect(
-		orderFromSearch(new URLSearchParams("sort=kind&order=up&folders=yes")),
+		orderFromSearch(new URLSearchParams("sort=type&order=up&folders=yes")),
 	).toEqual(defaultListingOrder);
 });
 
@@ -35,6 +35,8 @@ it("starts each field at its natural direction and flips the current one", () =>
 	});
 	expect(sortBy(byName, "size").order).toBe("desc");
 	expect(sortBy(byName, "name").order).toBe("desc");
+	expect(sortBy(byName, "kind").order).toBe("asc");
+	expect(orderFromSearch(new URLSearchParams("sort=kind")).sort).toBe("kind");
 	expect(sortBy({ ...byName, foldersFirst: true }, "size").foldersFirst).toBe(
 		true,
 	);

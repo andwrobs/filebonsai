@@ -31,6 +31,7 @@ const travel = {
 const photo = {
 	...root,
 	id: "photo",
+	family: "image",
 	kind: "file",
 	name: "IMG_8421.JPG",
 	parentId: "root",
@@ -360,10 +361,9 @@ it("sorts from the table headers through the server and the URL", async () => {
 		name: "Modified",
 	});
 	const name = screen.getByRole("columnheader", { name: "Name" });
+	const kind = screen.getByRole("columnheader", { name: "Kind" });
 	expect(name).toHaveAttribute("aria-sort", "ascending");
-	expect(
-		screen.getByRole("columnheader", { name: "Kind" }),
-	).not.toHaveAttribute("aria-sort");
+	expect(kind).toHaveAttribute("aria-sort", "none");
 
 	// A new field starts newest first; pressing it again flips it.
 	await user.click(modified);
@@ -377,10 +377,19 @@ it("sorts from the table headers through the server and the URL", async () => {
 	await vi.waitFor(() =>
 		expect(modified).toHaveAttribute("aria-sort", "ascending"),
 	);
+	// Kind starts A to Z, the order the server ranks families in.
+	await user.click(kind);
+	await vi.waitFor(() =>
+		expect(kind).toHaveAttribute("aria-sort", "ascending"),
+	);
+	expect(screen.getByLabelText("Test location")).toHaveTextContent(
+		"/library/root?sort=kind",
+	);
 	expect(childrenSearches(requests)).toEqual([
 		"?sort=name&order=asc&foldersFirst=false",
 		"?sort=updatedAt&order=desc&foldersFirst=false",
 		"?sort=updatedAt&order=asc&foldersFirst=false",
+		"?sort=kind&order=asc&foldersFirst=false",
 	]);
 });
 
@@ -533,7 +542,7 @@ it("loads the order in the URL and ignores values it doesn't know", async () => 
 	).toHaveAttribute("aria-sort", "descending");
 	queryClient.clear();
 
-	renderLibrary("root?sort=kind&order=sideways");
+	renderLibrary("root?sort=type&order=sideways");
 	await vi.waitFor(() => expect(childrenSearches(requests)).toHaveLength(2));
 	expect(childrenSearches(requests)).toEqual([
 		"?sort=size&order=desc&foldersFirst=true",
@@ -563,6 +572,26 @@ it("sorts from the menu, including folders first", async () => {
 	).toHaveAttribute("aria-checked", "true");
 	expect(childrenSearches(requests).at(-1)).toBe(
 		"?sort=size&order=desc&foldersFirst=true",
+	);
+});
+
+it("sorts by kind from the menu", async () => {
+	const { requests } = stubApi(serveFolder(() => [travel, photo]));
+	const { user } = renderLibrary();
+	await user.click(await screen.findByRole("button", { name: "Sort" }));
+	await user.click(screen.getByRole("menuitemradio", { name: "Kind" }));
+	await vi.waitFor(() =>
+		expect(screen.getByLabelText("Test location")).toHaveTextContent(
+			"/library/root?sort=kind",
+		),
+	);
+	await user.click(screen.getByRole("button", { name: "Sort" }));
+	expect(screen.getByRole("menuitemradio", { name: "A to Z" })).toHaveAttribute(
+		"aria-checked",
+		"true",
+	);
+	expect(childrenSearches(requests).at(-1)).toBe(
+		"?sort=kind&order=asc&foldersFirst=false",
 	);
 });
 

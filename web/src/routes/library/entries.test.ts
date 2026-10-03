@@ -45,6 +45,7 @@ it("shortens modified labels with recency", () => {
 it("leads compact meta with size for files and kind for folders", () => {
 	const file = {
 		...folder,
+		family: "image",
 		kind: "file" as const,
 		name: "IMG_8421.JPG",
 		parentId: folder.id,
@@ -67,13 +68,27 @@ it("shows the full date in details", () => {
 	);
 });
 
-it("takes kinds from the extension, never from a leading dot or an unknown suffix", () => {
-	const kind = (name: string) => entryKind({ kind: "file", name }).label;
-	expect(entryKind(folder).label).toBe("Folder");
-	expect(kind("IMG_8421.JPG")).toBe("Image");
-	expect(kind("Italy Itinerary.pdf")).toBe("PDF");
-	expect(kind("archive.tar.gz")).toBe("Archive");
-	expect(kind(".env")).toBe("File");
-	expect(kind("README")).toBe("File");
-	expect(kind("notes.unknown")).toBe("File");
+it("labels the server's family and shows a family it does not know by name", () => {
+	const file = {
+		...folder,
+		kind: "file" as const,
+		name: "archive.tar.gz",
+		parentId: folder.id,
+		currentVersion: {
+			id: "00000000-0000-4000-8000-000000000002",
+			sha256: null,
+			sizeBytes: "1",
+			storageConnectionName: "Local disk",
+		},
+		versionCount: 1,
+	};
+	const kind = (family: string) => entryKind({ ...file, family });
+	expect(entryKind(folder)).toEqual({ family: "folder", label: "Folder" });
+	expect(kind("archive")).toEqual({ family: "archive", label: "Archive" });
+	expect(kind("pdf")).toEqual({ family: "pdf", label: "PDF" });
+	expect(kind("file")).toEqual({ family: "file", label: "File" });
+	// The vocabulary is open: a newer server's family keeps its name and the plain icon.
+	expect(kind("font")).toEqual({ family: "file", label: "Font" });
+	// "folder" is never a file's family, so it cannot borrow the folder icon.
+	expect(kind("folder")).toEqual({ family: "file", label: "Folder" });
 });
