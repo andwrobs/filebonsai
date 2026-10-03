@@ -69,8 +69,8 @@ export function EntryTable({
 					{sortable("Name")}
 				</TableHead>
 				{showKind ? (
-					<TableHead className={cn(head, "w-28")} id="kind">
-						Kind
+					<TableHead allowsSorting className={cn(head, "w-28")} id="kind">
+						{sortable("Kind")}
 					</TableHead>
 				) : null}
 				<TableHead

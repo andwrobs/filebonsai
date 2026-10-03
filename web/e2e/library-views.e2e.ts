@@ -95,6 +95,89 @@ test("sorts through the server, keeps a grid across reloads, and uses rows on a 
 	await library.expectFolder(folder);
 });
 
+test("sorts by kind with the server's families, folders first and unknown types last", async ({
+	page,
+	signInPage,
+	library,
+	ownerPassword,
+}, testInfo) => {
+	const phone = testInfo.project.name === "phone";
+	const stamp = Date.now().toString(36);
+	const named = (label: string, name: string) => ({
+		...syntheticFile(label, 1024),
+		name,
+	});
+	// Names sort the other way from kinds, so the order can only come from the family.
+	const notes = named("notes", `A notes ${stamp}.txt`);
+	const photo = named("photo", `B photo ${stamp}.JPG`);
+	const report = named("report", `C report ${stamp}.pdf`);
+	const unknown = named("unknown", `D model ${stamp}.blend`);
+	const folder = `E folder ${stamp}`;
+
+	await page.goto("/");
+	await signInPage.signIn(ownerPassword);
+	await library.expectFolder("Library");
+	const parent = `Kinds ${testInfo.project.name} ${stamp}`;
+	await library.createFolder(parent);
+	await library.openFolder(parent);
+	await library.createFolder(folder);
+	for (const file of [notes, photo, report, unknown])
+		await library.upload(file);
+	const table = !phone;
+
+	if (phone) {
+		await page.getByRole("button", { name: "Sort" }).tap();
+		await page.getByRole("menuitemradio", { name: "Kind" }).tap();
+	} else {
+		const kind = page.getByRole("columnheader", { name: "Kind" });
+		await kind.click();
+		await expect(kind).toHaveAttribute("aria-sort", "ascending");
+	}
+	await expect(page).toHaveURL(/\?sort=kind$/);
+	const ascending = [folder, photo.name, report.name, notes.name, unknown.name];
+	await expectOrder(page, library, ascending, table);
+	if (table) {
+		const rows = entryRows(page, library, true);
+		for (const [index, label] of [
+			"Folder",
+			"Image",
+			"PDF",
+			"Text",
+			"File",
+		].entries()) {
+			await expect(rows.nth(index).getByRole("gridcell").first()).toHaveText(
+				label,
+			);
+		}
+	}
+	await testInfo.attach("kind-ascending", {
+		body: await page.screenshot(),
+		contentType: "image/png",
+	});
+
+	await library.press(page.getByRole("button", { name: "Sort" }));
+	await library.press(page.getByRole("menuitemradio", { name: "Z to A" }));
+	await expect(page).toHaveURL(/\?sort=kind&order=desc$/);
+	await expectOrder(page, library, [...ascending].reverse(), table);
+
+	await library.press(page.getByRole("button", { name: "Sort" }));
+	await library.press(
+		page.getByRole("menuitemcheckbox", { name: "Folders first" }),
+	);
+	await page.keyboard.press("Escape");
+	await page.reload();
+	await expectOrder(
+		page,
+		library,
+		[folder, unknown.name, notes.name, report.name, photo.name],
+		table,
+	);
+	await testInfo.attach("kind-descending-folders-first", {
+		body: await page.screenshot(),
+		contentType: "image/png",
+	});
+});
+
 test("sort choices compose while a preceding listing request is delayed", async ({
 	page,
 	signInPage,

@@ -1,6 +1,6 @@
 # Verified status and next work
 
-Updated 2026-09-30. This is the only live status and sequencing document. Record only
+Updated 2026-10-03. This is the only live status and sequencing document. Record only
 observed results; use Git history for prior plans and completed migrations.
 
 ## Current implementation
@@ -34,7 +34,7 @@ observed results; use Git history for prior plans and completed migrations.
   rollback/concurrency, immutable identities/versions/objects, domain constraints,
   root protection, generated-schema drift, and the listing orders below.
 - `GET /api/v1/entries/{id}/children` takes optional `sort` (`name`, `updatedAt`,
-  `size`), `order` (`asc`, `desc`), and `foldersFirst`. Each order ends in name bytes,
+  `size`, `kind`), `order` (`asc`, `desc`), and `foldersFirst`. Each order ends in name bytes,
   then UUID; a folder sizes below any file. Cursors are bound to all three, and
   default-order cursors issued before they existed still work. Flyway V9 copies each
   entry's kind, `updated_at`, and current size onto its name row through triggers, and
@@ -43,7 +43,13 @@ observed results; use Git history for prior plans and completed migrations.
   the kind as well, unfiltered cursors keep their tokens, and no migration was needed
   (the existing indexes serve both groups in every order). The folder tree uses
   `kind=folder`; the Library's table, grid and sort menu use `sort`, `order`, and
-  `foldersFirst`.
+  `foldersFirst`. Each file carries `family`, an open vocabulary the server guesses
+  from the name's extension (Java `KindFamily`); `sort=kind` orders folders, then
+  families by label, then unknown `file`. Flyway V10 mirrors the mapping in an
+  immutable `catalog_kind_rank` function behind a generated `entry_kind_rank` column
+  and a fifth partial index. A PostgreSQL test checks that both mappings agree for
+  every extension. The Library's Kind column shows the server's family, and the
+  Kind header and Sort menu sort by it.
 - The PostgreSQL profile exposes authenticated Catalog HTTP through session-derived
   membership scope. Local-owner access includes secret-file bootstrap/reset,
   PostgreSQL-backed sessions, rotation/logout/reset invalidation, CSRF, persisted
@@ -166,6 +172,20 @@ observed results; use Git history for prior plans and completed migrations.
   Image object URLs are revoked when the preview closes or changes.
 
 ## Latest observed checks
+
+- Sort by kind (LIB-24): `cd backend && ./mvnw test -Dtest=PostgresCatalogTest`
+  passed 21 PostgreSQL tests on postgres:17-alpine, including family agreement
+  between Java and SQL, paging every order (KIND included) with inserts and the
+  `kind` filter, and index-only plans with no Sort or Seq Scan at 10,000 children.
+  `cd backend && ./scripts/verify.sh` passed 106 backend tests (live R2 skipped),
+  export, generation and 12 Swift decoding checks. `cd web && npm run
+  generate:schema && npm test` passed (Biome, typegen and `tsc`, 156 Vitest tests,
+  build). `npm run e2e -- -g "sorts by kind"` passed on desktop (1440×900) and phone
+  (390×844) against the disposable PostgreSQL-profile stack: header and menu sort,
+  Kind column labels, descending, and folders first across a reload. Fresh
+  contract and persistence reviews found no blockers. V10 rewrites `catalog_names`
+  under an exclusive lock, so a later change to the family table should prefer a
+  batched backfill and a concurrent index.
 
 - Selection (LIB-05 and its follow-up): table, grid and phone rows share one entry-ID
   selection per folder, owned by the Library route. Click selects, Cmd/Ctrl toggles,

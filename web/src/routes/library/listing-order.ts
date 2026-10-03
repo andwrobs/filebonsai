@@ -5,7 +5,7 @@ import {
 	type SortOrder,
 } from "~/lib/catalog/catalog";
 
-const fields: readonly SortField[] = ["name", "updatedAt", "size"];
+const fields: readonly SortField[] = ["name", "updatedAt", "size", "kind"];
 const orders: readonly SortOrder[] = ["asc", "desc"];
 
 const isField = (value: string | null): value is SortField =>
@@ -39,11 +39,12 @@ export function searchWithOrder(search: URLSearchParams, order: ListingOrder) {
 	return next;
 }
 
-// Names read A to Z first; dates and sizes read newest and largest first.
+// Names and kinds read A to Z first; dates and sizes read newest and largest first.
 const firstOrder: Record<SortField, SortOrder> = {
 	name: "asc",
 	updatedAt: "desc",
 	size: "desc",
+	kind: "asc",
 };
 
 /** A column header: the same field flips its direction, another starts at its natural one. */
@@ -58,6 +59,7 @@ export const fieldLabels: Record<SortField, string> = {
 	name: "Name",
 	updatedAt: "Modified",
 	size: "Size",
+	kind: "Kind",
 };
 
 /** Plain-language direction for a field, as the sort menu shows it. */
@@ -66,6 +68,8 @@ export function directionLabel(sort: SortField, order: SortOrder) {
 		name: ["A to Z", "Z to A"],
 		updatedAt: ["Oldest first", "Newest first"],
 		size: ["Smallest first", "Largest first"],
+		// The server puts folders before every kind and unrecognized files after.
+		kind: ["A to Z", "Z to A"],
 	};
 	return labels[sort][order === "asc" ? 0 : 1];
 }

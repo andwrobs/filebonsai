@@ -30,6 +30,7 @@ const photo = {
 	},
 	versionCount: 1,
 	id: "photo",
+	family: "image",
 	kind: "file" as const,
 	name: "IMG_8421.JPG",
 	parentId: travel.id,

@@ -154,7 +154,6 @@ Make the daily loop of finding, looking and acting feel like the design directio
 | [LIB-18](everyday-library.md#lib-18-panel-visual-regression-coverage) Panel visual regression coverage | Proof | P2 | M | [ENG-02](foundations.md#eng-02-playwright-end-to-end-harness), [LIB-15](everyday-library.md#lib-15-inspector-hierarchy-and-description-polish), [LIB-16](everyday-library.md#lib-16-storage-summary-and-explanatory-panels) |
 | [LIB-22](everyday-library.md#lib-22-entry-actions-context-menu-and-in-app-drag) Entry actions: context menu and in-app drag | Build | P2 | L | [M1-11](finish-m1.md#m1-11-drag-and-drop-upload), [ORG-02](organize.md#org-02-rename), [ORG-03](organize.md#org-03-move) |
 | [LIB-23](everyday-library.md#lib-23-letter-spacing-defaults-that-yield-to-tracking-utilities) Letter-spacing defaults that yield to tracking utilities | Build | P3 | S | none |
-| [LIB-24](everyday-library.md#lib-24-sort-by-kind) Sort by kind | Build | P2 | M | none |
 
 ### [Organize](organize.md)
 

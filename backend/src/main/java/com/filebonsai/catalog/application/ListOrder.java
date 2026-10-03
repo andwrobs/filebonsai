@@ -1,6 +1,7 @@
 package com.filebonsai.catalog.application;
 
 import com.filebonsai.catalog.domain.Entry;
+import com.filebonsai.catalog.domain.KindFamily;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -22,7 +23,9 @@ public record ListOrder(Key key, boolean descending, boolean foldersFirst) {
     public enum Key {
         NAME,
         UPDATED_AT,
-        SIZE
+        SIZE,
+        /** The {@link KindFamily} rank: folders, known families by label, then unknown files. */
+        KIND
     }
 
     /** Where an entry falls in an order: its kind, the key before the name (null for name), name and ID. */
@@ -46,6 +49,7 @@ public record ListOrder(Key key, boolean descending, boolean foldersFirst) {
                         entry instanceof Entry.File file
                                 ? file.currentVersion().sizeBytes().value()
                                 : FOLDER_SIZE;
+                    case KIND -> (long) KindFamily.of(entry).rank();
                 };
         return new Position(
                 entry instanceof Entry.Folder,
@@ -80,6 +84,7 @@ public record ListOrder(Key key, boolean descending, boolean foldersFirst) {
                     case NAME -> "name-id-utf8";
                     case UPDATED_AT -> "updated-name-id-utf8";
                     case SIZE -> "size-name-id-utf8";
+                    case KIND -> "kind-name-id-utf8";
                 };
         return (foldersFirst ? "folders-first-" : "") + keys + (descending ? "-desc" : "-asc") + "-v1";
     }

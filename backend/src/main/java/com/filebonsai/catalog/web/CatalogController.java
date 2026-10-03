@@ -117,7 +117,7 @@ public class CatalogController {
             operationId = "listChildren",
             summary = "List direct children",
             description =
-                    "Ordered by `sort`, then NFC name in UTF-8 byte order, then ID; `desc` reverses all three. `foldersFirst` keeps folders ahead of files in either direction. `kind` limits the page to folders or files; the order is unchanged. `updatedAt` is the entry's `updatedAt`. `size` is the current version's `sizeBytes`, and a folder sorts below any file. No snapshot: inserts or changes behind the cursor may be missed, and changes ahead may repeat an entry. Deduplicate by ID or refresh when needed. Tokens are opaque, scoped to the workspace/folder/sort/order/foldersFirst/kind, and invalid after cursor-key rotation; fixture restart rotates its key.")
+                    "Ordered by `sort`, then NFC name in UTF-8 byte order, then ID; `desc` reverses all three. `foldersFirst` keeps folders ahead of files in either direction. `kind` limits the page to folders or files; the order is unchanged. `updatedAt` is the entry's `updatedAt`. `size` is the current version's `sizeBytes`, and a folder sorts below any file. `kind` orders by `family`: folders, then archive, audio, code, document, image, pdf, presentation, spreadsheet, text, video, then file. No snapshot: inserts or changes behind the cursor may be missed, and changes ahead may repeat an entry. Deduplicate by ID or refresh when needed. Tokens are opaque, scoped to the workspace/folder/sort/order/foldersFirst/kind, and invalid after cursor-key rotation; fixture restart rotates its key.")
     @ApiResponse(
             responseCode = "200",
             description = "Page",
@@ -129,7 +129,7 @@ public class CatalogController {
             @Parameter(
                             schema =
                                     @Schema(
-                                            allowableValues = {"name", "updatedAt", "size"},
+                                            allowableValues = {"name", "updatedAt", "size", "kind"},
                                             defaultValue = "name"))
                     @RequestParam(defaultValue = "name")
                     String sort,
@@ -195,8 +195,10 @@ public class CatalogController {
                     case "name" -> ListOrder.Key.NAME;
                     case "updatedAt" -> ListOrder.Key.UPDATED_AT;
                     case "size" -> ListOrder.Key.SIZE;
+                    case "kind" -> ListOrder.Key.KIND;
                     default ->
-                        throw new InvalidField("sort", "UNSUPPORTED_VALUE", "Sort must be name, updatedAt or size");
+                        throw new InvalidField(
+                                "sort", "UNSUPPORTED_VALUE", "Sort must be name, updatedAt, size or kind");
                 };
         boolean descending =
                 switch (order) {

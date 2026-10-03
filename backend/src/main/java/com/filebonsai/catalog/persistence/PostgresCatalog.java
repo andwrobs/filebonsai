@@ -60,6 +60,9 @@ public final class PostgresCatalog
     // Must match the ix_catalog_names_page_size expression, including the inline -1.
     private static final Field<Long> SORT_SIZE = DSL.field(
             "coalesce({0}, -1)", Long.class, DSL.field(DSL.name("catalog_names", "entry_size_bytes"), Long.class));
+    // V10's generated kind rank, matching ix_catalog_names_page_kind.
+    private static final Field<Short> SORT_KIND_RANK =
+            DSL.field(DSL.name("catalog_names", "entry_kind_rank"), Short.class);
     private static final Field<String> SORT_NAME = DSL.field("{0} collate \"C\"", String.class, CATALOG_NAMES.NAME);
     // Added by V7, after the generated classes.
     private static final Field<byte[]> OBJECT_SHA256 = DSL.field(DSL.name("physical_objects", "sha256"), byte[].class);
@@ -209,6 +212,15 @@ public final class PostgresCatalog
             if (after != null) {
                 values.add(OffsetDateTime.ofInstant(ListOrder.fromEpochMicros(after.key()), ZoneOffset.UTC));
             }
+        } else if (order.key() == ListOrder.Key.KIND && !Boolean.TRUE.equals(folders)) {
+            // Every folder ranks 0, so name and ID alone order the folder group, as for size.
+            keys.add(SORT_KIND_RANK);
+            if (after != null) {
+                values.add(after.key().shortValue());
+            }
+            if (folders != null) {
+                group = SORT_KIND_RANK.gt((short) 0);
+            }
         } else if (sized) {
             keys.add(SORT_SIZE);
             if (after != null) {
@@ -241,7 +253,8 @@ public final class PostgresCatalog
                         VERSION_COUNT,
                         SORT_KIND,
                         SORT_UPDATED_AT,
-                        SORT_SIZE)
+                        SORT_SIZE,
+                        SORT_KIND_RANK)
                 .from(CATALOG_NAMES)
                 .join(CATALOG_ENTRIES)
                 .on(CATALOG_ENTRIES.ID.eq(CATALOG_NAMES.ENTRY_ID))
@@ -271,6 +284,7 @@ public final class PostgresCatalog
                     case UPDATED_AT ->
                         ListOrder.epochMicros(row.get(SORT_UPDATED_AT).toInstant());
                     case SIZE -> row.get(SORT_SIZE);
+                    case KIND -> row.get(SORT_KIND_RANK).longValue();
                 };
         return new ListOrder.Position(
                 FOLDER.equals(row.get(SORT_KIND)), key, row.get(CATALOG_NAMES.NAME), row.get(CATALOG_ENTRIES.ID));

@@ -15,103 +15,45 @@ export type KindFamily =
 	| "text"
 	| "file";
 
-const families: Record<
-	Exclude<KindFamily, "folder">,
-	{ label: string; extensions: string[] }
-> = {
-	image: {
-		label: "Image",
-		extensions: [
-			"jpg",
-			"jpeg",
-			"png",
-			"gif",
-			"webp",
-			"heic",
-			"heif",
-			"avif",
-			"bmp",
-			"tif",
-			"tiff",
-			"svg",
-			"raw",
-			"dng",
-			"cr2",
-			"nef",
-			"arw",
-		],
-	},
-	pdf: { label: "PDF", extensions: ["pdf"] },
-	document: {
-		label: "Document",
-		extensions: ["doc", "docx", "odt", "rtf", "pages"],
-	},
-	spreadsheet: {
-		label: "Spreadsheet",
-		extensions: ["xls", "xlsx", "ods", "csv", "tsv", "numbers"],
-	},
-	presentation: {
-		label: "Presentation",
-		extensions: ["ppt", "pptx", "odp", "key"],
-	},
-	archive: {
-		label: "Archive",
-		extensions: ["zip", "tar", "gz", "tgz", "bz2", "xz", "7z", "rar", "zst"],
-	},
-	audio: {
-		label: "Audio",
-		extensions: ["mp3", "m4a", "aac", "wav", "flac", "ogg", "opus", "aiff"],
-	},
-	video: {
-		label: "Video",
-		extensions: ["mp4", "m4v", "mov", "mkv", "webm", "avi"],
-	},
-	code: {
-		label: "Code",
-		extensions: [
-			"js",
-			"ts",
-			"tsx",
-			"jsx",
-			"json",
-			"java",
-			"py",
-			"rb",
-			"go",
-			"rs",
-			"swift",
-			"kt",
-			"c",
-			"h",
-			"cpp",
-			"sh",
-			"yml",
-			"yaml",
-			"toml",
-			"xml",
-			"html",
-			"css",
-			"sql",
-		],
-	},
-	text: { label: "Text", extensions: ["txt", "md", "markdown", "log"] },
-	file: { label: "File", extensions: [] },
+const labels: Record<KindFamily, string> = {
+	folder: "Folder",
+	image: "Image",
+	pdf: "PDF",
+	document: "Document",
+	spreadsheet: "Spreadsheet",
+	presentation: "Presentation",
+	archive: "Archive",
+	audio: "Audio",
+	video: "Video",
+	code: "Code",
+	text: "Text",
+	file: "File",
 };
 
-/** Display-only kind guessed from the name's extension; the name is metadata, never content. */
-export function entryKind(entry: Pick<Entry, "kind" | "name">): {
+const isFamily = (value: string): value is Exclude<KindFamily, "folder"> =>
+	value !== "folder" && Object.hasOwn(labels, value);
+
+/**
+ * The server guesses a file's family from its extension and sorts by it, so the
+ * Kind column and the kind sort agree. The vocabulary is open: a family this
+ * client does not know yet shows by name with the plain file icon.
+ */
+export function entryKind(entry: Entry): {
 	family: KindFamily;
 	label: string;
 } {
-	if (entry.kind === "folder") return { family: "folder", label: "Folder" };
-	const dot = entry.name.lastIndexOf(".");
-	const extension = dot > 0 ? entry.name.slice(dot + 1).toLowerCase() : "";
-	for (const [family, { label, extensions }] of Object.entries(families)) {
-		if (extensions.includes(extension)) {
-			return { family: family as KindFamily, label };
-		}
+	if (entry.kind === "folder")
+		return { family: "folder", label: labels.folder };
+	if (isFamily(entry.family)) {
+		return { family: entry.family, label: labels[entry.family] };
 	}
-	return { family: "file", label: "File" };
+	const unknown = entry.family.trim();
+	return {
+		family: "file",
+		label: unknown
+			? unknown.charAt(0).toUpperCase() + unknown.slice(1)
+			: labels.file,
+	};
 }
 
 /** Short modified label: time today, "Yesterday", month and day this year, full date otherwise. */
