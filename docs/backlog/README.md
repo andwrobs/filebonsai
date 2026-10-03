@@ -80,7 +80,8 @@ Drive/Dropbox/Photos workflows to their owning epics and records research source
 | --- | --- | --- |
 | First-class photos and effortless albums | PHO-01, PRV-04 and PRV-02 | PHO-02/03/04, PHO-05; RFL-05 map |
 | Searchable, editable, portable metadata | MET-01; build on accepted decisions 0009/0010 | MET-02/03/04/05; MET-09 privacy-safe media |
-| Storage and retention choices in the app | TIER-10, CFG-11, POL-01 | Existing TIER setup; POL-02/03/04/05 |
+| Dynamic cloud connections with local credential custody | TIER-10; near-term order in status.md | TIER-03/11/12/14, TIER-13 onboarding, TIER-15 workflow/security proof |
+| Storage and retention choices in the app | CFG-11, POL-01; build on TIER setup | POL-02/03/04/05 |
 | Fast mobile and desktop organization | TDY-01 and ORG-01 | TDY-02 through 06, TDY-10/11 and PHO-05 |
 | Beautiful adaptable layouts | Existing CFG-01 and LIB polish | CFG-02/03/04/10/12/13 |
 | Clear hook/store orchestration | Decision 0011; ARC-02 through 05, independently | ARC-06 enforcement |
@@ -112,7 +113,7 @@ M1 promises that a clean checkout becomes a working, recoverable library. Close 
 | [M1-07](finish-m1.md#m1-07-container-image-and-compose-from-a-clean-checkout) Container image and Compose from a clean checkout | Build | P1 | L | [M1-08](finish-m1.md#m1-08-serve-the-web-app-from-the-backend-at-one-origin) |
 | [M1-08](finish-m1.md#m1-08-serve-the-web-app-from-the-backend-at-one-origin) Serve the web app from the backend at one origin | Build | P1 | M | none |
 | [M1-10](finish-m1.md#m1-10-honest-determinate-upload-progress) Honest determinate upload progress | Build | P2 | S | none |
-| [M1-11](finish-m1.md#m1-11-drag-and-drop-upload) Drag-and-drop upload | Build | P2 | S | none |
+| [M1-11](finish-m1.md#m1-11-drag-and-drop-upload) Drag-and-drop upload | Build | P2 | M | none |
 | [M1-12](finish-m1.md#m1-12-m1-exit-review) M1 exit review | Proof | P1 | M | [M1-01](finish-m1.md#m1-01-map-m1-failure-outcomes-in-the-web-client), [M1-03](finish-m1.md#m1-03-rediscover-and-cancel-open-uploads), [M1-05](finish-m1.md#m1-05-prove-interruption-and-restart-recovery-in-the-browser), [M1-06](finish-m1.md#m1-06-prove-second-principal-isolation-over-http), [M1-07](finish-m1.md#m1-07-container-image-and-compose-from-a-clean-checkout), [M1-13](finish-m1.md#m1-13-folder-name-conflicts-return-500) |
 | [M1-13](finish-m1.md#m1-13-folder-name-conflicts-return-500) Folder name conflicts return 500 | Build | P1 | S | none |
 | [M1-14](finish-m1.md#m1-14-sign-out-control-in-the-web-shell) Sign-out control in the web shell | Build | P2 | S | none |

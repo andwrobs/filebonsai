@@ -167,6 +167,29 @@ observed results; use Git history for prior plans and completed migrations.
 
 ## Latest observed checks
 
+- Combined Library merge verification (PRs #32/#33): `cd web && npm test`
+  passed Biome, route typegen/TypeScript, 147 Vitest tests and the production build.
+  `cd backend && ./scripts/verify.sh` passed 102 backend tests (the opt-in live-R2
+  proof skipped), including 20 PostgreSQL Catalog tests, TypeScript client checks
+  11/11 and Swift checks 12/12. Exported contracts/fixtures and
+  `cd web && npm run generate:schema` reproduced the committed files without drift.
+  `npm run e2e` with an output/reporting-only config override passed 12 desktop/phone
+  tests, with two desktop-only scenarios skipped on phone. Regression scenarios
+  exercised revealing sibling folder 1,050, closing the rail's folder sheet on
+  1024px → 1440px → 1024px resize, and consecutive sort choices while the preceding
+  listing request was held. The 1,100-folder tree kept 21 rows in the DOM; its longest
+  browser task was 77 ms at boot, with no long task during paging or 30 ArrowDown
+  presses. Screenshots of the desktop table/grid and phone rows/folder sheet were
+  inspected at 1440×900 and 390×844. Fresh contract, persistence and web reviews found
+  no remaining blockers after the reveal, resize, pending-menu and query-fixture
+  repairs. An additional PostgreSQL browser check passed for a folder at 503
+  levels, with its current row and label visible before and after reload; its
+  screenshot was inspected. Active ancestor expansion is now independent of the
+  500-ID persistence cap, and visual indentation is capped while ARIA depth stays
+  exact. Ten store tests cover the cap and deep-trail recovery; the final Library
+  route test run passed 21 tests, including explicit reversed menu selections.
+  These checks used disposable PostgreSQL and synthetic local originals.
+
 - Table and grid views (LIB-04): `cd web && npm test` passed (Biome, typegen and
   `tsc`, 140 Vitest tests, build). They cover header sorting with `aria-sort` and the
   URL, loading an order from the URL and ignoring unknown values, the Sort menu with
@@ -537,15 +560,27 @@ items and required tests.
 1. Cloud transfer: run the decision 0007 compatibility proof against a disposable
    real Cloudflare R2 bucket, repair any provider mismatch, and record bounded
    streaming/recovery evidence before claiming R2 support or adding another provider.
-2. Web: LIB-05 selection, M1-11
-   file drops, ORG-01/02/03 mutations, and LIB-22 shared menus and in-app dragging.
-   The inspector and Storage move onto `web/src/lib/ui` within LIB-15 and LIB-16.
-3. Photo metadata: accepted decisions
+2. Web interaction polish: build LIB-05 selection on the completed table/grid
+   (LIB-04) and folder tree (LIB-02), then M1-11 computer-file drops,
+   ORG-01/02/03 mutation rules and
+   commands, and LIB-22 shared menus and catalog dragging. Cover grid-folder and
+   left-sidebar destinations through one drag owner, with keyboard/touch alternatives.
+   Selection, drops, mutations, menus and catalog dragging remain backlog work.
+   The inspector and Storage move onto `web/src/lib/ui` within LIB-15/16.
+3. App-managed storage is near-term work after interaction polish: settle
+   [TIER-10](../backlog/storage-tiers.md#tier-10-decision-secure-app-managed-connections),
+   build the TIER-03 registry and TIER-11 encrypted credential custody, then TIER-12/14
+   setup/routing, TIER-13 onboarding and TIER-15 security/recovery proof. Include CFG-09
+   discovery and LIB-16's Storage surface. The decision and fixture-backed work can
+   proceed before the live R2 proof; live enablement retains TIER-00's gate.
+   The target is adding supported cloud connections in the app without per-connection
+   configuration or restart. This is planned behavior; Storage remains read-only.
+4. Photo metadata: accepted decisions
    [0009](../decisions/0009-durable-jobs-in-postgresql.md) (durable jobs) and
    [0010](../decisions/0010-media-processing-isolation.md) (processing isolation and
    metadata model). Build ENG-05 and PRV-10, then PRV-04. Both metadata parsing and
    native decoding require the per-job sandbox; an in-backend child JVM is insufficient.
-4. iOS Catalog remains deferred by user preference. When resumed, implement the
+5. iOS Catalog remains deferred by user preference. When resumed, implement the
    SwiftUI/TCA slice through a generated transport and handwritten application adapter.
 
 Each item is split into a bounded task at execution time with owned paths, dependencies,
@@ -555,8 +590,10 @@ acceptance criteria, checks, and a handoff. The ordered list is not blanket auth
 ## Unresolved decisions
 
 - Native authentication/session behavior for foreground and background transfers.
-- R2 credential delivery/rotation and operational bucket provisioning; decision 0007
-  selects the first provider and its initial server-mediated transfer contract.
+- TIER-10's secure app-managed connection decision: owner authority, credential
+  submission/custody, encryption-root recovery and config-to-app migration. Decision
+  0007 retains R2 as the first provider and the server-mediated transfer boundary;
+  dynamic setup does not yet exist, and bucket provisioning remains operator-owned.
 - Configurable-shell schema, precedence, persistence, and delivery milestone.
 - JavaScript workspace manager, generated-client packaging, and Swift generator path.
 - License, contribution/release conventions, supported deployment matrix, backup/
