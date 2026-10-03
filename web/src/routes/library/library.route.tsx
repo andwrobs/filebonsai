@@ -105,7 +105,9 @@ function Folder({
 		// biome-ignore lint/a11y/useKeyWithClickEvents: see above.
 		<div
 			onClick={(event) => {
-				if (isEmptySpace(event.target)) selection.clear();
+				// Portaled menus and their underlays bubble here in React, not in the DOM.
+				const onPage = event.currentTarget.contains(event.target as Node);
+				if (onPage && isEmptySpace(event.target)) selection.clear();
 			}}
 			className="@container/page flex flex-1 flex-col gap-5 px-(--content-gutter) pt-4 pb-8 max-md:pb-[calc(--spacing(8)+3.5rem)] max-md:pl-[max(var(--content-gutter),env(safe-area-inset-left))] max-md:pr-[max(var(--content-gutter),env(safe-area-inset-right))]"
 		>
