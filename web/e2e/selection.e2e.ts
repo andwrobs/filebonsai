@@ -48,9 +48,6 @@ test("selects entries without opening them and opens folders deliberately", asyn
 	await expect(selected).toHaveCount(2);
 	await expect(count).toContainText("2 selected");
 
-	// Arrows move focus only; Shift extends through the displayed order.
-	await page.keyboard.press("ArrowUp");
-	await expect(selected).toHaveCount(2);
 	await page.getByRole("radio", { name: "Grid" }).click();
 	await expect(selected).toHaveCount(2);
 	await page.screenshot({ path: testInfo.outputPath("selection-grid.png") });
@@ -62,24 +59,43 @@ test("selects entries without opening them and opens folders deliberately", asyn
 	await expect(selected).toHaveCount(3);
 	await page.screenshot({ path: testInfo.outputPath("selection-table.png") });
 
-	// Details inspects without selecting, and its Escape stays with it.
-	await library.entry(first.name).click();
+	// Details shows the selection: several, then the one a Details button picks.
+	const details = page.getByRole("complementary", { name: "Details" });
+	if (!(await details.isVisible())) {
+		await page.getByRole("button", { name: "Details", exact: true }).click();
+	}
+	await expect(details).toContainText("3 items selected");
 	await page
 		.getByRole("button", { name: `Details for ${second.name}`, exact: true })
 		.click();
-	await expect(
-		page.getByRole("complementary", { name: "Details" }),
-	).toBeVisible();
 	await expect(selected).toHaveCount(1);
+	await expect(details.getByRole("heading", { level: 2 })).toHaveText(
+		second.name,
+	);
+	await library.entry(first.name).click();
+	await expect(details.getByRole("heading", { level: 2 })).toHaveText(
+		first.name,
+	);
 	await page.screenshot({
 		path: testInfo.outputPath("selection-inspector.png"),
 	});
+	// Arrows move the selection, and Details follows.
+	await page.keyboard.press("ArrowDown");
+	await expect(details.getByRole("heading", { level: 2 })).toHaveText(folder);
+
+	// Escape in the inspector closes it; in the listing it clears.
+	await details.getByRole("button", { name: "Close details" }).focus();
 	await page.keyboard.press("Escape");
-	await expect(
-		page.getByRole("complementary", { name: "Details" }),
-	).toBeHidden();
+	await expect(details).toBeHidden();
 	await expect(selected).toHaveCount(1);
+	await library.entry(first.name).click();
 	await page.keyboard.press("Escape");
+	await expect(selected).toHaveCount(0);
+
+	// Clicking empty space below the listing clears the selection.
+	await library.entry(first.name).click();
+	await expect(selected).toHaveCount(1);
+	await page.mouse.click(700, 600);
 	await expect(selected).toHaveCount(0);
 
 	await library.openFolder(folder);

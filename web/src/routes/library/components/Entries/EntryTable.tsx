@@ -25,8 +25,6 @@ const cell = cn(focusable, "px-3 py-1 text-sm text-muted-foreground");
 // row's expanded tint.
 const selected =
 	"hover:bg-accent has-aria-expanded:bg-transparent data-selected:bg-selection data-selected:text-selection-foreground data-selected:hover:bg-selection data-selected:has-aria-expanded:bg-selection";
-// The inspected entry is marked apart from selection: a bar at its start.
-const inspectedRow = "shadow-[inset_3px_0_0_var(--color-primary)]";
 
 /**
  * A dense table sorted by the server. Rows are focusable; arrows move focus
@@ -95,13 +93,7 @@ export function EntryTable({
 			<TableBody items={items}>
 				{(item) => (
 					<TableRow
-						className={cn(
-							focusable,
-							selected,
-							"border-b",
-							item.inspected && inspectedRow,
-						)}
-						data-inspected={item.inspected || undefined}
+						className={cn(focusable, selected, "border-b")}
 						href={item.href}
 						id={item.entry.id}
 						textValue={item.entry.name}

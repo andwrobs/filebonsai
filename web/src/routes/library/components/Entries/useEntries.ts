@@ -11,7 +11,7 @@ import {
 import type { EntryView } from "../../entry-view.store";
 import { useOriginalDownloads } from "../../useOriginalDownload";
 import type { Inspector } from "../Inspector";
-import { useEntrySelection } from "./useEntrySelection";
+import type { EntrySelection } from "./useEntrySelection";
 
 /** What one entry shows in any view, and what it can do. */
 export interface EntryItem {
@@ -28,6 +28,7 @@ export interface EntryItem {
 	modifiedFull: string;
 	/** Size or kind with the date, for layouts without columns. */
 	meta: string;
+	/** Showing alone in the open inspector. */
 	inspected: boolean;
 	inspectorId: string;
 	downloading: boolean;
@@ -45,23 +46,22 @@ const kindBelow = 44;
 
 export function useEntries({
 	entries,
-	folderId,
 	inspector,
 	inspectorId,
 	phone,
+	selection,
 	view,
 }: {
 	entries: readonly Entry[];
-	folderId: string;
 	inspector: Inspector;
 	inspectorId: string;
 	phone: boolean;
+	selection: EntrySelection;
 	view: EntryView;
 }) {
 	const container = useRef<HTMLDivElement>(null);
 	const width = useInlineSizeInRem(container);
 	const downloads = useOriginalDownloads();
-	const selection = useEntrySelection({ entries, folderId, touch: phone });
 	const now = new Date();
 
 	const layout: EntriesLayout =
@@ -95,7 +95,6 @@ export function useEntries({
 		container,
 		items,
 		layout,
-		selection,
 		showKind: width >= kindBelow,
 	};
 }

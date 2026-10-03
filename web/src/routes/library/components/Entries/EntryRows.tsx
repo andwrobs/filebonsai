@@ -31,10 +31,7 @@ export function EntryRows({
 					className={cn(
 						"grid grid-cols-[1.75rem_minmax(0,1fr)_auto] items-center gap-x-3 border-b px-3 py-2 text-foreground outline-none data-focus-visible:outline-2 data-focus-visible:outline-solid data-focus-visible:-outline-offset-2 data-focus-visible:outline-ring",
 						"hover:bg-accent data-selected:bg-selection data-selected:text-selection-foreground",
-						// The inspected entry is marked apart from selection.
-						entry.inspected && "shadow-[inset_3px_0_0_var(--color-primary)]",
 					)}
-					data-inspected={entry.inspected || undefined}
 					href={entry.href}
 					id={entry.entry.id}
 					textValue={entry.entry.name}

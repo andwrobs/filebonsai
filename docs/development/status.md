@@ -167,23 +167,25 @@ observed results; use Git history for prior plans and completed migrations.
 
 ## Latest observed checks
 
-- Selection (LIB-05): table, grid and phone rows share one entry-ID selection per
-  folder. Click selects, Cmd/Ctrl toggles, Shift extends through the displayed order,
-  and double-click or Enter opens a folder; on touch a tap opens, while Select (or a
-  long-press) enters a mode where taps toggle. Arrows, type-ahead and focus arriving
-  from outside move focus without selecting; Details and Download neither select nor
-  navigate; the inspected entry has its own marker. A fixed-height bar announces the
-  item or selection count with Select all (loaded entries) and Clear/Done; Escape
-  clears unless a field, menu, dialog or the docked inspector claims it. Selection
-  survives sorting and view switches, refreshes prune missing IDs, and another folder
-  starts empty. `cd web && npm test` passed (Biome, typegen and `tsc`, 158 Vitest
-  tests, build), including six selection route tests and five pure-rule tests.
-  `npm run e2e` against the disposable PostgreSQL-profile stack passed every existing
-  journey on desktop and phone (folder opening moved to double-click on desktop). The
-  new selection journey's desktop range step assumed the wrong row order; once
-  corrected it passed on both, and its 1440×900 table/grid/inspector and
-  390×844 selection-mode screenshots were inspected. No load-more control exists yet,
-  so survival across further pages is covered only by the ID-keyed model.
+- Selection (LIB-05 and its follow-up): table, grid and phone rows share one entry-ID
+  selection per folder, owned by the Library route. Click selects, Cmd/Ctrl toggles,
+  Shift extends through the displayed order, arrows move the selection (as in Drive
+  and Finder), Escape in the listing clears it, and double-click or Enter opens a
+  folder; on touch a tap opens, while Select (or a long-press) enters a mode where
+  taps toggle. A click on empty space clears the selection; entries, controls, fields
+  and the inspector keep it. The inspector shows the selection: the folder when
+  nothing is selected, the entry when one is, and a count with file/folder totals for
+  several. A row's Details button makes that entry the selection and opens the
+  inspector. A fixed-height bar announces the item or selection count with Select all
+  (loaded entries) and Clear/Done. Selection survives sorting and view switches,
+  refreshes prune missing IDs, and another folder starts empty. The follow-up
+  removed the hook's document and window listeners and the separate inspected-entry
+  marker. `cd web && npm test` passed (Biome, typegen and `tsc`, 155 Vitest tests,
+  build). `npm run e2e` against the disposable PostgreSQL-profile stack passed all
+  15 desktop and phone tests, including Details following click, Details buttons and
+  arrows, the several-selected summary, and the empty-space clear at 1440×900. No
+  load-more control exists yet, so survival across further pages is covered only by
+  the ID-keyed model.
 
 - Combined Library merge verification (PRs #32/#33): `cd web && npm test`
   passed Biome, route typegen/TypeScript, 147 Vitest tests and the production build.

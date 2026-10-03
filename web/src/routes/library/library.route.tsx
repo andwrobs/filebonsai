@@ -20,10 +20,11 @@ import { queryClient } from "~/lib/query/client";
 import { UploadControl } from "~/lib/transfers/UploadControl";
 import { Button, LinkButton } from "~/lib/ui/button";
 import type { Route } from "./+types/library.route";
-import { Entries, ViewControls } from "./components/Entries";
+import { Entries, useEntrySelection, ViewControls } from "./components/Entries";
 import { FolderBreadcrumbs } from "./components/FolderBreadcrumbs";
 import { InspectorPanel, useInspector } from "./components/Inspector";
 import { NewFolderForm } from "./components/NewFolderForm";
+import { isEmptySpace } from "./entry-selection";
 import { orderFromSearch } from "./listing-order";
 import { useLibraryView } from "./useLibraryView";
 
@@ -91,11 +92,23 @@ function Folder({
 }) {
 	const [isCreating, setIsCreating] = useState(false);
 	const inspectorId = useId();
-	const inspector = useInspector(folder, children);
 	const library = useLibraryView(order);
+	const selection = useEntrySelection({
+		entries: children,
+		folderId: folder.id,
+		touch: library.phone,
+	});
+	const inspector = useInspector(folder, children, selection);
 
 	return (
-		<div className="@container/page flex flex-1 flex-col gap-5 px-(--content-gutter) pt-4 pb-8 max-md:pb-[calc(--spacing(8)+3.5rem)] max-md:pl-[max(var(--content-gutter),env(safe-area-inset-left))] max-md:pr-[max(var(--content-gutter),env(safe-area-inset-right))]">
+		// biome-ignore lint/a11y/noStaticElementInteractions: a pointer convenience; Escape and Clear do the same from the keyboard.
+		// biome-ignore lint/a11y/useKeyWithClickEvents: see above.
+		<div
+			onClick={(event) => {
+				if (isEmptySpace(event.target)) selection.clear();
+			}}
+			className="@container/page flex flex-1 flex-col gap-5 px-(--content-gutter) pt-4 pb-8 max-md:pb-[calc(--spacing(8)+3.5rem)] max-md:pl-[max(var(--content-gutter),env(safe-area-inset-left))] max-md:pr-[max(var(--content-gutter),env(safe-area-inset-right))]"
+		>
 			<header className="flex min-h-[calc(var(--control-height)+1rem)] flex-wrap items-center justify-between gap-x-4 gap-y-3 border-b pb-3 @max-[30rem]/page:flex-col @max-[30rem]/page:flex-nowrap @max-[30rem]/page:items-stretch">
 				<div className="flex min-w-0 flex-[1_1_12rem] items-center gap-1 @max-[30rem]/page:flex-none">
 					{folder.parentId ? (
@@ -183,11 +196,11 @@ function Folder({
 						) : (
 							<Entries
 								entries={children}
-								folderId={folder.id}
 								inspector={inspector}
 								inspectorId={inspectorId}
 								labelledBy="items-heading"
 								library={library}
+								selection={selection}
 							/>
 						)}
 						{nextCursor ? (
