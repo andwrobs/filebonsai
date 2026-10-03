@@ -25,7 +25,8 @@ public record FolderDetailsResponse(
         @Schema(
                 requiredMode = REQUIRED,
                 minimum = "1",
-                description = "Changes with the name, parent or current version; send it back as expectedRevision")
+                description =
+                        "Changes with the name, parent, trash state or current version; send it back as expectedRevision")
         long revision,
 
         @ArraySchema(

@@ -175,6 +175,7 @@ Rename, move, trash, versions and tags. Every change is metadata, reversible whe
 | [ORG-12](organize.md#org-12-undo-for-reversible-actions) Undo for reversible actions | Build | P3 | S | [ORG-02](organize.md#org-02-rename), [ORG-03](organize.md#org-03-move), [ORG-04](organize.md#org-04-trash-and-restore) |
 | [ORG-13](organize.md#org-13-file-notes) File notes | Build | P3 | S | none |
 | [ORG-14](organize.md#org-14-copy-files-without-coupling-their-lifecycle) Copy files without coupling their lifecycle | Build | P2 | L | [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer) |
+| [ORG-16](organize.md#org-16-retry-catalog-writes-that-lose-a-deadlock) Retry catalog writes that lose a deadlock | Build | P3 | S | none |
 
 ### [Previews & media](previews-and-media.md)
 
@@ -271,6 +272,7 @@ A library you can prove is intact and can rebuild from an export. This is M4.
 | [REC-05](integrity-and-recovery.md#rec-05-restore-into-a-clean-installation) Restore into a clean installation | Proof | P3 | M | [REC-04](integrity-and-recovery.md#rec-04-export-command), [M1-07](finish-m1.md#m1-07-container-image-and-compose-from-a-clean-checkout) |
 | [REC-06](integrity-and-recovery.md#rec-06-backup-and-restore-drill) Backup and restore drill | Proof | P3 | M | [M1-07](finish-m1.md#m1-07-container-image-and-compose-from-a-clean-checkout) |
 | [REC-07](integrity-and-recovery.md#rec-07-upgrade-drill) Upgrade drill | Proof | P3 | M | [M1-07](finish-m1.md#m1-07-container-image-and-compose-from-a-clean-checkout), [ENG-11](foundations.md#eng-11-migration-upgrade-test-harness) |
+| [REC-08](integrity-and-recovery.md#rec-08-upload-completion-survives-translated-database-errors) Upload completion survives translated database errors | Build | P1 | S | none |
 
 ### [Configurable shell](configurable-shell.md)
 

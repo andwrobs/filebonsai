@@ -17,6 +17,7 @@ import com.filebonsai.catalog.domain.EntryId;
 import com.filebonsai.catalog.domain.FileName;
 import com.filebonsai.catalog.domain.VersionId;
 import com.filebonsai.catalog.persistence.CatalogHierarchyLock;
+import com.filebonsai.catalog.persistence.SqlErrors;
 import com.filebonsai.storage.LocalObjectStorage;
 import com.filebonsai.storage.PublishedObjectStorage;
 import com.filebonsai.transfers.application.BeginUpload;
@@ -168,8 +169,8 @@ public final class PostgresLocalTransfers
                         uploadId);
                 return map(find(transaction, scope, uploadId, false));
             });
-        } catch (DataAccessException exception) {
-            if ("23505".equals(exception.sqlState())) {
+        } catch (RuntimeException exception) {
+            if (SqlErrors.uniqueViolation(exception)) {
                 throw new UploadFailure(NAME_CONFLICT, "A sibling entry or pending upload already reserves this name");
             }
             throw exception;

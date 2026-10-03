@@ -54,7 +54,6 @@ import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.ResultQuery;
 import org.jooq.RowN;
-import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 
 public final class PostgresCatalog
@@ -313,8 +312,8 @@ public final class PostgresCatalog
         try {
             return database.transactionResult(
                     configuration -> create(DSL.using(configuration), scope, parentId, name, idempotencyKey));
-        } catch (DataAccessException exception) {
-            if ("23505".equals(exception.sqlState())) {
+        } catch (RuntimeException exception) {
+            if (SqlErrors.uniqueViolation(exception)) {
                 throw new CatalogFailure(NAME_CONFLICT, "A sibling entry or pending upload already reserves this name");
             }
             throw exception;
@@ -593,6 +592,15 @@ public final class PostgresCatalog
         if (entry.folder() && exceedsDepth(transaction, workspace, entry.id(), destinationDepth)) {
             return new ItemResult(id, Outcome.DEPTH_LIMIT_EXCEEDED, entry.revision(), null);
         }
+        // An abandoned upload's expired reservation must not hold the name, as for folder creation.
+        transaction.execute(
+                "delete from catalog_names where workspace_id = ? and parent_id = ? and claim_kind = 'reservation'"
+                        + " and expires_at <= current_timestamp and name = (select name from catalog_names"
+                        + " where workspace_id = ? and entry_id = ? and claim_kind = 'entry')",
+                workspace,
+                destinationId.value(),
+                workspace,
+                entry.id());
         // A uniqueness violation aborts the statement; the savepoint keeps the other items' moves.
         transaction.execute("savepoint move_entry");
         try {
@@ -602,8 +610,8 @@ public final class PostgresCatalog
                     destinationId.value(),
                     workspace,
                     entry.id());
-        } catch (DataAccessException exception) {
-            if (!"23505".equals(exception.sqlState())) {
+        } catch (RuntimeException exception) {
+            if (!SqlErrors.uniqueViolation(exception)) {
                 throw exception;
             }
             transaction.execute("rollback to savepoint move_entry");

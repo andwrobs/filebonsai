@@ -92,7 +92,7 @@ The move outcomes are:
 | --- | --- |
 | `MOVED` | The entry now sits in the destination. |
 | `MOVED_WITH_ANCESTOR` | A selected ancestor moved, carrying this entry inside it. |
-| `UNCHANGED` | The entry was already in the destination. No revision change. |
+| `UNCHANGED` | The entry was already in the destination, whatever revision was sent. No revision change. |
 | `ANCESTOR_NOT_MOVED` | A selected ancestor failed, so this entry stayed where it was. |
 | `NOT_FOUND` | Missing, inaccessible, pending or trashed; indistinguishable. |
 | `REVISION_CONFLICT` | The entry changed since the client read it. |

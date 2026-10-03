@@ -133,3 +133,24 @@ Depends on: [M1-07](finish-m1.md#m1-07-container-image-and-compose-from-a-clean-
 
 **Invariants:** INV-16  
 **Checks:** Recorded drill
+
+## REC-08 Upload completion survives translated database errors
+
+`P1` · `S` · Build · Backend
+
+Depends on: none
+
+Context: ORG-03's persistence review found that Spring's jOOQ wiring turns database failures into Spring exceptions, not jOOQ's `DataAccessException`. Name conflicts now classify by the `SQLException` underneath (`SqlErrors`). `PostgresLocalTransfers.complete` still catches `IOException | DataAccessException` around publication, so in the running app a database failure there skips `markReconciling` and returns a `500`.
+
+**Why.** A failed publication must hand the upload to reconciliation rather than leave it to restart recovery.
+
+**Outcome.** Completion recognizes database failures from either exception family and marks the upload for reconciliation, as the plain-jOOQ tests already assume.
+
+**Acceptance**
+
+- A Spring-wired PostgreSQL test injects a database failure during publication and observes the reconciling state and a `503`
+- No other catch in `transfers` or `storage` depends on jOOQ's exception type
+
+**Invariants:** INV-04, INV-10  
+**Checks:** `postgres`
+

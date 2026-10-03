@@ -915,6 +915,25 @@ class PostgresCatalogTest {
     }
 
     @Test
+    void anExpiredUploadReservationDoesNotHoldTheNameAgainstAMove() {
+        Entry.Folder archive = create(ROOT, "Archive");
+        OffsetDateTime now = database.fetchValue(DSL.field("current_timestamp", OffsetDateTime.class));
+        database.execute(
+                "insert into catalog_names (id, workspace_id, parent_id, name, claim_kind, expires_at, created_at)"
+                        + " values (?, ?, ?, 'Italy.pdf', 'reservation', ?::timestamptz, ?::timestamptz)",
+                UUID.randomUUID(),
+                WORKSPACE,
+                archive.id().value(),
+                now.minusMinutes(1),
+                now.minusHours(1));
+
+        assertThat(move(archive.id(), UUID.randomUUID(), item(FILE, 1)))
+                .containsExactly(new ItemResult(FILE, Outcome.MOVED, 2L, ROOT));
+        assertThat(database.fetchCount(CATALOG_NAMES, CATALOG_NAMES.CLAIM_KIND.eq("reservation")))
+                .isZero();
+    }
+
+    @Test
     void selectedDescendantsFollowTheirClosestSelectedAncestor() {
         Entry.Folder trips = create(ROOT, "Trips");
         Entry.Folder italy = create(trips.id(), "Italy");

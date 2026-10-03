@@ -113,8 +113,19 @@ observed results; use Git history for prior plans and completed migrations.
   menu, and the current folder. From 1024px it shows up to the last two parents and
   hides the menu when they are the only middle segments. Below 30rem the toolbar drops
   to its own row. Long names truncate and keep their full text for assistive tech.
-  Folder creation has no depth limit yet, so a folder deeper than the cap reads as a
-  `500` (ORG-15).
+  Folders nest at most 1,024 levels below the root, the same cap, so every folder reads
+  its full path; creating one deeper is `409 DEPTH_LIMIT_EXCEEDED`.
+- Entries can move (ORG-03's API, decision 0012). Every entry response carries
+  `revision`, which Flyway V10 adds and a move increments. `POST /api/v1/entries/move`
+  moves 1–1,000 entries into a folder under an `Idempotency-Key`, with each entry's
+  expected revision, and returns one outcome per entry in canonical ID order: moved,
+  carried by a selected folder, already there, or why it stayed (not found, stale
+  revision, name taken by an entry or pending upload, root, destination inside it, too
+  deep). The stored result replays for 30 days. A per-workspace advisory lock serializes
+  folder moves (file moves, folder creation and begin-upload share it), then entry rows
+  lock in UUID order before their names. A folder read takes its ancestors from the
+  same snapshot. A move changes no name, `updatedAt`, version or stored object. The web
+  client has no Move to… dialog yet.
 - The Library has an inspector (`web/src/routes/library/components/Inspector/`). Each row has
   a Details button. The toolbar's Details toggle shows the current folder when no row
   is chosen. The inspector shows name, kind, rounded and exact size, created and
@@ -166,6 +177,30 @@ observed results; use Git history for prior plans and completed migrations.
   Image object URLs are revoked when the preview closes or changes.
 
 ## Latest observed checks
+
+- Move API, revisions and folder depth (ORG-03 backend, ORG-15):
+  `cd backend && ./scripts/verify.sh` passed 117 backend tests (the opt-in live-R2 proof
+  skipped), including 29 PostgreSQL Catalog and 13 PostgreSQL-profile HTTP tests, then exported the contract and passed
+  TypeScript client checks 12/12 and Swift 13/13, which decode the new move result with
+  null `revision` and `previousParentId`. The PostgreSQL tests cover partial results with
+  entry and pending-upload name conflicts, another workspace's entry, replay under eight
+  concurrent requests with one key, a stale revision after the move, selected
+  descendants carried by or left with their folder, 25 rounds of concurrent opposing
+  folder moves, the depth limit on create and move with a 1,024-level chain, and
+  unchanged versions and storage keys. With the hierarchy lock disabled, the
+  opposing-moves test failed; the concurrent create-versus-move depth test still passed,
+  so its race is not reliably reproduced. PostgreSQL-profile HTTP tests cover CSRF,
+  workspace scope and a move through the session. The fresh persistence review found
+  that Spring's jOOQ wiring translates database errors into Spring exceptions, so a
+  unique violation escaped the name-conflict catches. Through the Spring-wired stack a
+  move with one clash returned `500` and moved nothing, and folder creation and
+  begin-upload already returned `500` instead of `409 NAME_CONFLICT` on `main`. All
+  three now classify by the underlying SQLSTATE; a Spring-wired PostgreSQL test failed
+  before the repair and passes after it. A move also clears an expired upload
+  reservation holding the name, as folder creation does. REC-08 (upload completion's
+  catch) and ORG-16 (deadlock retries) record the review's remaining findings. `cd web && npm run generate:schema &&
+  npm test` passed (Biome, typegen and `tsc`, 155 Vitest tests, build); the web client
+  only gained `revision` in its fixtures.
 
 - Selection (LIB-05 and its follow-up): table, grid and phone rows share one entry-ID
   selection per folder, owned by the Library route. Click selects, Cmd/Ctrl toggles,
@@ -585,8 +620,8 @@ items and required tests.
    ORG-02/03 mutations (rules accepted in decision 0012) and
    commands, and LIB-22 shared menus and catalog dragging. Cover grid-folder and
    left-sidebar destinations through one drag owner, with keyboard/touch alternatives.
-   Drops, mutations, menus and catalog dragging remain backlog work. ORG-03 (move)
-   is in progress: backend move API first, then the Move to… dialog.
+   Drops, mutations, menus and catalog dragging remain backlog work. The move API
+   is built; ORG-03's Move to… dialog is next, then LIB-22's drags reuse it.
    The inspector and Storage move onto `web/src/lib/ui` within LIB-15/16.
 3. App-managed storage is near-term work after interaction polish: settle
    [TIER-10](../backlog/storage-tiers.md#tier-10-decision-secure-app-managed-connections),

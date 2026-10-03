@@ -267,3 +267,24 @@ Depends on: [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer)
 **Read:** `docs/product/domain.md`, `docs/architecture/storage-and-transfers.md`, `docs/backlog/metadata.md`
 
 **Checks:** `postgres`; `contract`; `web`; `rendered`
+
+## ORG-16 Retry catalog writes that lose a deadlock
+
+`P3` · `S` · Build · Backend
+
+Depends on: none
+
+Context: ORG-03's persistence review: two concurrent moves into one folder whose entries carry crossing names (one moves `x` then `y`, the other `y` then `x`) can deadlock on the sibling-name index. PostgreSQL aborts one with `40P01`, which reaches the client as a `500`. Folder creation has the same exposure. A single-owner workspace rarely hits it.
+
+**Why.** A lost deadlock is a retryable conflict, not a server fault.
+
+**Outcome.** Catalog writes retry a `40P01` (or serialization failure) a bounded number of times within the same idempotency key, or write names in a fixed order so the cycle can't form.
+
+**Acceptance**
+
+- A PostgreSQL test forces the crossing order and both requests finish with per-item results
+- Retries never repeat a committed effect
+
+**Invariants:** INV-05, INV-10  
+**Checks:** `postgres`
+

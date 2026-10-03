@@ -393,7 +393,7 @@ export interface components {
             parentId: string;
             /**
              * Format: int64
-             * @description Changes with the name, parent or current version; send it back as expectedRevision
+             * @description Changes with the name, parent, trash state or current version; send it back as expectedRevision
              */
             revision: number;
             /** Format: date-time */
@@ -432,7 +432,7 @@ export interface components {
             parentId: string | null;
             /**
              * Format: int64
-             * @description Changes with the name, parent or current version; send it back as expectedRevision
+             * @description Changes with the name, parent, trash state or current version; send it back as expectedRevision
              */
             revision: number;
             /** Format: date-time */
@@ -457,7 +457,7 @@ export interface components {
             parentId: string | null;
             /**
              * Format: int64
-             * @description Changes with the name, parent or current version; send it back as expectedRevision
+             * @description Changes with the name, parent, trash state or current version; send it back as expectedRevision
              */
             revision: number;
             /** Format: date-time */
@@ -489,7 +489,7 @@ export interface components {
             /** Format: uuid */
             entryId: string;
             /**
-             * @description MOVED: now in the destination. MOVED_WITH_ANCESTOR: a selected folder above it moved, carrying it. UNCHANGED: already in the destination. ANCESTOR_NOT_MOVED: a selected folder above it failed, so it stayed. NOT_FOUND: missing or inaccessible. REVISION_CONFLICT: changed since the client read it. NAME_CONFLICT: an entry or pending upload in the destination holds the name. CANNOT_MOVE_ROOT. DESTINATION_INSIDE_ENTRY: the destination is the folder or inside it. DEPTH_LIMIT_EXCEEDED: a folder would pass the depth limit.
+             * @description MOVED: now in the destination. MOVED_WITH_ANCESTOR: a selected folder above it moved, carrying it. UNCHANGED: already in the destination, whatever revision was sent. ANCESTOR_NOT_MOVED: a selected folder above it failed, so it stayed. NOT_FOUND: missing or inaccessible. REVISION_CONFLICT: changed since the client read it. NAME_CONFLICT: an entry or pending upload in the destination holds the name. CANNOT_MOVE_ROOT. DESTINATION_INSIDE_ENTRY: the destination is the folder or inside it. DEPTH_LIMIT_EXCEEDED: a folder would pass the depth limit.
              * @enum {string}
              */
             outcome: "MOVED" | "MOVED_WITH_ANCESTOR" | "UNCHANGED" | "ANCESTOR_NOT_MOVED" | "NOT_FOUND" | "REVISION_CONFLICT" | "NAME_CONFLICT" | "CANNOT_MOVE_ROOT" | "DESTINATION_INSIDE_ENTRY" | "DEPTH_LIMIT_EXCEEDED";

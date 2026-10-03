@@ -324,6 +324,73 @@ class AccessHttpPostgresTest {
                         jsonPath("$.ancestors[*].id").value(org.hamcrest.Matchers.contains(rootA.toString(), target)));
     }
 
+    @Test
+    void nameCollisionsThroughTheSpringWiredDatabaseAreConflictsNotFailures() throws Exception {
+        Csrf anonymous = csrf();
+        MvcResult login = login(anonymous, null, PASSWORD);
+        Cookie session = login.getResponse().getCookie(LocalOwnerAccess.SESSION_COOKIE);
+        Cookie csrf = login.getResponse().getCookie(LocalOwnerAccess.CSRF_COOKIE);
+        String target = createFolder(session, csrf, rootA.toString(), "Target");
+        createFolder(session, csrf, target, "Clash");
+        String clash = createFolder(session, csrf, rootA.toString(), "Clash");
+        String mover = createFolder(session, csrf, rootA.toString(), "Mover");
+
+        mvc.perform(post("/api/v1/folders")
+                        .cookie(session, csrf)
+                        .header(LocalOwnerAccess.CSRF_HEADER, csrf.getValue())
+                        .header("Idempotency-Key", UUID.randomUUID())
+                        .contentType("application/json")
+                        .content(mapper.writeValueAsString(java.util.Map.of("parentId", rootA, "name", "Clash"))))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("NAME_CONFLICT"));
+        mvc.perform(post("/api/v1/entries/move")
+                        .cookie(session, csrf)
+                        .header(LocalOwnerAccess.CSRF_HEADER, csrf.getValue())
+                        .header("Idempotency-Key", UUID.randomUUID())
+                        .contentType("application/json")
+                        .content(mapper.writeValueAsString(java.util.Map.of(
+                                "destinationId",
+                                target,
+                                "items",
+                                java.util.List.of(
+                                        java.util.Map.of("entryId", clash, "expectedRevision", 1),
+                                        java.util.Map.of("entryId", mover, "expectedRevision", 1))))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[?(@.entryId == '" + clash + "')].outcome")
+                        .value("NAME_CONFLICT"))
+                .andExpect(jsonPath("$.items[?(@.entryId == '" + mover + "')].outcome")
+                        .value("MOVED"));
+        mvc.perform(post("/api/v1/uploads")
+                        .cookie(session, csrf)
+                        .header(LocalOwnerAccess.CSRF_HEADER, csrf.getValue())
+                        .header("Idempotency-Key", UUID.randomUUID())
+                        .contentType("application/json")
+                        .content(mapper.writeValueAsString(java.util.Map.of(
+                                "parentId", rootA, "name", "Clash", "sizeBytes", "1", "sha256", "0".repeat(64)))))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("NAME_CONFLICT"));
+        mvc.perform(get("/api/v1/entries/" + mover).cookie(session))
+                .andExpect(jsonPath("$.parentId").value(target));
+        mvc.perform(get("/api/v1/entries/" + clash).cookie(session))
+                .andExpect(jsonPath("$.parentId").value(rootA.toString()));
+    }
+
+    private String createFolder(Cookie session, Cookie csrf, String parentId, String name) throws Exception {
+        return mapper.readTree(mvc.perform(post("/api/v1/folders")
+                                .cookie(session, csrf)
+                                .header(LocalOwnerAccess.CSRF_HEADER, csrf.getValue())
+                                .header("Idempotency-Key", UUID.randomUUID())
+                                .contentType("application/json")
+                                .content(mapper.writeValueAsString(
+                                        java.util.Map.of("parentId", parentId, "name", name))))
+                        .andExpect(status().isCreated())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString())
+                .get("id")
+                .asText();
+    }
+
     private String folderNamed(Cookie session, String name) throws Exception {
         var page = mapper.readTree(
                 mvc.perform(get("/api/v1/entries/" + rootA + "/children").cookie(session))

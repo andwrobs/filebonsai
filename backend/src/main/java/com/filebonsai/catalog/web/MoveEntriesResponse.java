@@ -23,7 +23,7 @@ public record MoveEntriesResponse(
                     requiredMode = REQUIRED,
                     description =
                             "MOVED: now in the destination. MOVED_WITH_ANCESTOR: a selected folder above it moved,"
-                                    + " carrying it. UNCHANGED: already in the destination. ANCESTOR_NOT_MOVED: a"
+                                    + " carrying it. UNCHANGED: already in the destination, whatever revision was sent. ANCESTOR_NOT_MOVED: a"
                                     + " selected folder above it failed, so it stayed. NOT_FOUND: missing or"
                                     + " inaccessible. REVISION_CONFLICT: changed since the client read it."
                                     + " NAME_CONFLICT: an entry or pending upload in the destination holds the name."
