@@ -142,7 +142,6 @@ Make the daily loop of finding, looking and acting feel like the design directio
 
 | Item | Kind | Priority | Size | Depends on |
 | --- | --- | --- | --- | --- |
-| [LIB-05](everyday-library.md#lib-05-selection-model) Selection model | Build | P2 | M | none |
 | [LIB-07](everyday-library.md#lib-07-name-search) Name search | Build | P2 | M | none |
 | [LIB-08](everyday-library.md#lib-08-command-palette-and-keyboard-shortcuts) Command palette and keyboard shortcuts | Build | P2 | M | none |
 | [LIB-09](everyday-library.md#lib-09-starred-and-recent) Starred and Recent | Build | P2 | M | none |
@@ -153,7 +152,7 @@ Make the daily loop of finding, looking and acting feel like the design directio
 | [LIB-16](everyday-library.md#lib-16-storage-summary-and-explanatory-panels) Storage summary and explanatory panels | Build | P2 | M | none |
 | [LIB-17](everyday-library.md#lib-17-panel-interaction-and-feedback-polish) Panel interaction and feedback polish | Build | P2 | M | [LIB-15](everyday-library.md#lib-15-inspector-hierarchy-and-description-polish), [LIB-16](everyday-library.md#lib-16-storage-summary-and-explanatory-panels) |
 | [LIB-18](everyday-library.md#lib-18-panel-visual-regression-coverage) Panel visual regression coverage | Proof | P2 | M | [ENG-02](foundations.md#eng-02-playwright-end-to-end-harness), [LIB-15](everyday-library.md#lib-15-inspector-hierarchy-and-description-polish), [LIB-16](everyday-library.md#lib-16-storage-summary-and-explanatory-panels) |
-| [LIB-22](everyday-library.md#lib-22-entry-actions-context-menu-and-in-app-drag) Entry actions: context menu and in-app drag | Build | P2 | L | [LIB-05](everyday-library.md#lib-05-selection-model), [M1-11](finish-m1.md#m1-11-drag-and-drop-upload), [ORG-02](organize.md#org-02-rename), [ORG-03](organize.md#org-03-move) |
+| [LIB-22](everyday-library.md#lib-22-entry-actions-context-menu-and-in-app-drag) Entry actions: context menu and in-app drag | Build | P2 | L | [M1-11](finish-m1.md#m1-11-drag-and-drop-upload), [ORG-02](organize.md#org-02-rename), [ORG-03](organize.md#org-03-move) |
 | [LIB-23](everyday-library.md#lib-23-letter-spacing-defaults-that-yield-to-tracking-utilities) Letter-spacing defaults that yield to tracking utilities | Build | P3 | S | none |
 
 ### [Organize](organize.md)
@@ -164,7 +163,7 @@ Rename, move, trash, versions and tags. Every change is metadata, reversible whe
 | --- | --- | --- | --- | --- |
 | [ORG-01](organize.md#org-01-decision-how-entries-change) Decision: how entries change | Decision | P1 | S | none |
 | [ORG-02](organize.md#org-02-rename) Rename | Build | P1 | M | [ORG-01](organize.md#org-01-decision-how-entries-change) |
-| [ORG-03](organize.md#org-03-move) Move | Build | P1 | L | [ORG-01](organize.md#org-01-decision-how-entries-change), [LIB-05](everyday-library.md#lib-05-selection-model) |
+| [ORG-03](organize.md#org-03-move) Move | Build | P1 | L | [ORG-01](organize.md#org-01-decision-how-entries-change) |
 | [ORG-04](organize.md#org-04-trash-and-restore) Trash and restore | Build | P1 | L | [ORG-01](organize.md#org-01-decision-how-entries-change) |
 | [ORG-05](organize.md#org-05-permanent-deletion-and-object-garbage-collection) Permanent deletion and object garbage collection | Build | P2 | L | [ORG-04](organize.md#org-04-trash-and-restore), [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer) |
 | [ORG-06](organize.md#org-06-upload-a-new-version-of-a-file) Upload a new version of a file | Build | P2 | L | [ORG-01](organize.md#org-01-decision-how-entries-change) |
@@ -208,7 +207,7 @@ Swipe through files one card at a time and decide what stays, what gets archived
 | [TDY-07](tidy-mode.md#tdy-07-sort-into-folders-mode) Sort-into-folders mode | Build | P3 | M | [TDY-06](tidy-mode.md#tdy-06-swipe-deck-ui), [ORG-03](organize.md#org-03-move) |
 | [TDY-08](tidy-mode.md#tdy-08-duplicate-resolution-card) Duplicate resolution card | Build | P3 | S | [TDY-06](tidy-mode.md#tdy-06-swipe-deck-ui), [ORG-10](organize.md#org-10-duplicate-finder) |
 | [TDY-09](tidy-mode.md#tdy-09-tidy-recap) Tidy recap | Build | P3 | S | [ORG-11](organize.md#org-11-activity-and-audit-log), [TDY-05](tidy-mode.md#tdy-05-tidy-decision-batches) |
-| [TDY-10](tidy-mode.md#tdy-10-desktop-review-workspace) Desktop review workspace | Build | P2 | M | [TDY-06](tidy-mode.md#tdy-06-swipe-deck-ui), [LIB-05](everyday-library.md#lib-05-selection-model) |
+| [TDY-10](tidy-mode.md#tdy-10-desktop-review-workspace) Desktop review workspace | Build | P2 | M | [TDY-06](tidy-mode.md#tdy-06-swipe-deck-ui) |
 | [TDY-11](tidy-mode.md#tdy-11-resume-review-sessions-and-explain-pending-changes) Resume review sessions and explain pending changes | Build | P2 | M | [TDY-05](tidy-mode.md#tdy-05-tidy-decision-batches), [TDY-06](tidy-mode.md#tdy-06-swipe-deck-ui) |
 
 ### [Reflect](reflect.md)
@@ -341,7 +340,7 @@ Find files by what they contain and what people know about them, while preservin
 | --- | --- | --- | --- | --- |
 | [MET-01](metadata.md#met-01-decision-metadata-authority-and-provenance) Decision: metadata authority and provenance | Decision | P1 | M | none |
 | [MET-02](metadata.md#met-02-revisioned-annotations-and-effective-metadata-api) Revisioned annotations and effective metadata API | Build | P2 | L | [MET-01](metadata.md#met-01-decision-metadata-authority-and-provenance), [ORG-01](organize.md#org-01-decision-how-entries-change), [PRV-04](previews-and-media.md#prv-04-photo-metadata-extraction) |
-| [MET-03](metadata.md#met-03-metadata-inspector-and-bulk-corrections) Metadata inspector and bulk corrections | Build | P2 | M | [MET-02](metadata.md#met-02-revisioned-annotations-and-effective-metadata-api), [LIB-05](everyday-library.md#lib-05-selection-model) |
+| [MET-03](metadata.md#met-03-metadata-inspector-and-bulk-corrections) Metadata inspector and bulk corrections | Build | P2 | M | [MET-02](metadata.md#met-02-revisioned-annotations-and-effective-metadata-api) |
 | [MET-04](metadata.md#met-04-portable-sidecar-import-and-metadata-export) Portable sidecar import and metadata export | Build | P2 | L | [MET-02](metadata.md#met-02-revisioned-annotations-and-effective-metadata-api), [REC-03](integrity-and-recovery.md#rec-03-decision-export-format), [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer) |
 | [MET-05](metadata.md#met-05-faceted-metadata-search) Faceted metadata search | Build | P2 | L | [LIB-07](everyday-library.md#lib-07-name-search), [MET-02](metadata.md#met-02-revisioned-annotations-and-effective-metadata-api) |
 | [MET-06](metadata.md#met-06-document-text-extraction-and-local-ocr) Document text extraction and local OCR | Build | P3 | L | [MET-05](metadata.md#met-05-faceted-metadata-search), [PRV-10](previews-and-media.md#prv-10-processing-sandbox-container), [ENG-05](foundations.md#eng-05-job-runner-with-a-first-consumer) |
@@ -358,7 +357,7 @@ Photos should have a home of their own: a fast chronological library, albums, a 
 | [PHO-01](photos.md#pho-01-decision-photo-identity-and-album-semantics) Decision: photo identity and album semantics | Decision | P1 | M | none |
 | [PHO-02](photos.md#pho-02-photos-home-and-chronological-browsing) Photos home and chronological browsing | Build | P2 | L | [PHO-01](photos.md#pho-01-decision-photo-identity-and-album-semantics), [PRV-04](previews-and-media.md#prv-04-photo-metadata-extraction), [PRV-03](previews-and-media.md#prv-03-gallery-grid-and-lightbox) |
 | [PHO-03](photos.md#pho-03-albums-api-and-collection-integrity) Albums API and collection integrity | Build | P2 | L | [PHO-01](photos.md#pho-01-decision-photo-identity-and-album-semantics), [ORG-01](organize.md#org-01-decision-how-entries-change) |
-| [PHO-04](photos.md#pho-04-fast-add-to-albums-and-album-browser) Fast add-to-albums and album browser | Build | P2 | M | [PHO-03](photos.md#pho-03-albums-api-and-collection-integrity), [PHO-02](photos.md#pho-02-photos-home-and-chronological-browsing), [LIB-05](everyday-library.md#lib-05-selection-model) |
+| [PHO-04](photos.md#pho-04-fast-add-to-albums-and-album-browser) Fast add-to-albums and album browser | Build | P2 | M | [PHO-03](photos.md#pho-03-albums-api-and-collection-integrity), [PHO-02](photos.md#pho-02-photos-home-and-chronological-browsing) |
 | [PHO-05](photos.md#pho-05-album-curation-deck-for-touch-and-keyboard) Album curation deck for touch and keyboard | Build | P2 | M | [PHO-04](photos.md#pho-04-fast-add-to-albums-and-album-browser), [TDY-06](tidy-mode.md#tdy-06-swipe-deck-ui) |
 | [PHO-06](photos.md#pho-06-heic-raw-and-companion-media-support) HEIC RAW and companion-media support | Spike | P2 | M | [PHO-01](photos.md#pho-01-decision-photo-identity-and-album-semantics) |
 | [PHO-07](photos.md#pho-07-photo-library-migration-with-sidecars-and-albums) Photo-library migration with sidecars and albums | Build | P2 | L | [IMP-01](bring-files-in.md#imp-01-import-an-existing-folder-from-the-server), [MET-04](metadata.md#met-04-portable-sidecar-import-and-metadata-export), [PHO-03](photos.md#pho-03-albums-api-and-collection-integrity) |

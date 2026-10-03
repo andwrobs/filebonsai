@@ -183,6 +183,7 @@ function Folder({
 						) : (
 							<Entries
 								entries={children}
+								folderId={folder.id}
 								inspector={inspector}
 								inspectorId={inspectorId}
 								labelledBy="items-heading"

@@ -82,7 +82,7 @@ Depends on: [MET-01](#met-01-decision-metadata-authority-and-provenance), [ORG-0
 
 `P2` · `M` · Build · Web
 
-Depends on: [MET-02](#met-02-revisioned-annotations-and-effective-metadata-api), [LIB-05](everyday-library.md#lib-05-selection-model)
+Depends on: [MET-02](#met-02-revisioned-annotations-and-effective-metadata-api)
 
 **Why.** A rich inspector should explain facts and make fixing them fast.
 

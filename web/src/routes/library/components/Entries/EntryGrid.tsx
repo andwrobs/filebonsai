@@ -2,7 +2,9 @@ import { GridList, GridListItem } from "react-aria-components";
 import { cn } from "~/lib/ui/utils";
 import { EntryIcon } from "../EntryIcon";
 import { DownloadStatus, EntryActions } from "./EntryActions";
+import { SelectionMark } from "./SelectionMark";
 import type { EntryItem } from "./useEntries";
+import type { CollectionSelection } from "./useEntrySelection";
 
 const item =
 	"relative flex min-w-0 flex-col gap-2 rounded-lg border bg-background p-2 text-foreground outline-none data-focus-visible:outline-2 data-focus-visible:outline-solid data-focus-visible:outline-offset-2 data-focus-visible:outline-ring";
@@ -14,9 +16,11 @@ const item =
 export function EntryGrid({
 	items,
 	labelledBy,
+	selection,
 }: {
 	items: readonly EntryItem[];
 	labelledBy: string;
+	selection: CollectionSelection;
 }) {
 	return (
 		<GridList
@@ -25,46 +29,55 @@ export function EntryGrid({
 			items={items}
 			keyboardNavigationBehavior="tab"
 			layout="grid"
+			{...selection}
 		>
 			{(entry) => (
 				<GridListItem
 					className={cn(
 						item,
-						entry.inspected
-							? "border-selection-border bg-selection text-selection-foreground"
-							: "hover:bg-accent",
-						entry.href ? "cursor-pointer" : undefined,
+						"hover:bg-accent data-selected:border-selection-border data-selected:bg-selection data-selected:text-selection-foreground",
+						// The inspected entry is marked apart from selection.
+						entry.inspected && "border-primary ring-1 ring-primary",
 					)}
 					data-inspected={entry.inspected || undefined}
 					href={entry.href}
 					id={entry.entry.id}
 					textValue={entry.entry.name}
 				>
-					<span className="grid aspect-[4/3] place-items-center rounded-md bg-muted">
-						<EntryIcon
-							className="size-12"
-							family={entry.family}
-							strokeWidth={1.25}
-						/>
-					</span>
-					<span className="grid gap-0.5 px-1">
-						<span
-							className="line-clamp-2 text-sm font-medium wrap-anywhere"
-							title={entry.entry.name}
-						>
-							{entry.entry.name}
-						</span>
-						<span className="flex items-center justify-between gap-1">
-							<span
-								className="truncate text-xs text-muted-foreground"
-								title={`Modified ${entry.modifiedFull}`}
-							>
-								{entry.meta}
+					{({ isSelected, selectionBehavior }) => (
+						<>
+							<SelectionMark
+								selected={isSelected}
+								toggling={selectionBehavior === "toggle"}
+								className="absolute top-3 left-3"
+							/>
+							<span className="grid aspect-[4/3] place-items-center rounded-md bg-muted">
+								<EntryIcon
+									className="size-12"
+									family={entry.family}
+									strokeWidth={1.25}
+								/>
 							</span>
-							<EntryActions className="-mr-1 gap-0" item={entry} />
-						</span>
-						<DownloadStatus className="text-xs" item={entry} />
-					</span>
+							<span className="grid gap-0.5 px-1">
+								<span
+									className="line-clamp-2 text-sm font-medium wrap-anywhere"
+									title={entry.entry.name}
+								>
+									{entry.entry.name}
+								</span>
+								<span className="flex items-center justify-between gap-1">
+									<span
+										className="truncate text-xs text-muted-foreground"
+										title={`Modified ${entry.modifiedFull}`}
+									>
+										{entry.meta}
+									</span>
+									<EntryActions className="-mr-1 gap-0" item={entry} />
+								</span>
+								<DownloadStatus className="text-xs" item={entry} />
+							</span>
+						</>
+					)}
 				</GridListItem>
 			)}
 		</GridList>

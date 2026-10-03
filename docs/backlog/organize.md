@@ -56,7 +56,7 @@ Depends on: [ORG-01](#org-01-decision-how-entries-change)
 
 `P1` · `L` · Build · Backend, Web · Public API change
 
-Depends on: [ORG-01](#org-01-decision-how-entries-change), [LIB-05](everyday-library.md#lib-05-selection-model)
+Depends on: [ORG-01](#org-01-decision-how-entries-change)
 
 Context: M1-02's `getEntry` reads a folder and then its `ancestors` in two statements. Nothing moves entries yet, so they agree today. Once moves exist, read both in one snapshot or derive the folder row from the ancestor query, so `parentId` always matches the last ancestor.
 

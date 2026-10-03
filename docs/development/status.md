@@ -167,6 +167,24 @@ observed results; use Git history for prior plans and completed migrations.
 
 ## Latest observed checks
 
+- Selection (LIB-05): table, grid and phone rows share one entry-ID selection per
+  folder. Click selects, Cmd/Ctrl toggles, Shift extends through the displayed order,
+  and double-click or Enter opens a folder; on touch a tap opens, while Select (or a
+  long-press) enters a mode where taps toggle. Arrows, type-ahead and focus arriving
+  from outside move focus without selecting; Details and Download neither select nor
+  navigate; the inspected entry has its own marker. A fixed-height bar announces the
+  item or selection count with Select all (loaded entries) and Clear/Done; Escape
+  clears unless a field, menu, dialog or the docked inspector claims it. Selection
+  survives sorting and view switches, refreshes prune missing IDs, and another folder
+  starts empty. `cd web && npm test` passed (Biome, typegen and `tsc`, 158 Vitest
+  tests, build), including six selection route tests and five pure-rule tests.
+  `npm run e2e` against the disposable PostgreSQL-profile stack passed every existing
+  journey on desktop and phone (folder opening moved to double-click on desktop). The
+  new selection journey's desktop range step assumed the wrong row order; once
+  corrected it passed on both, and its 1440×900 table/grid/inspector and
+  390×844 selection-mode screenshots were inspected. No load-more control exists yet,
+  so survival across further pages is covered only by the ID-keyed model.
+
 - Combined Library merge verification (PRs #32/#33): `cd web && npm test`
   passed Biome, route typegen/TypeScript, 147 Vitest tests and the production build.
   `cd backend && ./scripts/verify.sh` passed 102 backend tests (the opt-in live-R2
@@ -560,12 +578,12 @@ items and required tests.
 1. Cloud transfer: run the decision 0007 compatibility proof against a disposable
    real Cloudflare R2 bucket, repair any provider mismatch, and record bounded
    streaming/recovery evidence before claiming R2 support or adding another provider.
-2. Web interaction polish: build LIB-05 selection on the completed table/grid
-   (LIB-04) and folder tree (LIB-02), then M1-11 computer-file drops,
+2. Web interaction polish: on the completed selection (LIB-05), table/grid
+   (LIB-04) and folder tree (LIB-02), build M1-11 computer-file drops,
    ORG-01/02/03 mutation rules and
    commands, and LIB-22 shared menus and catalog dragging. Cover grid-folder and
    left-sidebar destinations through one drag owner, with keyboard/touch alternatives.
-   Selection, drops, mutations, menus and catalog dragging remain backlog work.
+   Drops, mutations, menus and catalog dragging remain backlog work.
    The inspector and Storage move onto `web/src/lib/ui` within LIB-15/16.
 3. App-managed storage is near-term work after interaction polish: settle
    [TIER-10](../backlog/storage-tiers.md#tier-10-decision-secure-app-managed-connections),
