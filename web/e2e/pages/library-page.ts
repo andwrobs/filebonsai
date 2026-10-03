@@ -20,8 +20,10 @@ export class LibraryPage extends Screen {
 		await expect(this.folderLink(name)).toBeVisible();
 	}
 
+	/** A tap on touch; a double-click with a mouse, where a click selects. */
 	async openFolder(name: string) {
-		await this.press(this.folderLink(name));
+		const row = this.folderLink(name);
+		await (this.touch ? row.tap() : row.dblclick());
 		await this.expectFolder(name);
 	}
 
@@ -62,6 +64,10 @@ export class LibraryPage extends Screen {
 	/** The folder's entries, whichever view shows them. */
 	get items() {
 		return this.page.getByRole("grid", { name: "Items", exact: true });
+	}
+
+	entry(name: string) {
+		return this.folderLink(name);
 	}
 
 	private folderLink(name: string) {

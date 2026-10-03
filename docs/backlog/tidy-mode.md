@@ -174,7 +174,7 @@ Depends on: [ORG-11](organize.md#org-11-activity-and-audit-log), [TDY-05](#tdy-0
 
 `P2` · `M` · Build · Web
 
-Depends on: [TDY-06](#tdy-06-swipe-deck-ui), [LIB-05](everyday-library.md#lib-05-selection-model)
+Depends on: [TDY-06](#tdy-06-swipe-deck-ui)
 
 **Why.** Desktop curation should use a keyboard and screen space as well as touch uses swipes.
 

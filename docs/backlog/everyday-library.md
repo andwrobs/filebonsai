@@ -15,30 +15,6 @@ moves screens onto `web/src/lib/ui` and `web/src/styles/index.css`. The shell,
 sign-in, not-found page, and Library list are there. LIB-15 and LIB-16 move the
 inspector and Storage as part of their redesigns, so neither is restyled twice.
 
-## LIB-05 Selection model
-
-`P2` · `M` · Build · Web
-
-Depends on: none
-
-Context: LIB-04 added the sortable table/grid and phone rows; LIB-02 added the virtualized folder tree.
-
-**Why.** Bulk move, trash and Tidy all need multi-select.
-
-**Outcome.** One entry-ID selection model shared by table, grid and phone rows in the current folder: single, toggle (Cmd/Ctrl), range (Shift), select all loaded entries and a toolbar with the selection count. Keep keyboard focus, selection and inspected entry distinct. On desktop, plain click selects one entry; double-click or Enter opens a folder. On touch, a normal tap opens a folder; long-press or a visible Select action starts selection mode, where taps toggle selection.
-
-**Acceptance**
-
-- ARIA multiselect semantics, visible selected and focused states using existing tokens, and an announced selection count; arrows move focus without unintentionally replacing the selection
-- Cmd/Ctrl toggles without opening a folder; Shift uses a stable anchor and the displayed order; Select all is scoped to loaded entries and never fires inside an input
-- Selection survives loading more results, sorting and switching table/grid for the same folder; a refresh prunes removed/inaccessible IDs. Folder, workspace and session changes clear selection and its anchor
-- Download, Details and overflow controls act without unintended selection or navigation; the inspector never makes an entry selected merely by displaying it
-- Expose LIB-22 targeting rules as selection intents: right-click on a selected entry retains the selection; on an unselected entry it selects only that entry. Tree-node and background actions have their own folder scope without replacing the listing selection; menu rendering ships in LIB-22
-- With no active overlay/drag, Escape clears selection. While another interaction owns Escape, selection does not consume it; LIB-22 proves menu/drag dismissal and focus restoration
-- Render and exercise single/toggle/range and view-switch states at desktop/phone sizes, including long names, keyboard-only interaction and touch selection; test targeting intents without requiring LIB-22 menus first
-
-**Checks:** `web`; `rendered`
-
 ## LIB-07 Name search
 
 `P2` · `M` · Build · Backend, Web · Public API change
@@ -255,9 +231,9 @@ Depends on: [ENG-02](foundations.md#eng-02-playwright-end-to-end-harness), [LIB-
 
 `P2` · `L` · Build · Web
 
-Depends on: [LIB-05](#lib-05-selection-model), [M1-11](finish-m1.md#m1-11-drag-and-drop-upload), [ORG-02](organize.md#org-02-rename), [ORG-03](organize.md#org-03-move)
+Depends on: [M1-11](finish-m1.md#m1-11-drag-and-drop-upload), [ORG-02](organize.md#org-02-rename), [ORG-03](organize.md#org-03-move)
 
-Context: `web/src/lib/ui` already has `context-menu`, `dropdown-menu` and `command` components. ORG-02 adds an overflow menu for touch rows, ORG-03 the move API and 'Move to…' dialog, and LIB-08 the command palette. Without one action list, each of these grows its own menu.
+Context: LIB-05 added the listing selection (`useEntrySelection` in the Library's Entries feature); its `target(entryId)` and the pure `entryTarget` rule in `web/src/routes/library/entry-selection.ts` already implement right-click targeting, and Escape defers to handlers that call `preventDefault`. `web/src/lib/ui` already has `context-menu`, `dropdown-menu` and `command` components. ORG-02 adds an overflow menu for touch rows, ORG-03 the move API and 'Move to…' dialog, and LIB-08 the command palette. Without one action list, each of these grows its own menu.
 
 **Why.** People expect to right-click a file or folder, drag entries between folders, and act on folders from the tree, as they do in Finder, Explorer, Drive and Dropbox.
 

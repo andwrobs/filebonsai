@@ -298,7 +298,7 @@ it("lets a late reply refresh its own folder without closing the next folder's f
 			{ name: "Create folder" },
 		),
 	);
-	await user.click(screen.getByRole("row", { name: "Travel" }));
+	await user.dblClick(screen.getByRole("row", { name: "Travel" }));
 	expect(
 		await screen.findByRole("heading", { level: 1, name: "Travel" }),
 	).toBeInTheDocument();
@@ -623,4 +623,195 @@ it("moves between rows with the arrow keys and opens a folder with Enter", async
 	expect(
 		await screen.findByRole("heading", { level: 1, name: "Travel" }),
 	).toBeInTheDocument();
+});
+
+const notes = {
+	...photo,
+	id: "notes",
+	name: "notes.txt",
+	currentVersion: { ...photo.currentVersion, id: "v2", sizeBytes: "12" },
+};
+
+function selectedNames() {
+	return screen
+		.getAllByRole("row")
+		.filter((row) => row.getAttribute("aria-selected") === "true")
+		.map((row) => row.getAttribute("data-key"));
+}
+
+it("selects one, toggles, and extends a range without opening a folder", async () => {
+	stubApi(serveFolder(() => [travel, photo, notes]));
+	const { user } = renderLibrary();
+	const grid = await screen.findByRole("grid", { name: "Items" });
+	expect(grid).toHaveAttribute("aria-multiselectable", "true");
+
+	await user.click(screen.getByRole("row", { name: "Travel" }));
+	expect(selectedNames()).toEqual(["travel"]);
+	expect(screen.getByText("1 selected")).toHaveAttribute("role", "status");
+	expect(
+		screen.getByRole("heading", { level: 1, name: "Library" }),
+	).toBeVisible();
+
+	await user.keyboard("{Control>}");
+	await user.click(screen.getByRole("row", { name: "notes.txt" }));
+	await user.keyboard("{/Control}");
+	expect(selectedNames()).toEqual(["travel", "notes"]);
+
+	await user.click(screen.getByRole("row", { name: "IMG_8421.JPG" }));
+	await user.keyboard("{Shift>}");
+	await user.click(screen.getByRole("row", { name: "notes.txt" }));
+	await user.keyboard("{/Shift}");
+	expect(selectedNames()).toEqual(["photo", "notes"]);
+
+	await user.click(screen.getByRole("button", { name: "Clear" }));
+	expect(selectedNames()).toEqual([]);
+	expect(screen.getByText("3 items")).toHaveAttribute("role", "status");
+	expect(screen.queryByRole("button", { name: "Clear" })).toBeNull();
+});
+
+it("keeps focus and selection apart on the keyboard", async () => {
+	stubApi(serveFolder(() => [travel, photo, notes]));
+	const { user } = renderLibrary();
+	await screen.findByRole("grid", { name: "Items" });
+	// Tabbing in focuses a row without selecting it.
+	await user.tab({ shift: false });
+	while (!document.activeElement?.closest('[role="grid"]')) await user.tab();
+	expect(selectedNames()).toEqual([]);
+
+	await user.keyboard(" ");
+	expect(selectedNames()).toEqual(["travel"]);
+	await user.keyboard("{ArrowDown}");
+	expect(screen.getByRole("row", { name: "IMG_8421.JPG" })).toHaveFocus();
+	expect(selectedNames()).toEqual(["travel"]);
+	await user.keyboard("{Escape}");
+	expect(selectedNames()).toEqual([]);
+
+	// Shift extends from the anchor through the displayed order.
+	await user.keyboard("{Home} {Shift>}{ArrowDown}{/Shift}");
+	expect(selectedNames()).toEqual(["travel", "photo"]);
+	// Type-ahead moves focus only.
+	await user.keyboard("n");
+	expect(screen.getByRole("row", { name: "notes.txt" })).toHaveFocus();
+	expect(selectedNames()).toEqual(["travel", "photo"]);
+
+	await user.keyboard("{Control>}a{/Control}");
+	expect(selectedNames()).toEqual(["travel", "photo", "notes"]);
+	expect(screen.getByRole("button", { name: "Select all" })).toBeDisabled();
+	await user.keyboard("{Escape}");
+	expect(selectedNames()).toEqual([]);
+});
+
+it("keeps the selection through sorting and view changes and prunes it on refresh", async () => {
+	localStorage.clear();
+	let children = [travel, photo, notes];
+	stubApi(serveFolder(() => children));
+	const { user } = renderLibrary();
+	await user.click(await screen.findByRole("row", { name: "notes.txt" }));
+	await user.keyboard("{Control>}");
+	await user.click(screen.getByRole("row", { name: "Travel" }));
+	await user.keyboard("{/Control}");
+
+	await user.click(screen.getByRole("columnheader", { name: "Size" }));
+	await vi.waitFor(() =>
+		expect(
+			screen
+				.getByRole("columnheader", { name: "Size" })
+				.getAttribute("aria-sort"),
+		).toMatch(/ascending|descending/),
+	);
+	expect(selectedNames().sort()).toEqual(["notes", "travel"]);
+
+	await user.click(screen.getByRole("radio", { name: "Grid" }));
+	expect(selectedNames().sort()).toEqual(["notes", "travel"]);
+
+	children = [travel, photo];
+	await act(() => queryClient.invalidateQueries());
+	await vi.waitFor(() =>
+		expect(screen.queryByRole("row", { name: "notes.txt" })).toBeNull(),
+	);
+	expect(selectedNames()).toEqual(["travel"]);
+	expect(screen.getByText("1 selected")).toBeInTheDocument();
+});
+
+it("clears the selection on Escape unless a field or the inspector owns it", async () => {
+	stubApi(serveFolder(() => [travel, photo]));
+	const { user } = renderLibrary();
+	await user.click(await screen.findByRole("row", { name: "Travel" }));
+
+	// Details opens the inspector without selecting its entry.
+	await user.click(
+		screen.getByRole("button", { name: "Details for IMG_8421.JPG" }),
+	);
+	expect(selectedNames()).toEqual(["travel"]);
+	const details = await screen.findByRole("complementary", {
+		name: "Details",
+	});
+	expect(screen.getByRole("row", { name: "IMG_8421.JPG" })).toHaveAttribute(
+		"aria-selected",
+		"false",
+	);
+	act(() => within(details).getAllByRole("button")[0]?.focus());
+	await user.keyboard("{Escape}");
+	expect(
+		screen.queryByRole("complementary", { name: "Details" }),
+	).not.toBeInTheDocument();
+	expect(selectedNames()).toEqual(["travel"]);
+
+	await user.click(screen.getByRole("button", { name: "New folder" }));
+	await user.type(screen.getByLabelText("Folder name"), "x{Escape}");
+	expect(selectedNames()).toEqual(["travel"]);
+
+	act(() => (document.activeElement as HTMLElement | null)?.blur());
+	await user.keyboard("{Escape}");
+	expect(selectedNames()).toEqual([]);
+});
+
+it("starts touch selection with Select, where taps toggle instead of opening", async () => {
+	vi.stubGlobal("matchMedia", () => ({
+		matches: false,
+		addEventListener() {},
+		removeEventListener() {},
+	}));
+	stubApi(serveFolder(() => [travel, photo]));
+	const { user } = renderLibrary();
+	expect(await screen.findByRole("row", { name: "Travel" })).toHaveAttribute(
+		"data-href",
+		"/library/travel",
+	);
+	await user.click(screen.getByRole("button", { name: "Select" }));
+	expect(screen.getByText("Tap items to select")).toBeInTheDocument();
+	expect(screen.getByRole("row", { name: "Travel" })).not.toHaveAttribute(
+		"data-href",
+	);
+	await user.click(screen.getByRole("row", { name: "Travel" }));
+	await user.click(screen.getByRole("row", { name: "IMG_8421.JPG" }));
+	expect(selectedNames()).toEqual(["travel", "photo"]);
+	await user.click(screen.getByRole("row", { name: "Travel" }));
+	expect(selectedNames()).toEqual(["photo"]);
+	expect(
+		screen.getByRole("heading", { level: 1, name: "Library" }),
+	).toBeVisible();
+
+	await user.click(screen.getByRole("button", { name: "Done" }));
+	expect(selectedNames()).toEqual([]);
+	expect(screen.getByRole("row", { name: "Travel" })).toHaveAttribute(
+		"data-href",
+		"/library/travel",
+	);
+});
+
+it("forgets the selection in another folder", async () => {
+	stubApi((path) =>
+		path === "/api/v1/entries/travel"
+			? Response.json(travel)
+			: path === "/api/v1/entries/travel/children"
+				? Response.json({ entries: [notes], nextCursor: null })
+				: serveFolder(() => [photo, travel])(path),
+	);
+	const { user } = renderLibrary();
+	await user.click(await screen.findByRole("row", { name: "IMG_8421.JPG" }));
+	await user.dblClick(screen.getByRole("row", { name: "Travel" }));
+	await screen.findByRole("heading", { level: 1, name: "Travel" });
+	expect(selectedNames()).toEqual([]);
+	expect(screen.queryByText(/selected$/)).not.toBeInTheDocument();
 });

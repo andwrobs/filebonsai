@@ -11,13 +11,17 @@ import {
 import type { EntryView } from "../../entry-view.store";
 import { useOriginalDownloads } from "../../useOriginalDownload";
 import type { Inspector } from "../Inspector";
+import { useEntrySelection } from "./useEntrySelection";
 
 /** What one entry shows in any view, and what it can do. */
 export interface EntryItem {
 	entry: Entry;
 	family: KindFamily;
 	kindLabel: string;
-	/** Folders open as links; files have no page of their own. */
+	/**
+	 * Folders open as links (double-click or Enter on desktop, a tap on touch);
+	 * files have no page of their own. Touch selection mode opens nothing.
+	 */
 	href: string | undefined;
 	size: string;
 	modified: string;
@@ -41,12 +45,14 @@ const kindBelow = 44;
 
 export function useEntries({
 	entries,
+	folderId,
 	inspector,
 	inspectorId,
 	phone,
 	view,
 }: {
 	entries: readonly Entry[];
+	folderId: string;
 	inspector: Inspector;
 	inspectorId: string;
 	phone: boolean;
@@ -55,6 +61,7 @@ export function useEntries({
 	const container = useRef<HTMLDivElement>(null);
 	const width = useInlineSizeInRem(container);
 	const downloads = useOriginalDownloads();
+	const selection = useEntrySelection({ entries, folderId, touch: phone });
 	const now = new Date();
 
 	const layout: EntriesLayout =
@@ -65,7 +72,10 @@ export function useEntries({
 			entry,
 			family: kind.family,
 			kindLabel: kind.label,
-			href: entry.kind === "folder" ? catalogHref(entry.id) : undefined,
+			href:
+				entry.kind === "folder" && !selection.selecting
+					? catalogHref(entry.id)
+					: undefined,
 			size:
 				entry.kind === "file"
 					? formatBytes(entry.currentVersion.sizeBytes)
@@ -81,7 +91,13 @@ export function useEntries({
 			toggleDetails: (button) => inspector.toggleEntry(entry.id, button),
 		};
 	});
-	return { container, items, layout, showKind: width >= kindBelow };
+	return {
+		container,
+		items,
+		layout,
+		selection,
+		showKind: width >= kindBelow,
+	};
 }
 
 // Unknown until measured (and in layout-free tests): wide enough for everything.

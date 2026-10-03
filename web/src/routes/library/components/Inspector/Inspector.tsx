@@ -49,7 +49,10 @@ export function InspectorPanel({
 			className="inspector inspector-docked"
 			id={id}
 			onKeyDown={(event) => {
-				if (event.key === "Escape") inspector.close();
+				if (event.key !== "Escape") return;
+				// Claimed, so the listing keeps its selection.
+				event.preventDefault();
+				inspector.close();
 			}}
 		>
 			{details}

@@ -85,7 +85,7 @@ Depends on: [PHO-01](#pho-01-decision-photo-identity-and-album-semantics), [ORG-
 
 `P2` · `M` · Build · Web
 
-Depends on: [PHO-03](#pho-03-albums-api-and-collection-integrity), [PHO-02](#pho-02-photos-home-and-chronological-browsing), [LIB-05](everyday-library.md#lib-05-selection-model)
+Depends on: [PHO-03](#pho-03-albums-api-and-collection-integrity), [PHO-02](#pho-02-photos-home-and-chronological-browsing)
 
 **Why.** Adding a sequence of photos to albums should not require reopening a dialog for every photo.
 

@@ -14,28 +14,38 @@ import { cn } from "~/lib/ui/utils";
 import { EntryIcon } from "../EntryIcon";
 import { DownloadStatus, EntryActions } from "./EntryActions";
 import type { EntryItem } from "./useEntries";
+import type { CollectionSelection } from "./useEntrySelection";
 
 const head = "h-9 px-3 text-xs font-semibold text-muted-foreground";
 // Arrows can focus a cell as well as a row.
 const focusable =
 	"outline-none data-focus-visible:outline-2 data-focus-visible:outline-solid data-focus-visible:-outline-offset-2 data-focus-visible:outline-ring";
 const cell = cn(focusable, "px-3 py-1 text-sm text-muted-foreground");
+// Selection tints the row; the open Details button would otherwise pick up the
+// row's expanded tint.
+const selected =
+	"hover:bg-accent has-aria-expanded:bg-transparent data-selected:bg-selection data-selected:text-selection-foreground data-selected:hover:bg-selection data-selected:has-aria-expanded:bg-selection";
+// The inspected entry is marked apart from selection: a bar at its start.
+const inspectedRow = "shadow-[inset_3px_0_0_var(--color-primary)]";
 
 /**
- * A dense table sorted by the server. Rows are focusable; arrows move between
- * rows and into a row's buttons, and Enter opens a folder.
+ * A dense table sorted by the server. Rows are focusable; arrows move focus
+ * between rows and into a row's buttons. Click selects, Cmd/Ctrl-click
+ * toggles, Shift-click extends, and double-click or Enter opens a folder.
  */
 export function EntryTable({
 	items,
 	labelledBy,
 	onSort,
 	order,
+	selection,
 	showKind,
 }: {
 	items: readonly EntryItem[];
 	labelledBy: string;
 	onSort(field: SortField): void;
 	order: ListingOrder;
+	selection: CollectionSelection;
 	showKind: boolean;
 }) {
 	const sortDescriptor: SortDescriptor = {
@@ -49,6 +59,7 @@ export function EntryTable({
 			// The descriptor Aria proposes is ignored; sortBy picks the direction.
 			onSortChange={({ column }) => onSort(column as SortField)}
 			sortDescriptor={sortDescriptor}
+			{...selection}
 		>
 			<TableHeader className="border-b">
 				<TableHead
@@ -86,13 +97,9 @@ export function EntryTable({
 					<TableRow
 						className={cn(
 							focusable,
+							selected,
 							"border-b",
-							// The open Details button would otherwise pick up the
-							// row's expanded tint.
-							item.inspected
-								? "bg-selection text-selection-foreground hover:bg-selection has-aria-expanded:bg-selection"
-								: "hover:bg-accent",
-							item.href ? "cursor-pointer" : undefined,
+							item.inspected && inspectedRow,
 						)}
 						data-inspected={item.inspected || undefined}
 						href={item.href}
